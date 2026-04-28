@@ -1,0 +1,50 @@
+import 'package:get/get.dart';
+
+import '../modules/game/game_binding.dart';
+import '../modules/game/game_view.dart';
+import '../modules/home/home_binding.dart';
+import '../modules/home/home_view.dart';
+import '../modules/level_select/level_select_binding.dart';
+import '../modules/level_select/level_select_view.dart';
+import '../modules/records/records_binding.dart';
+import '../modules/records/records_view.dart';
+import '../modules/result/result_binding.dart';
+import '../modules/result/result_view.dart';
+import '../modules/splash/splash_binding.dart';
+import '../modules/splash/splash_view.dart';
+import 'app_routes.dart';
+
+abstract class AppPages {
+  static final pages = <GetPage<dynamic>>[
+    GetPage(
+      name: AppRoutes.splash,
+      page: () => const SplashView(),
+      binding: SplashBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.home,
+      page: () => const HomeView(),
+      binding: HomeBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.levelSelect,
+      page: () => const LevelSelectView(),
+      binding: LevelSelectBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.game,
+      page: () => const GameView(),
+      binding: GameBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.result,
+      page: () => const ResultView(),
+      binding: ResultBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.records,
+      page: () => const RecordsView(),
+      binding: RecordsBinding(),
+    ),
+  ];
+}
