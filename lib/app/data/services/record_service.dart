@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_record.dart';
 
 class RecordService extends GetxService {
-  static const _storageKey = 'game_records_v1';
+  static const _storageKey = 'game_records_v2';
 
   late final SharedPreferences _prefs;
 
@@ -26,6 +26,18 @@ class RecordService extends GetxService {
 
   Future<void> add(GameRecord record) async {
     final records = all()..add(record);
+    await _save(records);
+  }
+
+  // Records are matched by `finishedAt` — DateTime equality is value-based and
+  // millisecond precision makes collisions effectively impossible.
+  Future<void> delete(GameRecord record) async {
+    final records = all()
+      ..removeWhere((r) => r.finishedAt == record.finishedAt);
+    await _save(records);
+  }
+
+  Future<void> _save(List<GameRecord> records) async {
     await _prefs.setString(
       _storageKey,
       jsonEncode(records.map((r) => r.toJson()).toList()),

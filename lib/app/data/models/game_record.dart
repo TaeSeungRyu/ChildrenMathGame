@@ -7,6 +7,7 @@ class GameRecord {
     required this.level,
     required this.correctCount,
     required this.wrongCount,
+    required this.elapsedSeconds,
   });
 
   factory GameRecord.fromJson(Map<String, dynamic> json) => GameRecord(
@@ -15,6 +16,7 @@ class GameRecord {
     level: json['level'] as int,
     correctCount: json['correctCount'] as int,
     wrongCount: json['wrongCount'] as int,
+    elapsedSeconds: json['elapsedSeconds'] as int,
   );
 
   final DateTime finishedAt;
@@ -22,6 +24,7 @@ class GameRecord {
   final int level;
   final int correctCount;
   final int wrongCount;
+  final int elapsedSeconds;
 
   int get totalCount => correctCount + wrongCount;
 
@@ -31,5 +34,6 @@ class GameRecord {
     'level': level,
     'correctCount': correctCount,
     'wrongCount': wrongCount,
+    'elapsedSeconds': elapsedSeconds,
   };
 }

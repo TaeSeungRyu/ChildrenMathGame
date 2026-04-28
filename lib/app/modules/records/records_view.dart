@@ -27,7 +27,13 @@ class RecordsView extends GetView<RecordsController> {
             padding: const EdgeInsets.all(16),
             itemCount: records.length,
             separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (_, i) => _RecordTile(record: records[i]),
+            itemBuilder: (_, i) {
+              final r = records[i];
+              return _RecordTile(
+                record: r,
+                onDelete: () => controller.confirmDelete(r),
+              );
+            },
           );
         }),
       ),
@@ -36,15 +42,16 @@ class RecordsView extends GetView<RecordsController> {
 }
 
 class _RecordTile extends StatelessWidget {
-  const _RecordTile({required this.record});
+  const _RecordTile({required this.record, required this.onDelete});
 
   final GameRecord record;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
         child: Row(
           children: [
             CircleAvatar(
@@ -69,7 +76,11 @@ class _RecordTile extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     formatRecordDate(record.finishedAt),
-                    style: const TextStyle(color: Colors.grey),
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                  Text(
+                    '소요 ${formatElapsedSeconds(record.elapsedSeconds)}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ],
               ),
@@ -89,6 +100,12 @@ class _RecordTile extends StatelessWidget {
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
+            ),
+            IconButton(
+              tooltip: '삭제',
+              icon: const Icon(Icons.delete_outline),
+              color: Colors.red,
+              onPressed: onDelete,
             ),
           ],
         ),

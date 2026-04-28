@@ -31,6 +31,7 @@ class ResultView extends GetView<ResultController> {
               _Row(label: '게임', value: '${r.type.label} 레벨 ${r.level}'),
               _Row(label: '맞춘 갯수', value: '${r.correctCount}'),
               _Row(label: '틀린 갯수', value: '${r.wrongCount}'),
+              _Row(label: '소요 시간', value: formatElapsedSeconds(r.elapsedSeconds)),
               _Row(label: '종료 시간', value: formatRecordDate(r.finishedAt)),
               const Spacer(),
               SizedBox(

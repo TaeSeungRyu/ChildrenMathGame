@@ -88,6 +88,7 @@ class GameController extends GetxController {
       level: level,
       correctCount: correct,
       wrongCount: totalProblems - correct,
+      elapsedSeconds: totalSeconds - secondsLeft.value,
     );
     Get.find<RecordService>().add(record);
     Get.offNamed(AppRoutes.result, arguments: record);

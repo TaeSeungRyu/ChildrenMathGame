@@ -10,8 +10,8 @@ A children's math game (초등학생용). Flow:
 2. **Home** (`/home`) — picks one of four operations (덧셈/뺄셈/곱셈/나눗셈), plus a "결과보기" button that opens past records.
 3. **Level select** (`/level-select`) — 5 levels. Level *n* = *n*-digit operands (see "Difficulty rules" below).
 4. **Game** (`/game`) — 10 problems, 120-second hard cap. Game ends on whichever comes first; remaining unanswered problems count as wrong.
-5. **Result** (`/result`) — shows correct/wrong counts and persists a `GameRecord` (date, type, level, finishedAt, correct, wrong) via `RecordService`.
-6. **Records** (`/records`) — list of past records, newest first.
+5. **Result** (`/result`) — shows correct/wrong counts, elapsed time, and persists a `GameRecord` (`finishedAt`, `type`, `level`, `correctCount`, `wrongCount`, `elapsedSeconds`) via `RecordService`. Elapsed time is computed as `totalSeconds - secondsLeft.value` at finish, so it equals the full 120s when the timer expires.
+6. **Records** (`/records`) — list of past records, newest first. Each row has a delete button that opens an `AlertDialog` confirm; only on **확인** does the record get removed via `RecordService.delete` and from the in-memory `Rx` list.
 
 ### Difficulty rules
 
@@ -45,7 +45,7 @@ Conventions to keep:
 - Each feature owns view + controller + binding; the binding is referenced from `app_pages.dart` via `GetPage(binding: ...)`. New screens should follow the same triplet.
 - **Lazy vs eager binding**: bindings default to `Get.lazyPut`. That only instantiates the controller when something calls `Get.find<T>()` — `GetView<T>.controller` does this on first read. If a screen never reads `controller` in `build` (e.g. a splash that only kicks off a Timer in `onReady`, a side-effect-only page), `lazyPut` will silently never fire `onInit`/`onReady`. Use `Get.put(...)` for those screens. `SplashBinding` is the canonical example.
 - Controllers receive screen arguments via `Get.arguments` in `onInit` (typed cast). Cross-screen data uses `Get.toNamed(route, arguments: ...)`, never globals.
-- `RecordService` is registered in `main()` with `Get.putAsync` and is the single source of truth for record persistence (`shared_preferences`, JSON-encoded list under key `game_records_v1`). If you change the JSON shape, bump the key suffix to avoid crashes on old installs.
+- `RecordService` is registered in `main()` with `Get.putAsync` and is the single source of truth for record persistence (`shared_preferences`, JSON-encoded list under key `game_records_v2`). It identifies records for delete by `finishedAt` equality (DateTime millisecond precision is unique enough); if you ever add bulk-import or seeding, that assumption breaks and you'll need an explicit `id`. If you change the JSON shape, bump the key suffix to avoid `fromJson` crashes on old installs.
 - Don't introduce another state-management or navigation library (Navigator 2.0, go_router, Riverpod, Bloc, Provider) — GetX is the chosen stack.
 - Date formatting uses `lib/app/shared/date_format.dart` to avoid pulling `intl`. Keep using that helper.
 
