@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app/data/services/record_service.dart';
 import 'app/routes/app_pages.dart';
@@ -20,6 +21,7 @@ class MyApp extends StatelessWidget {
       title: '어린이 수학 게임',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        textTheme: GoogleFonts.juaTextTheme(),
         useMaterial3: true,
       ),
       initialRoute: AppRoutes.splash,

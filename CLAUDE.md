@@ -43,6 +43,7 @@ lib/app/
 Conventions to keep:
 
 - Each feature owns view + controller + binding; the binding is referenced from `app_pages.dart` via `GetPage(binding: ...)`. New screens should follow the same triplet.
+- **Lazy vs eager binding**: bindings default to `Get.lazyPut`. That only instantiates the controller when something calls `Get.find<T>()` — `GetView<T>.controller` does this on first read. If a screen never reads `controller` in `build` (e.g. a splash that only kicks off a Timer in `onReady`, a side-effect-only page), `lazyPut` will silently never fire `onInit`/`onReady`. Use `Get.put(...)` for those screens. `SplashBinding` is the canonical example.
 - Controllers receive screen arguments via `Get.arguments` in `onInit` (typed cast). Cross-screen data uses `Get.toNamed(route, arguments: ...)`, never globals.
 - `RecordService` is registered in `main()` with `Get.putAsync` and is the single source of truth for record persistence (`shared_preferences`, JSON-encoded list under key `game_records_v1`). If you change the JSON shape, bump the key suffix to avoid crashes on old installs.
 - Don't introduce another state-management or navigation library (Navigator 2.0, go_router, Riverpod, Bloc, Provider) — GetX is the chosen stack.
@@ -50,8 +51,10 @@ Conventions to keep:
 
 ## Stack & assets
 
+- **Target platform**: Android only. Don't add iOS/web/desktop platform folders or platform-specific code paths. `flutter_launcher_icons` is configured with `ios: false` for the same reason.
 - **Dart SDK**: `^3.11.4`. Code uses Dart 3 enhanced constructor inference (`colorScheme: .fromSeed(...)`, etc.) — don't "fix" those to fully-qualified forms.
-- **Dependencies of note**: `get` (navigation + state), `shared_preferences` (record storage), `flutter_launcher_icons` (dev).
+- **Dependencies of note**: `get` (navigation + state), `shared_preferences` (record storage), `google_fonts` (typography), `flutter_launcher_icons` (dev).
+- **Typography**: app-wide font is **Jua** (주아) via `GoogleFonts.juaTextTheme()` set on `MaterialApp.theme.textTheme` in `lib/main.dart`. Don't hard-code `fontFamily` on individual `TextStyle`s — read from `Theme.of(context).textTheme.<style>.fontFamily` if you need to mix sizes (see `splash_view.dart`). To swap fonts globally, change the single `juaTextTheme()` call. `google_fonts` downloads on first use; if you need offline guarantees, bundle the TTF in `assets/` and switch to `GoogleFonts.config.allowRuntimeFetching = false` plus a `pubspec.yaml` `fonts:` entry.
 - **Assets**: `assets/images/` is wired as a directory entry in `pubspec.yaml` — drop files in and they're picked up automatically (no per-file listing). App launcher source: `assets/icon/app_icon.png` (replace and run the regenerate command below).
 
 ## Commands

@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   get: ^4.7.3
   shared_preferences: ^2.5.5
+  google_fonts: ^8.1.0
 
 dev_dependencies:
   flutter_test:
@@ -59,7 +60,6 @@ flutter:
 
 flutter_launcher_icons:
   android: true
-  ios: true
+  ios: false
   image_path: "assets/icon/app_icon.png"
   min_sdk_android: 21
-  remove_alpha_ios: true
