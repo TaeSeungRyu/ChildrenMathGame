@@ -11,7 +11,7 @@ import '../../data/services/record_service.dart';
 import '../../routes/app_routes.dart';
 
 class GameController extends GetxController {
-  static const totalSeconds = 120;
+  static const totalSeconds = 180;
   static const totalProblems = ProblemGenerator.totalProblems;
 
   late final GameType type;
@@ -23,6 +23,7 @@ class GameController extends GetxController {
   final answerController = TextEditingController();
 
   final List<int?> _answers = List<int?>.filled(totalProblems, null);
+  final List<bool> _attempted = List<bool>.filled(totalProblems, false);
 
   Timer? _ticker;
   bool _finished = false;
@@ -62,6 +63,7 @@ class GameController extends GetxController {
     if (_finished) return;
     final parsed = int.tryParse(answerController.text.trim());
     _answers[currentIndex.value] = parsed;
+    _attempted[currentIndex.value] = true;
     answerController.clear();
     if (currentIndex.value + 1 >= totalProblems) {
       _finish();
@@ -77,9 +79,15 @@ class GameController extends GetxController {
     _ticker = null;
 
     var correct = 0;
+    var wrong = 0;
+    var unsolved = 0;
     for (var i = 0; i < problems.length; i++) {
-      if (_answers[i] != null && _answers[i] == problems[i].answer) {
+      if (!_attempted[i]) {
+        unsolved++;
+      } else if (_answers[i] != null && _answers[i] == problems[i].answer) {
         correct++;
+      } else {
+        wrong++;
       }
     }
     final record = GameRecord(
@@ -87,7 +95,8 @@ class GameController extends GetxController {
       type: type,
       level: level,
       correctCount: correct,
-      wrongCount: totalProblems - correct,
+      wrongCount: wrong,
+      unsolvedCount: unsolved,
       elapsedSeconds: totalSeconds - secondsLeft.value,
     );
     Get.find<RecordService>().add(record);

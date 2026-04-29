@@ -7,6 +7,7 @@ class GameRecord {
     required this.level,
     required this.correctCount,
     required this.wrongCount,
+    required this.unsolvedCount,
     required this.elapsedSeconds,
   });
 
@@ -16,6 +17,7 @@ class GameRecord {
     level: json['level'] as int,
     correctCount: json['correctCount'] as int,
     wrongCount: json['wrongCount'] as int,
+    unsolvedCount: json['unsolvedCount'] as int,
     elapsedSeconds: json['elapsedSeconds'] as int,
   );
 
@@ -24,9 +26,11 @@ class GameRecord {
   final int level;
   final int correctCount;
   final int wrongCount;
+  final int unsolvedCount;
   final int elapsedSeconds;
 
-  int get totalCount => correctCount + wrongCount;
+  int get solvedCount => correctCount + wrongCount;
+  int get totalCount => correctCount + wrongCount + unsolvedCount;
 
   Map<String, dynamic> toJson() => {
     'finishedAt': finishedAt.toIso8601String(),
@@ -34,6 +38,7 @@ class GameRecord {
     'level': level,
     'correctCount': correctCount,
     'wrongCount': wrongCount,
+    'unsolvedCount': unsolvedCount,
     'elapsedSeconds': elapsedSeconds,
   };
 }
