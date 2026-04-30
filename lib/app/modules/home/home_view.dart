@@ -32,18 +32,12 @@ class HomeView extends GetView<HomeController> {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  children: GameType.values
-                      .map(
-                        (t) => _GameTile(
-                          type: t,
-                          onTap: () => controller.selectGame(t),
-                        ),
-                      )
-                      .toList(),
+                child: Column(
+                  children: [
+                    Expanded(child: _tileRow(0, 1)),
+                    const SizedBox(height: 16),
+                    Expanded(child: _tileRow(2, 3)),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
@@ -63,6 +57,28 @@ class HomeView extends GetView<HomeController> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _tileRow(int leftIdx, int rightIdx) {
+    final left = GameType.values[leftIdx];
+    final right = GameType.values[rightIdx];
+    return Row(
+      children: [
+        Expanded(
+          child: _GameTile(
+            type: left,
+            onTap: () => controller.selectGame(left),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _GameTile(
+            type: right,
+            onTap: () => controller.selectGame(right),
+          ),
+        ),
+      ],
     );
   }
 }
