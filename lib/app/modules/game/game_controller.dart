@@ -18,9 +18,11 @@ class GameController extends GetxController {
   late final int level;
   late final List<Problem> problems;
 
+  static const maxAnswerLength = 6;
+
   final currentIndex = 0.obs;
   final secondsLeft = totalSeconds.obs;
-  final answerController = TextEditingController();
+  final answer = ''.obs;
 
   final List<int?> _answers = List<int?>.filled(totalProblems, null);
   final List<bool> _attempted = List<bool>.filled(totalProblems, false);
@@ -55,13 +57,24 @@ class GameController extends GetxController {
   @override
   void onClose() {
     _ticker?.cancel();
-    answerController.dispose();
     super.onClose();
+  }
+
+  void appendDigit(String digit) {
+    if (_finished) return;
+    if (answer.value.length >= maxAnswerLength) return;
+    answer.value = answer.value + digit;
+  }
+
+  void deleteLast() {
+    if (_finished) return;
+    if (answer.value.isEmpty) return;
+    answer.value = answer.value.substring(0, answer.value.length - 1);
   }
 
   void submit() {
     if (_finished) return;
-    final text = answerController.text.trim();
+    final text = answer.value;
     if (text.isEmpty) {
       Get.snackbar(
         '',
@@ -83,7 +96,7 @@ class GameController extends GetxController {
     final parsed = int.tryParse(text);
     _answers[currentIndex.value] = parsed;
     _attempted[currentIndex.value] = true;
-    answerController.clear();
+    answer.value = '';
     if (currentIndex.value + 1 >= totalProblems) {
       _finish();
     } else {
