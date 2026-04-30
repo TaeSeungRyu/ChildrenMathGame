@@ -10,7 +10,13 @@ class HomeView extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('게임 선택'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text(
+          '게임 선택',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),

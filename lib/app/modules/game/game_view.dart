@@ -14,6 +14,10 @@ class GameView extends GetView<GameController> {
         title: Obx(
           () => Text(
             '${controller.currentIndex.value + 1} / ${GameController.totalProblems}',
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         centerTitle: true,
@@ -25,9 +29,9 @@ class GameView extends GetView<GameController> {
                 final s = controller.secondsLeft.value;
                 final color = s <= 10 ? Colors.red : null;
                 return Text(
-                  '${s}s',
+                  '$s초',
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: color,
                   ),

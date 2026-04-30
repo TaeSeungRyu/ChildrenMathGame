@@ -11,7 +11,13 @@ class RecordsView extends GetView<RecordsController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('결과 보기'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text(
+          '결과 보기',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Obx(() {
           final records = controller.records;

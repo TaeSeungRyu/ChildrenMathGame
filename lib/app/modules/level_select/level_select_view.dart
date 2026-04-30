@@ -10,7 +10,10 @@ class LevelSelectView extends GetView<LevelSelectController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${controller.type.label} - 난이도 선택'),
+        title: Text(
+          '${controller.type.label} - 난이도 선택',
+          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: SafeArea(

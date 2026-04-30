@@ -20,7 +20,15 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: '어린이 수학 게임',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+        ),
         textTheme: GoogleFonts.juaTextTheme(),
         useMaterial3: true,
       ),
