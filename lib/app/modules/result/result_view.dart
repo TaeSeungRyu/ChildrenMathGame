@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../routes/app_routes.dart';
 import '../../shared/date_format.dart';
@@ -12,12 +13,26 @@ class ResultView extends GetView<ResultController> {
   Widget build(BuildContext context) {
     final r = controller.record;
     return Scaffold(
-      appBar: AppBar(title: const Text('결과'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text(
+          '결과',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 140,
+                child: Lottie.asset(
+                  'assets/lottie/result_celebrate.json',
+                  fit: BoxFit.contain,
+                ),
+              ),
               const SizedBox(height: 16),
               Text(
                 '${r.correctCount} / ${r.totalCount}',

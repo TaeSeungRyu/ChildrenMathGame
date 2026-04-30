@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 
 import 'game_controller.dart';
 
@@ -55,7 +56,15 @@ class GameView extends GetView<GameController> {
                   minHeight: 8,
                 );
               }),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 120,
+                child: Lottie.asset(
+                  'assets/lottie/game_character.json',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 16),
               Expanded(
                 child: Center(
                   child: Obx(

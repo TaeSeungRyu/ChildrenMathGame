@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../data/models/game_type.dart';
 import 'home_controller.dart';
@@ -22,6 +23,14 @@ class HomeView extends GetView<HomeController> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
+              SizedBox(
+                height: 140,
+                child: Lottie.asset(
+                  'assets/lottie/home_banner.json',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 16),
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 2,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../data/models/game_record.dart';
 import '../../shared/date_format.dart';
@@ -22,10 +23,26 @@ class RecordsView extends GetView<RecordsController> {
         child: Obx(() {
           final records = controller.records;
           if (records.isEmpty) {
-            return const Center(
-              child: Text(
-                '아직 기록이 없습니다',
-                style: TextStyle(fontSize: 18),
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 160,
+                      child: Lottie.asset(
+                        'assets/lottie/empty_state.json',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '아직 기록이 없습니다',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ],
+                ),
               ),
             );
           }

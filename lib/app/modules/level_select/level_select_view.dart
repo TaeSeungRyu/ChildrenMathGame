@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 
 import 'level_select_controller.dart';
 
@@ -20,23 +21,33 @@ class LevelSelectView extends GetView<LevelSelectController> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
-            children: List.generate(5, (i) {
-              final level = i + 1;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 72,
-                  child: FilledButton(
-                    onPressed: () => controller.selectLevel(level),
-                    child: Text(
-                      '레벨 $level  ($level자릿수)',
-                      style: const TextStyle(fontSize: 22),
+            children: [
+              SizedBox(
+                height: 120,
+                child: Lottie.asset(
+                  'assets/lottie/level_banner.json',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...List.generate(5, (i) {
+                final level = i + 1;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 72,
+                    child: FilledButton(
+                      onPressed: () => controller.selectLevel(level),
+                      child: Text(
+                        '레벨 $level  ($level자릿수)',
+                        style: const TextStyle(fontSize: 22),
+                      ),
                     ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ],
           ),
         ),
       ),
