@@ -11,7 +11,9 @@
       "Bash(curl -sIL -A \"Mozilla/5.0\" \"https://assets1.lottiefiles.com/packages/lf20_DMgKk1.json\")",
       "Bash(curl -sIL -A \"Mozilla/5.0\" \"https://assets3.lottiefiles.com/private_files/lf30_editor_l3pcxasx.json\")",
       "Bash(python3 -c ' *)",
-      "Bash(curl -sSL -o assets/lottie/game_character.json \"https://raw.githubusercontent.com/xvrh/lottie-flutter/master/example/assets/lottiefiles/dog.json\")"
+      "Bash(curl -sSL -o assets/lottie/game_character.json \"https://raw.githubusercontent.com/xvrh/lottie-flutter/master/example/assets/lottiefiles/dog.json\")",
+      "Bash(python *)",
+      "Bash(dart run *)"
     ]
   }
 }
