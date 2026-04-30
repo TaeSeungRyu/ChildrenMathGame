@@ -40,7 +40,7 @@ class LevelSelectView extends GetView<LevelSelectController> {
                     child: FilledButton(
                       onPressed: () => controller.selectLevel(level),
                       child: Text(
-                        '레벨 $level  ($level자릿수)',
+                        '레벨 $level  (${_levelLabel(level)})',
                         style: const TextStyle(fontSize: 22),
                       ),
                     ),
@@ -52,5 +52,22 @@ class LevelSelectView extends GetView<LevelSelectController> {
         ),
       ),
     );
+  }
+
+  String _levelLabel(int level) {
+    switch (level) {
+      case 1:
+        return '1자리수';
+      case 2:
+        return '2자리수+1자리수';
+      case 3:
+        return '2자리수+2자리수';
+      case 4:
+        return '3자리수+2자리수';
+      case 5:
+        return '3자리수+3자리수';
+      default:
+        return '';
+    }
   }
 }

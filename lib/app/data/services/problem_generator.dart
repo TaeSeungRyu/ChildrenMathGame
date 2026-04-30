@@ -12,16 +12,18 @@ class ProblemGenerator {
   }
 
   static Problem _one(GameType type, int level) {
+    final (aDigits, bDigits) = _digitsForLevel(level);
     switch (type) {
       case GameType.addition:
         return Problem(
-          operandA: _nDigit(level),
-          operandB: _nDigit(level),
+          operandA: _nDigit(aDigits),
+          operandB: _nDigit(bDigits),
           type: type,
         );
       case GameType.subtraction:
-        var a = _nDigit(level);
-        var b = _nDigit(level);
+        // Keep larger first so the result never goes negative.
+        var a = _nDigit(aDigits);
+        var b = _nDigit(bDigits);
         if (a < b) {
           final tmp = a;
           a = b;
@@ -29,27 +31,49 @@ class ProblemGenerator {
         }
         return Problem(operandA: a, operandB: b, type: type);
       case GameType.multiplication:
-        // Keep one operand single-digit so level 5 stays tractable for kids.
         return Problem(
-          operandA: _nDigit(level),
-          operandB: _random.nextInt(9) + 1,
+          operandA: _nDigit(aDigits),
+          operandB: _nDigit(bDigits),
           type: type,
         );
       case GameType.division:
         // Build dividend = quotient * divisor so the result is always integer.
-        final divisor = level == 1 ? _random.nextInt(8) + 2 : _random.nextInt(8) + 2;
-        final low = level == 1 ? 1 : _pow10(level - 1);
-        final high = _pow10(level) - 1;
-        final qMin = (low + divisor - 1) ~/ divisor;
-        final qMax = high ~/ divisor;
-        final quotient = qMax <= qMin
-            ? qMin
-            : qMin + _random.nextInt(qMax - qMin + 1);
-        return Problem(
-          operandA: quotient * divisor,
-          operandB: divisor,
-          type: type,
-        );
+        // Reject q < 2 (avoids trivial n÷n=1) and divisors that can't reach the
+        // dividend digit range; retry until a valid combo lands.
+        while (true) {
+          final divisor = bDigits == 1
+              ? _random.nextInt(8) + 2
+              : _nDigit(bDigits);
+          final low = aDigits == 1 ? 1 : _pow10(aDigits - 1);
+          final high = _pow10(aDigits) - 1;
+          var qMin = (low + divisor - 1) ~/ divisor;
+          if (qMin < 2) qMin = 2;
+          final qMax = high ~/ divisor;
+          if (qMax < qMin) continue;
+          final quotient = qMin + _random.nextInt(qMax - qMin + 1);
+          return Problem(
+            operandA: quotient * divisor,
+            operandB: divisor,
+            type: type,
+          );
+        }
+    }
+  }
+
+  static (int, int) _digitsForLevel(int level) {
+    switch (level) {
+      case 1:
+        return (1, 1);
+      case 2:
+        return (2, 1);
+      case 3:
+        return (2, 2);
+      case 4:
+        return (3, 2);
+      case 5:
+        return (3, 3);
+      default:
+        return (1, 1);
     }
   }
 

@@ -8,20 +8,30 @@ A children's math game (초등학생용). Flow:
 
 1. **Splash** (`/splash`) — auto-advances to home after 2s.
 2. **Home** (`/home`) — picks one of four operations (덧셈/뺄셈/곱셈/나눗셈), plus a "결과보기" button that opens past records.
-3. **Level select** (`/level-select`) — 5 levels. Level *n* = *n*-digit operands (see "Difficulty rules" below).
+3. **Level select** (`/level-select`) — 5 levels with progressive operand digit pairing (see "Difficulty rules" below).
 4. **Game** (`/game`) — 10 problems, 120-second hard cap. Game ends on whichever comes first; remaining unanswered problems count as wrong.
 5. **Result** (`/result`) — shows correct/wrong counts, elapsed time, and persists a `GameRecord` (`finishedAt`, `type`, `level`, `correctCount`, `wrongCount`, `elapsedSeconds`) via `RecordService`. Elapsed time is computed as `totalSeconds - secondsLeft.value` at finish, so it equals the full 120s when the timer expires.
 6. **Records** (`/records`) — list of past records, newest first. Each row has a delete button that opens an `AlertDialog` confirm; only on **확인** does the record get removed via `RecordService.delete` and from the in-memory `Rx` list.
 
 ### Difficulty rules
 
-`ProblemGenerator` (`lib/app/data/services/problem_generator.dart`) is deliberately not "both operands n-digit" for every operation:
+`ProblemGenerator` (`lib/app/data/services/problem_generator.dart`) pairs operand digit counts per level via `_digitsForLevel(level)`:
 
-- **Addition / subtraction**: both operands are *n*-digit. Subtraction is reordered so `a >= b` (no negatives).
-- **Multiplication**: one operand is *n*-digit, the other is single-digit. 5×5-digit multiplication would be unreasonable for kids.
-- **Division**: dividend is *n*-digit, divisor is 2–9, and the dividend is constructed as `quotient * divisor` so results are always integers.
+| Level | Operand A | Operand B |
+|-------|-----------|-----------|
+| 1     | 1-digit   | 1-digit   |
+| 2     | 2-digit   | 1-digit   |
+| 3     | 2-digit   | 2-digit   |
+| 4     | 3-digit   | 2-digit   |
+| 5     | 3-digit   | 3-digit   |
 
-If you change these rules, update the level-select label (`'레벨 $n  ($n자릿수)'`) too — and double-check level 1 division stays solvable (only 8÷2, 9÷3, etc. exist).
+Operation specifics:
+
+- **Addition / multiplication**: operands generated directly from the (A, B) digit pair.
+- **Subtraction**: same pair, then swap so `a >= b` (no negatives).
+- **Division**: dividend has A digits, divisor has B digits (1-digit divisor is restricted to 2–9 to skip trivial ÷1), dividend built as `quotient * divisor` with `quotient >= 2` to avoid trivial `n÷n=1`. Loop retries divisor picks that can't reach the dividend digit range.
+
+If you change these rules, update **both** the `_digitsForLevel` table here and `_levelLabel` in `level_select_view.dart`. Level 1 division is intentionally a small set (e.g. `4÷2`, `6÷2`, `8÷2`, `6÷3`, `9÷3`, `8÷4`).
 
 ## Architecture
 

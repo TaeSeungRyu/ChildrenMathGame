@@ -61,7 +61,26 @@ class GameController extends GetxController {
 
   void submit() {
     if (_finished) return;
-    final parsed = int.tryParse(answerController.text.trim());
+    final text = answerController.text.trim();
+    if (text.isEmpty) {
+      Get.snackbar(
+        '',
+        '',
+        titleText: const SizedBox.shrink(),
+        messageText: const Text(
+          '값을 입력 해 주세요.',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+          textAlign: TextAlign.center,
+        ),
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade400,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+        animationDuration: const Duration(milliseconds: 200),
+      );
+      return;
+    }
+    final parsed = int.tryParse(text);
     _answers[currentIndex.value] = parsed;
     _attempted[currentIndex.value] = true;
     answerController.clear();
