@@ -19,47 +19,46 @@ class RecordsView extends GetView<RecordsController> {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Obx(() {
-          final records = controller.records;
-          if (records.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      height: 160,
-                      child: Lottie.asset(
-                        'assets/lottie/empty_state.json',
-                        fit: BoxFit.contain,
-                      ),
+      body: Obx(() {
+        final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+        final records = controller.records;
+        if (records.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomInset),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 160,
+                    child: Lottie.asset(
+                      'assets/lottie/empty_state.json',
+                      fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      '아직 기록이 없습니다',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '아직 기록이 없습니다',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ],
               ),
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: records.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (_, i) {
-              final r = records[i];
-              return _RecordTile(
-                record: r,
-                onDelete: () => controller.confirmDelete(r),
-              );
-            },
+            ),
           );
-        }),
-      ),
+        }
+        return ListView.separated(
+          padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
+          itemCount: records.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          itemBuilder: (_, i) {
+            final r = records[i];
+            return _RecordTile(
+              record: r,
+              onDelete: () => controller.confirmDelete(r),
+            );
+          },
+        );
+      }),
     );
   }
 }

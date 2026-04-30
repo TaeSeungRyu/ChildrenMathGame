@@ -18,43 +18,46 @@ class HomeView extends GetView<HomeController> {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              SizedBox(
-                height: 140,
-                child: Lottie.asset(
-                  'assets/lottie/home_banner.json',
-                  fit: BoxFit.contain,
-                ),
+      body: Padding(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.of(context).viewPadding.bottom + 16,
+        ),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 140,
+              child: Lottie.asset(
+                'assets/lottie/home_banner.json',
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: Column(
-                  children: [
-                    Expanded(child: _tileRow(0, 1)),
-                    const SizedBox(height: 16),
-                    Expanded(child: _tileRow(2, 3)),
-                  ],
-                ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Column(
+                children: [
+                  Expanded(child: _tileRow(0, 1)),
+                  const SizedBox(height: 16),
+                  Expanded(child: _tileRow(2, 3)),
+                ],
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: FilledButton.tonalIcon(
-                  icon: const Icon(Icons.bar_chart),
-                  label: const Text(
-                    '결과보기',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                  onPressed: controller.openRecords,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: FilledButton.tonalIcon(
+                icon: const Icon(Icons.bar_chart),
+                label: const Text(
+                  '결과보기',
+                  style: TextStyle(fontSize: 18),
                 ),
+                onPressed: controller.openRecords,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

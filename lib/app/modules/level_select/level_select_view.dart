@@ -17,38 +17,41 @@ class LevelSelectView extends GetView<LevelSelectController> {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              SizedBox(
-                height: 120,
-                child: Lottie.asset(
-                  'assets/lottie/level_banner.json',
-                  fit: BoxFit.contain,
-                ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.of(context).viewPadding.bottom + 16,
+        ),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 120,
+              child: Lottie.asset(
+                'assets/lottie/level_banner.json',
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 16),
-              ...List.generate(5, (i) {
-                final level = i + 1;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 72,
-                    child: FilledButton(
-                      onPressed: () => controller.selectLevel(level),
-                      child: Text(
-                        '레벨 $level  (${_levelLabel(level)})',
-                        style: const TextStyle(fontSize: 22),
-                      ),
+            ),
+            const SizedBox(height: 16),
+            ...List.generate(5, (i) {
+              final level = i + 1;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 72,
+                  child: FilledButton(
+                    onPressed: () => controller.selectLevel(level),
+                    child: Text(
+                      '레벨 $level  (${_levelLabel(level)})',
+                      style: const TextStyle(fontSize: 22),
                     ),
                   ),
-                );
-              }),
-            ],
-          ),
+                ),
+              );
+            }),
+          ],
         ),
       ),
     );

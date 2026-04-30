@@ -41,33 +41,39 @@ class GameView extends GetView<GameController> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Obx(() {
-                final progress =
-                    controller.secondsLeft.value / GameController.totalSeconds;
-                return LinearProgressIndicator(
-                  value: progress.clamp(0.0, 1.0),
-                  minHeight: 8,
-                );
-              }),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 100,
-                child: Lottie.asset(
-                  'assets/lottie/game_character.json',
-                  fit: BoxFit.contain,
-                ),
+      body: Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          MediaQuery.of(context).viewPadding.bottom + 24,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Obx(() {
+              final progress =
+                  controller.secondsLeft.value / GameController.totalSeconds;
+              return LinearProgressIndicator(
+                value: progress.clamp(0.0, 1.0),
+                minHeight: 8,
+              );
+            }),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 100,
+              child: Lottie.asset(
+                'assets/lottie/game_character.json',
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: Center(
-                  child: Obx(
-                    () => Text(
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Center(
+                child: Obx(
+                  () => FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
                       '${controller.current.questionText} = ?',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
@@ -78,12 +84,12 @@ class GameView extends GetView<GameController> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              _AnswerDisplay(),
-              const SizedBox(height: 12),
-              _Keypad(),
-            ],
-          ),
+            ),
+            const SizedBox(height: 12),
+            _AnswerDisplay(),
+            const SizedBox(height: 12),
+            _Keypad(),
+          ],
         ),
       ),
     );
