@@ -5,4 +5,5 @@ abstract class AppRoutes {
   static const game = '/game';
   static const result = '/result';
   static const records = '/records';
+  static const recordDetail = '/record-detail';
 }

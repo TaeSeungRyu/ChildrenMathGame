@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../data/models/game_record.dart';
+import '../../routes/app_routes.dart';
 import '../../shared/date_format.dart';
 import 'records_controller.dart';
 
@@ -54,6 +55,8 @@ class RecordsView extends GetView<RecordsController> {
             final r = records[i];
             return _RecordTile(
               record: r,
+              onTap: () =>
+                  Get.toNamed(AppRoutes.recordDetail, arguments: r),
               onDelete: () => controller.confirmDelete(r),
             );
           },
@@ -64,72 +67,87 @@ class RecordsView extends GetView<RecordsController> {
 }
 
 class _RecordTile extends StatelessWidget {
-  const _RecordTile({required this.record, required this.onDelete});
+  const _RecordTile({
+    required this.record,
+    required this.onTap,
+    required this.onDelete,
+  });
 
   final GameRecord record;
+  final VoidCallback onTap;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 28,
-              child: Text(
-                record.type.symbol,
-                style: const TextStyle(fontSize: 24),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                child: Text(
+                  record.type.symbol,
+                  style: const TextStyle(fontSize: 24),
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${record.type.label} 레벨 ${record.level}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      formatRecordDate(record.finishedAt),
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      '소요 ${formatElapsedSeconds(record.elapsedSeconds)}',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '${record.type.label} 레벨 ${record.level}',
+                    '${record.correctCount} / ${record.totalCount}',
                     style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    formatRecordDate(record.finishedAt),
-                    style: const TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
-                  Text(
-                    '소요 ${formatElapsedSeconds(record.elapsedSeconds)}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  const Text(
+                    '맞춘 갯수',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${record.correctCount} / ${record.totalCount}',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Text(
-                  '맞춘 갯수',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
-            ),
-            IconButton(
-              tooltip: '삭제',
-              icon: const Icon(Icons.delete_outline),
-              color: Colors.red,
-              onPressed: onDelete,
-            ),
-          ],
+              IconButton(
+                tooltip: '삭제',
+                icon: const Icon(Icons.delete_outline),
+                color: Colors.red,
+                onPressed: onDelete,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../data/models/game_record.dart';
 import '../../data/models/game_type.dart';
 import '../../data/models/problem.dart';
+import '../../data/models/problem_attempt.dart';
 import '../../data/services/problem_generator.dart';
 import '../../data/services/record_service.dart';
 import '../../routes/app_routes.dart';
@@ -113,14 +114,30 @@ class GameController extends GetxController {
     var correct = 0;
     var wrong = 0;
     var unsolved = 0;
+    final attempts = <ProblemAttempt>[];
     for (var i = 0; i < problems.length; i++) {
+      final p = problems[i];
+      final AttemptStatus status;
       if (!_attempted[i]) {
         unsolved++;
-      } else if (_answers[i] != null && _answers[i] == problems[i].answer) {
+        status = AttemptStatus.unsolved;
+      } else if (_answers[i] != null && _answers[i] == p.answer) {
         correct++;
+        status = AttemptStatus.correct;
       } else {
         wrong++;
+        status = AttemptStatus.wrong;
       }
+      attempts.add(
+        ProblemAttempt(
+          operandA: p.operandA,
+          operandB: p.operandB,
+          type: p.type,
+          correctAnswer: p.answer,
+          userAnswer: _answers[i],
+          status: status,
+        ),
+      );
     }
     final record = GameRecord(
       finishedAt: DateTime.now(),
@@ -130,6 +147,7 @@ class GameController extends GetxController {
       wrongCount: wrong,
       unsolvedCount: unsolved,
       elapsedSeconds: totalSeconds - secondsLeft.value,
+      attempts: attempts,
     );
     Get.find<RecordService>().add(record);
     Get.offNamed(AppRoutes.result, arguments: record);

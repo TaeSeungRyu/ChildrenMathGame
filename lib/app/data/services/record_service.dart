@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_record.dart';
 
 class RecordService extends GetxService {
-  static const _storageKey = 'game_records_v3';
+  static const _storageKey = 'game_records_v4';
 
   late final SharedPreferences _prefs;
 

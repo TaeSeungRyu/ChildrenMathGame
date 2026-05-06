@@ -6,6 +6,8 @@ import '../modules/home/home_binding.dart';
 import '../modules/home/home_view.dart';
 import '../modules/level_select/level_select_binding.dart';
 import '../modules/level_select/level_select_view.dart';
+import '../modules/record_detail/record_detail_binding.dart';
+import '../modules/record_detail/record_detail_view.dart';
 import '../modules/records/records_binding.dart';
 import '../modules/records/records_view.dart';
 import '../modules/result/result_binding.dart';
@@ -45,6 +47,11 @@ abstract class AppPages {
       name: AppRoutes.records,
       page: () => const RecordsView(),
       binding: RecordsBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.recordDetail,
+      page: () => const RecordDetailView(),
+      binding: RecordDetailBinding(),
     ),
   ];
 }

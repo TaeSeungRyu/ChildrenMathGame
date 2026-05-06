@@ -1,4 +1,5 @@
 import 'game_type.dart';
+import 'problem_attempt.dart';
 
 class GameRecord {
   GameRecord({
@@ -9,6 +10,7 @@ class GameRecord {
     required this.wrongCount,
     required this.unsolvedCount,
     required this.elapsedSeconds,
+    required this.attempts,
   });
 
   factory GameRecord.fromJson(Map<String, dynamic> json) => GameRecord(
@@ -19,6 +21,9 @@ class GameRecord {
     wrongCount: json['wrongCount'] as int,
     unsolvedCount: json['unsolvedCount'] as int,
     elapsedSeconds: json['elapsedSeconds'] as int,
+    attempts: (json['attempts'] as List<dynamic>)
+        .map((e) => ProblemAttempt.fromJson(e as Map<String, dynamic>))
+        .toList(),
   );
 
   final DateTime finishedAt;
@@ -28,6 +33,7 @@ class GameRecord {
   final int wrongCount;
   final int unsolvedCount;
   final int elapsedSeconds;
+  final List<ProblemAttempt> attempts;
 
   int get solvedCount => correctCount + wrongCount;
   int get totalCount => correctCount + wrongCount + unsolvedCount;
@@ -40,5 +46,6 @@ class GameRecord {
     'wrongCount': wrongCount,
     'unsolvedCount': unsolvedCount,
     'elapsedSeconds': elapsedSeconds,
+    'attempts': attempts.map((a) => a.toJson()).toList(),
   };
 }
