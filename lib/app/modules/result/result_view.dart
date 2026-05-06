@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../routes/app_routes.dart';
+import '../../shared/attempt_tile.dart';
 import '../../shared/date_format.dart';
 import 'result_controller.dart';
 
@@ -60,6 +61,22 @@ class ResultView extends GetView<ResultController> {
                       label: '소요 시간',
                       value: formatElapsedSeconds(r.elapsedSeconds),
                     ),
+                    const SizedBox(height: 24),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '문제별 결과',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    for (var i = 0; i < r.attempts.length; i++) ...[
+                      AttemptTile(index: i + 1, attempt: r.attempts[i]),
+                      const SizedBox(height: 8),
+                    ],
                   ],
                 ),
               ),
