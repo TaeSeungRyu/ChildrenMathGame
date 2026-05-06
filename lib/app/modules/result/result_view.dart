@@ -13,6 +13,7 @@ class ResultView extends GetView<ResultController> {
   @override
   Widget build(BuildContext context) {
     final r = controller.record;
+    final isNewBest = controller.isNewPerfectBest;
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -36,21 +37,29 @@ class ResultView extends GetView<ResultController> {
                   children: [
                     const SizedBox(height: 8),
                     SizedBox(
-                      height: 140,
+                      height: isNewBest ? 200 : 140,
                       child: Lottie.asset(
                         'assets/lottie/result_celebrate.json',
                         fit: BoxFit.contain,
                       ),
                     ),
+                    if (isNewBest) ...[
+                      const SizedBox(height: 8),
+                      const _NewRecordBadge(),
+                    ],
                     const SizedBox(height: 16),
+                    _ScoreText(
+                      text: '${r.correctCount} / ${r.totalCount}',
+                      highlight: isNewBest,
+                    ),
                     Text(
-                      '${r.correctCount} / ${r.totalCount}',
-                      style: const TextStyle(
-                        fontSize: 56,
-                        fontWeight: FontWeight.bold,
+                      isNewBest ? '신기록 달성!' : '맞춘 문제',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: isNewBest ? FontWeight.bold : null,
+                        color: isNewBest ? Colors.amber.shade800 : null,
                       ),
                     ),
-                    const Text('맞춘 문제', style: TextStyle(fontSize: 18)),
                     const SizedBox(height: 32),
                     _Row(label: '게임', value: '${r.type.label} 레벨 ${r.level}'),
                     _Row(label: '푼 문제', value: '${r.solvedCount}'),
@@ -116,9 +125,85 @@ class _Row extends StatelessWidget {
           Text(label, style: const TextStyle(fontSize: 15, color: Colors.grey)),
           Text(
             value,
-            style: const TextStyle(fontSize:15, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ScoreText extends StatelessWidget {
+  const _ScoreText({required this.text, required this.highlight});
+
+  final String text;
+  final bool highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = TextStyle(
+      fontSize: highlight ? 64 : 56,
+      fontWeight: FontWeight.bold,
+      color: highlight ? Colors.amber.shade800 : null,
+    );
+    if (!highlight) return Text(text, style: style);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.6, end: 1.0),
+      duration: const Duration(milliseconds: 700),
+      curve: Curves.elasticOut,
+      builder: (context, t, child) =>
+          Transform.scale(scale: t, child: child),
+      child: Text(text, style: style),
+    );
+  }
+}
+
+class _NewRecordBadge extends StatelessWidget {
+  const _NewRecordBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 900),
+      curve: Curves.elasticOut,
+      builder: (context, t, child) => Transform.scale(
+        scale: t,
+        child: Opacity(opacity: t.clamp(0.0, 1.0), child: child),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFD54F), Color(0xFFFB8C00)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.amber.withValues(alpha: 0.6),
+              blurRadius: 16,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.emoji_events, color: Colors.white, size: 26),
+            SizedBox(width: 8),
+            Text(
+              '최단 시간 신기록!',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
