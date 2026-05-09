@@ -116,6 +116,7 @@ class _AnswerDisplay extends GetView<ReviewController> {
           ),
         );
       }
+      final value = controller.answer.value;
       return Container(
         height: 72,
         decoration: BoxDecoration(
@@ -123,24 +124,18 @@ class _AnswerDisplay extends GetView<ReviewController> {
           borderRadius: BorderRadius.circular(8),
         ),
         alignment: Alignment.center,
-        child: Builder(
-          builder: (_) {
-            final value = controller.answer.value;
-            if (value.isEmpty) {
-              return Text(
+        child: value.isEmpty
+            ? Text(
                 '정답 입력',
                 style: TextStyle(fontSize: 24, color: theme.hintColor),
-              );
-            }
-            return Text(
-              value,
-              style: const TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
+              )
+            : Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            );
-          },
-        ),
       );
     });
   }
