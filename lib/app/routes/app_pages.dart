@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 
+import '../modules/badges/badges_binding.dart';
+import '../modules/badges/badges_view.dart';
 import '../modules/game/game_binding.dart';
 import '../modules/game/game_view.dart';
 import '../modules/home/home_binding.dart';
@@ -52,6 +54,11 @@ abstract class AppPages {
       name: AppRoutes.recordDetail,
       page: () => const RecordDetailView(),
       binding: RecordDetailBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.badges,
+      page: () => const BadgesView(),
+      binding: BadgesBinding(),
     ),
   ];
 }

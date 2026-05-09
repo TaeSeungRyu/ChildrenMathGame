@@ -70,4 +70,46 @@ void main() {
       expect(computeStreak(dates, today: today), 3);
     });
   });
+
+  group('computeMaxStreak', () {
+    test('returns 0 when empty', () {
+      expect(computeMaxStreak(const []), 0);
+    });
+
+    test('returns 1 for a single day', () {
+      expect(computeMaxStreak([DateTime(2026, 5, 1)]), 1);
+    });
+
+    test('returns longest run when multiple separate runs exist', () {
+      // Run A: May 1-2 (2 days). Run B: May 4-7 (4 days). Run C: May 9 (1).
+      final dates = [
+        DateTime(2026, 5, 1, 9),
+        DateTime(2026, 5, 2, 9),
+        DateTime(2026, 5, 4, 9),
+        DateTime(2026, 5, 5, 9),
+        DateTime(2026, 5, 6, 9),
+        DateTime(2026, 5, 7, 9),
+        DateTime(2026, 5, 9, 9),
+      ];
+      expect(computeMaxStreak(dates), 4);
+    });
+
+    test('multiple plays on the same day count once', () {
+      final dates = [
+        DateTime(2026, 5, 1, 9),
+        DateTime(2026, 5, 1, 18),
+        DateTime(2026, 5, 2, 9),
+      ];
+      expect(computeMaxStreak(dates), 2);
+    });
+
+    test('handles month boundary', () {
+      final dates = [
+        DateTime(2026, 4, 30, 9),
+        DateTime(2026, 5, 1, 9),
+        DateTime(2026, 5, 2, 9),
+      ];
+      expect(computeMaxStreak(dates), 3);
+    });
+  });
 }

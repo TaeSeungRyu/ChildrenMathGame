@@ -58,15 +58,31 @@ class HomeView extends GetView<HomeController> {
             ),
             const SizedBox(height: 16),
             SizedBox(
-              width: double.infinity,
               height: 56,
-              child: FilledButton.tonalIcon(
-                icon: const Icon(Icons.bar_chart),
-                label: const Text(
-                  '결과보기',
-                  style: TextStyle(fontSize: 18),
-                ),
-                onPressed: controller.openRecords,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      icon: const Icon(Icons.emoji_events),
+                      label: const Text(
+                        '도장판',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      onPressed: controller.openBadges,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      icon: const Icon(Icons.bar_chart),
+                      label: const Text(
+                        '결과보기',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      onPressed: controller.openRecords,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

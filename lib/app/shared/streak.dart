@@ -5,29 +5,53 @@
 int computeStreak(Iterable<DateTime> finishedAt, {required DateTime today}) {
   if (finishedAt.isEmpty) return 0;
 
-  final playedDays = <int>{
-    for (final d in finishedAt) _dayKey(d),
+  final days = <DateTime>{
+    for (final d in finishedAt) _dayOf(d),
   };
 
-  final todayKey = _dayKey(today);
-  final yesterdayKey = _dayKey(today.subtract(const Duration(days: 1)));
+  final todayDay = _dayOf(today);
+  final yesterdayDay = _dayOf(today.subtract(const Duration(days: 1)));
 
-  var cursor = playedDays.contains(todayKey)
-      ? today
-      : playedDays.contains(yesterdayKey)
-          ? today.subtract(const Duration(days: 1))
-          : null;
-  if (cursor == null) return 0;
+  DateTime cursor;
+  if (days.contains(todayDay)) {
+    cursor = todayDay;
+  } else if (days.contains(yesterdayDay)) {
+    cursor = yesterdayDay;
+  } else {
+    return 0;
+  }
 
   var streak = 0;
-  while (playedDays.contains(_dayKey(cursor!))) {
+  while (days.contains(cursor)) {
     streak++;
-    cursor = cursor.subtract(const Duration(days: 1));
+    cursor = _dayOf(cursor.subtract(const Duration(days: 1)));
   }
   return streak;
 }
 
-int _dayKey(DateTime d) {
+/// Longest run of consecutive days ever recorded. Used for streak badges that
+/// must stay unlocked once earned, even if the current streak later breaks.
+int computeMaxStreak(Iterable<DateTime> finishedAt) {
+  if (finishedAt.isEmpty) return 0;
+  final days = <DateTime>{
+    for (final d in finishedAt) _dayOf(d),
+  }.toList()..sort();
+
+  var best = 1;
+  var run = 1;
+  for (var i = 1; i < days.length; i++) {
+    final expected = _dayOf(days[i - 1].add(const Duration(days: 1)));
+    if (days[i] == expected) {
+      run++;
+      if (run > best) best = run;
+    } else {
+      run = 1;
+    }
+  }
+  return best;
+}
+
+DateTime _dayOf(DateTime d) {
   final local = d.toLocal();
-  return local.year * 10000 + local.month * 100 + local.day;
+  return DateTime(local.year, local.month, local.day);
 }

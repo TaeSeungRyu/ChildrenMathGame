@@ -16,4 +16,8 @@ class HomeController extends GetxController {
   void openRecords() {
     Get.toNamed(AppRoutes.records);
   }
+
+  void openBadges() {
+    Get.toNamed(AppRoutes.badges);
+  }
 }
