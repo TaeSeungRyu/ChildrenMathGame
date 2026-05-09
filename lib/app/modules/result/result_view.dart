@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
+import '../../data/models/problem_attempt.dart';
 import '../../routes/app_routes.dart';
 import '../../shared/attempt_tile.dart';
 import '../../shared/date_format.dart';
@@ -14,6 +15,9 @@ class ResultView extends GetView<ResultController> {
   Widget build(BuildContext context) {
     final r = controller.record;
     final isNewBest = controller.isNewPerfectBest;
+    final reviewable = r.attempts
+        .where((a) => a.status != AttemptStatus.correct)
+        .toList();
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -91,6 +95,24 @@ class ResultView extends GetView<ResultController> {
               ),
             ),
             const SizedBox(height: 16),
+            if (reviewable.isNotEmpty) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: OutlinedButton.icon(
+                  onPressed: () => Get.toNamed(
+                    AppRoutes.review,
+                    arguments: reviewable,
+                  ),
+                  icon: const Icon(Icons.refresh, size: 22),
+                  label: Text(
+                    '틀린 문제 다시 풀기 (${reviewable.length})',
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             SizedBox(
               width: double.infinity,
               height: 56,

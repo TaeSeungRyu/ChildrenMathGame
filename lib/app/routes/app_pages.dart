@@ -14,6 +14,8 @@ import '../modules/records/records_binding.dart';
 import '../modules/records/records_view.dart';
 import '../modules/result/result_binding.dart';
 import '../modules/result/result_view.dart';
+import '../modules/review/review_binding.dart';
+import '../modules/review/review_view.dart';
 import '../modules/splash/splash_binding.dart';
 import '../modules/splash/splash_view.dart';
 import 'app_routes.dart';
@@ -59,6 +61,11 @@ abstract class AppPages {
       name: AppRoutes.badges,
       page: () => const BadgesView(),
       binding: BadgesBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.review,
+      page: () => const ReviewView(),
+      binding: ReviewBinding(),
     ),
   ];
 }

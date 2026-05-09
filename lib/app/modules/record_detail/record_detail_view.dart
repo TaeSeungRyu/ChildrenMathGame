@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../data/models/problem_attempt.dart';
+import '../../routes/app_routes.dart';
 import '../../shared/attempt_tile.dart';
 import '../../shared/date_format.dart';
 import 'record_detail_controller.dart';
@@ -12,6 +14,9 @@ class RecordDetailView extends GetView<RecordDetailController> {
   Widget build(BuildContext context) {
     final r = controller.record;
     final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+    final reviewable = r.attempts
+        .where((a) => a.status != AttemptStatus.correct)
+        .toList();
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -73,6 +78,24 @@ class RecordDetailView extends GetView<RecordDetailController> {
             ),
           ),
           const SizedBox(height: 16),
+          if (reviewable.isNotEmpty) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton.icon(
+                onPressed: () => Get.toNamed(
+                  AppRoutes.review,
+                  arguments: reviewable,
+                ),
+                icon: const Icon(Icons.refresh, size: 20),
+                label: Text(
+                  '틀린 문제 다시 풀기 (${reviewable.length})',
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           for (var i = 0; i < r.attempts.length; i++) ...[
             AttemptTile(index: i + 1, attempt: r.attempts[i]),
             const SizedBox(height: 8),
