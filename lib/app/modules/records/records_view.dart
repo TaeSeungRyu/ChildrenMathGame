@@ -19,6 +19,13 @@ class RecordsView extends GetView<RecordsController> {
           style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: '통계',
+            icon: const Icon(Icons.insights),
+            onPressed: () => Get.toNamed(AppRoutes.stats),
+          ),
+        ],
       ),
       body: Obx(() {
         final bottomInset = MediaQuery.of(context).viewPadding.bottom;
