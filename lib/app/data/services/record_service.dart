@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../shared/streak.dart';
 import '../models/game_record.dart';
 
 class RecordService extends GetxService {
@@ -27,6 +28,13 @@ class RecordService extends GetxService {
   Future<void> add(GameRecord record) async {
     final records = all()..add(record);
     await _save(records);
+  }
+
+  int currentStreak({DateTime? now}) {
+    return computeStreak(
+      all().map((r) => r.finishedAt),
+      today: now ?? DateTime.now(),
+    );
   }
 
   // Records are matched by `finishedAt` — DateTime equality is value-based and
