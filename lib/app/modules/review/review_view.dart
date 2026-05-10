@@ -146,38 +146,43 @@ class _Keypad extends GetView<ReviewController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isFeedback = controller.phase.value == ReviewPhase.feedback;
-      return Column(
-        children: [
-          _row([_digit('1'), _digit('2'), _digit('3')]),
-          const SizedBox(height: 8),
-          _row([_digit('4'), _digit('5'), _digit('6')]),
-          const SizedBox(height: 8),
-          _row([_digit('7'), _digit('8'), _digit('9')]),
-          const SizedBox(height: 8),
-          _row(
-            [
-              _action(
-                label: '지우기',
-                onPressed: isFeedback ? null : controller.deleteLast,
-                color: Colors.orange.shade400,
-              ),
-              _digit('0'),
-              _action(
+    return Column(
+      children: [
+        _row([_digit('1'), _digit('2'), _digit('3')]),
+        const SizedBox(height: 8),
+        _row([_digit('4'), _digit('5'), _digit('6')]),
+        const SizedBox(height: 8),
+        _row([_digit('7'), _digit('8'), _digit('9')]),
+        const SizedBox(height: 8),
+        _row(
+          [
+            _KeypadButton(
+              label: '지우기',
+              onPressed: controller.deleteLast,
+              backgroundColor: Colors.orange.shade400,
+              foregroundColor: Colors.white,
+              fontSize: 22,
+            ),
+            _digit('0'),
+            Obx(() {
+              final isFeedback =
+                  controller.phase.value == ReviewPhase.feedback;
+              return _KeypadButton(
                 label: isFeedback
                     ? (controller.isLast ? '완료' : '다음')
                     : '입력',
                 onPressed: isFeedback ? controller.next : controller.submit,
-                color: Colors.green.shade500,
-              ),
-            ],
-            flexes: const [1, 1, 2],
-            height: 96,
-          ),
-        ],
-      );
-    });
+                backgroundColor: Colors.green.shade500,
+                foregroundColor: Colors.white,
+                fontSize: 22,
+              );
+            }),
+          ],
+          flexes: const [1, 1, 2],
+          height: 96,
+        ),
+      ],
+    );
   }
 
   Widget _row(
@@ -194,26 +199,9 @@ class _Keypad extends GetView<ReviewController> {
   }
 
   Widget _digit(String d) {
-    return Obx(() {
-      final isFeedback = controller.phase.value == ReviewPhase.feedback;
-      return _KeypadButton(
-        label: d,
-        onPressed: isFeedback ? null : () => controller.appendDigit(d),
-      );
-    });
-  }
-
-  Widget _action({
-    required String label,
-    required VoidCallback? onPressed,
-    required Color color,
-  }) {
     return _KeypadButton(
-      label: label,
-      onPressed: onPressed,
-      backgroundColor: color,
-      foregroundColor: Colors.white,
-      fontSize: 22,
+      label: d,
+      onPressed: () => controller.appendDigit(d),
     );
   }
 }
