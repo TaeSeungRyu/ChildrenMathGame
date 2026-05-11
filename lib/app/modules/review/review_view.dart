@@ -118,7 +118,7 @@ class _AnswerDisplay extends GetView<ReviewController> {
       }
       final value = controller.answer.value;
       return Container(
-        height: 72,
+        height: 62,
         decoration: BoxDecoration(
           border: Border.all(color: theme.colorScheme.outline),
           borderRadius: BorderRadius.circular(8),

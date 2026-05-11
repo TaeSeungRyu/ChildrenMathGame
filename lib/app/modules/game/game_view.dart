@@ -101,7 +101,7 @@ class _AnswerDisplay extends GetView<GameController> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      height: 72,
+      height: 62,
       decoration: BoxDecoration(
         border: Border.all(color: theme.colorScheme.outline),
         borderRadius: BorderRadius.circular(8),
@@ -121,7 +121,7 @@ class _AnswerDisplay extends GetView<GameController> {
         return Text(
           value,
           style: const TextStyle(
-            fontSize: 40,
+            fontSize: 30,
             fontWeight: FontWeight.bold,
           ),
         );
