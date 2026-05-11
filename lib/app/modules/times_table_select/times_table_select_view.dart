@@ -68,25 +68,16 @@ class _TableTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '$table',
-                style: TextStyle(
-                  fontSize: 64,
-                  fontWeight: FontWeight.bold,
-                  color: scheme.onPrimaryContainer,
-                ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '$table단',
+              style: TextStyle(
+                fontSize: 56,
+                fontWeight: FontWeight.bold,
+                color: scheme.onPrimaryContainer,
               ),
-              Text(
-                '단',
-                style: TextStyle(
-                  fontSize: 24,
-                  color: scheme.onPrimaryContainer,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
