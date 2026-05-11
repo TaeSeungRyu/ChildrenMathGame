@@ -65,7 +65,12 @@ class ResultView extends GetView<ResultController> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    _Row(label: '게임', value: '${r.type.label} 레벨 ${r.level}'),
+                    _Row(
+                      label: '게임',
+                      value: controller.isTimesTable
+                          ? '${controller.tableNumber}단 연습'
+                          : '${r.type.label} 레벨 ${r.level}',
+                    ),
                     _Row(label: '푼 문제', value: '${r.solvedCount}'),
                     _Row(label: '못 푼 문제', value: '${r.unsolvedCount}'),
                     _Row(label: '맞은 문제', value: '${r.correctCount}'),

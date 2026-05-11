@@ -14,21 +14,22 @@ import '../../routes/app_routes.dart';
 
 class GameController extends GetxController {
   static const totalSeconds = 180;
-  static const totalProblems = ProblemGenerator.totalProblems;
   static const tickWarningThreshold = 5;
+  static const maxAnswerLength = 6;
 
   late final GameType type;
   late final int level;
   late final List<Problem> problems;
-
-  static const maxAnswerLength = 6;
+  // Non-null when the session is a "단 연습" (times-table practice) run.
+  // In that mode the timer still runs but the record is not persisted.
+  late final int? tableNumber;
 
   final currentIndex = 0.obs;
   final secondsLeft = totalSeconds.obs;
   final answer = ''.obs;
 
-  final List<int?> _answers = List<int?>.filled(totalProblems, null);
-  final List<bool> _attempted = List<bool>.filled(totalProblems, false);
+  late final List<int?> _answers;
+  late final List<bool> _attempted;
 
   Timer? _ticker;
   bool _finished = false;
@@ -36,14 +37,25 @@ class GameController extends GetxController {
   final SfxService _sfx = Get.find<SfxService>();
 
   Problem get current => problems[currentIndex.value];
+  int get totalProblems => problems.length;
+  bool get isTimesTable => tableNumber != null;
 
   @override
   void onInit() {
     super.onInit();
     final args = Get.arguments as Map;
-    type = args['type'] as GameType;
-    level = args['level'] as int;
-    problems = ProblemGenerator.generate(type: type, level: level);
+    tableNumber = args['tableNumber'] as int?;
+    if (isTimesTable) {
+      type = GameType.multiplication;
+      level = 0;
+      problems = ProblemGenerator.generateTimesTable(tableNumber!);
+    } else {
+      type = args['type'] as GameType;
+      level = args['level'] as int;
+      problems = ProblemGenerator.generate(type: type, level: level);
+    }
+    _answers = List<int?>.filled(problems.length, null);
+    _attempted = List<bool>.filled(problems.length, false);
   }
 
   @override
@@ -112,7 +124,7 @@ class GameController extends GetxController {
       _sfx.wrong();
     }
     answer.value = '';
-    if (currentIndex.value + 1 >= totalProblems) {
+    if (currentIndex.value + 1 >= problems.length) {
       _finish();
     } else {
       currentIndex.value += 1;
@@ -164,7 +176,14 @@ class GameController extends GetxController {
       elapsedSeconds: totalSeconds - secondsLeft.value,
       attempts: attempts,
     );
-    Get.find<RecordService>().add(record);
-    Get.offNamed(AppRoutes.result, arguments: record);
+    // Practice runs (구구단) don't write to history — keeps streak/badges/stats
+    // free of "casual practice" noise.
+    if (!isTimesTable) {
+      Get.find<RecordService>().add(record);
+    }
+    Get.offNamed(
+      AppRoutes.result,
+      arguments: {'record': record, 'tableNumber': tableNumber},
+    );
   }
 }

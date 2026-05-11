@@ -20,4 +20,8 @@ class HomeController extends GetxController {
   void openBadges() {
     Get.toNamed(AppRoutes.badges);
   }
+
+  void openTimesTable() {
+    Get.toNamed(AppRoutes.timesTableSelect);
+  }
 }

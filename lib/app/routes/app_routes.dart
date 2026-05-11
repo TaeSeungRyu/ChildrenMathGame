@@ -9,4 +9,5 @@ abstract class AppRoutes {
   static const badges = '/badges';
   static const review = '/review';
   static const stats = '/stats';
+  static const timesTableSelect = '/times-table-select';
 }

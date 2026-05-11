@@ -5,10 +5,25 @@ import '../models/problem.dart';
 
 class ProblemGenerator {
   static const totalProblems = 10;
+  static const timesTableProblems = 9;
   static final _random = Random();
 
   static List<Problem> generate({required GameType type, required int level}) {
     return List.generate(totalProblems, (_) => _one(type, level));
+  }
+
+  /// 1×N .. 9×N for the given [table] (2..9), shuffled. The table number is
+  /// always the left operand so the question reads as "N × k = ?".
+  static List<Problem> generateTimesTable(int table) {
+    final problems = List.generate(
+      timesTableProblems,
+      (i) => Problem(
+        operandA: table,
+        operandB: i + 1,
+        type: GameType.multiplication,
+      ),
+    )..shuffle(_random);
+    return problems;
   }
 
   static Problem _one(GameType type, int level) {

@@ -6,12 +6,17 @@ import '../../data/services/record_service.dart';
 
 class ResultController extends GetxController {
   late final GameRecord record;
+  late final int? tableNumber;
   late final bool isNewPerfectBest;
+
+  bool get isTimesTable => tableNumber != null;
 
   @override
   void onInit() {
     super.onInit();
-    record = Get.arguments as GameRecord;
+    final args = Get.arguments as Map;
+    record = args['record'] as GameRecord;
+    tableNumber = args['tableNumber'] as int?;
     isNewPerfectBest = _computeNewPerfectBest();
   }
 
@@ -24,6 +29,8 @@ class ResultController extends GetxController {
   }
 
   bool _computeNewPerfectBest() {
+    // Practice runs aren't persisted, so there's no history to beat.
+    if (isTimesTable) return false;
     if (record.correctCount != record.totalCount) return false;
     final priors = Get.find<RecordService>().all().where(
       (r) =>

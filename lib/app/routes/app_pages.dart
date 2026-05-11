@@ -20,6 +20,8 @@ import '../modules/stats/stats_binding.dart';
 import '../modules/stats/stats_view.dart';
 import '../modules/splash/splash_binding.dart';
 import '../modules/splash/splash_view.dart';
+import '../modules/times_table_select/times_table_select_binding.dart';
+import '../modules/times_table_select/times_table_select_view.dart';
 import 'app_routes.dart';
 
 abstract class AppPages {
@@ -73,6 +75,11 @@ abstract class AppPages {
       name: AppRoutes.stats,
       page: () => const StatsView(),
       binding: StatsBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.timesTableSelect,
+      page: () => const TimesTableSelectView(),
+      binding: TimesTableSelectBinding(),
     ),
   ];
 }

@@ -12,13 +12,20 @@ class GameView extends GetView<GameController> {
     return Scaffold(
       appBar: AppBar(
         title: Obx(
-          () => Text(
-            '${controller.currentIndex.value + 1} / ${GameController.totalProblems}',
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          () {
+            final progress =
+                '${controller.currentIndex.value + 1} / ${controller.totalProblems}';
+            final prefix = controller.isTimesTable
+                ? '${controller.tableNumber}단  '
+                : '';
+            return Text(
+              '$prefix$progress',
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            );
+          },
         ),
         centerTitle: true,
         actions: [
