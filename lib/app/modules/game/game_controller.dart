@@ -21,11 +21,16 @@ class GameController extends GetxController {
   late final int level;
   late final List<Problem> problems;
   // Non-null when the session is a "단 연습" (times-table practice) run.
-  // In that mode the timer still runs but the record is not persisted.
   late final int? tableNumber;
+  // True when this run does not impose a time limit and does not persist a
+  // record. Auto-true for times-table runs; otherwise comes from level select.
+  late final bool isPractice;
 
   final currentIndex = 0.obs;
-  final secondsLeft = totalSeconds.obs;
+  // Seconds elapsed since the timer started. Counts up regardless of mode so
+  // the same value feeds both the countdown display (challenge) and the
+  // informational up-counter (practice).
+  final elapsed = 0.obs;
   final answer = ''.obs;
 
   late final List<int?> _answers;
@@ -39,6 +44,8 @@ class GameController extends GetxController {
   Problem get current => problems[currentIndex.value];
   int get totalProblems => problems.length;
   bool get isTimesTable => tableNumber != null;
+  int get remainingSeconds =>
+      (totalSeconds - elapsed.value).clamp(0, totalSeconds);
 
   @override
   void onInit() {
@@ -49,10 +56,12 @@ class GameController extends GetxController {
       type = GameType.multiplication;
       level = 0;
       problems = ProblemGenerator.generateTimesTable(tableNumber!);
+      isPractice = true;
     } else {
       type = args['type'] as GameType;
       level = args['level'] as int;
       problems = ProblemGenerator.generate(type: type, level: level);
+      isPractice = (args['isPractice'] as bool?) ?? false;
     }
     _answers = List<int?>.filled(problems.length, null);
     _attempted = List<bool>.filled(problems.length, false);
@@ -62,14 +71,13 @@ class GameController extends GetxController {
   void onReady() {
     super.onReady();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (secondsLeft.value <= 1) {
-        secondsLeft.value = 0;
+      elapsed.value += 1;
+      if (isPractice) return;
+      final remain = totalSeconds - elapsed.value;
+      if (remain <= 0) {
         _finish();
-      } else {
-        secondsLeft.value -= 1;
-        if (secondsLeft.value <= tickWarningThreshold) {
-          _sfx.tick();
-        }
+      } else if (remain <= tickWarningThreshold) {
+        _sfx.tick();
       }
     });
   }
@@ -173,17 +181,21 @@ class GameController extends GetxController {
       correctCount: correct,
       wrongCount: wrong,
       unsolvedCount: unsolved,
-      elapsedSeconds: totalSeconds - secondsLeft.value,
+      elapsedSeconds: elapsed.value,
       attempts: attempts,
     );
-    // Practice runs (구구단) don't write to history — keeps streak/badges/stats
+    // Practice + 구구단 runs don't write to history — keeps streak/badges/stats
     // free of "casual practice" noise.
-    if (!isTimesTable) {
+    if (!isPractice) {
       Get.find<RecordService>().add(record);
     }
     Get.offNamed(
       AppRoutes.result,
-      arguments: {'record': record, 'tableNumber': tableNumber},
+      arguments: {
+        'record': record,
+        'tableNumber': tableNumber,
+        'isPractice': isPractice,
+      },
     );
   }
 }

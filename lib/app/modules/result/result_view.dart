@@ -69,7 +69,9 @@ class ResultView extends GetView<ResultController> {
                       label: '게임',
                       value: controller.isTimesTable
                           ? '${controller.tableNumber}단 연습'
-                          : '${r.type.label} 레벨 ${r.level}',
+                          : controller.isPractice
+                              ? '${r.type.label} 레벨 ${r.level} (연습)'
+                              : '${r.type.label} 레벨 ${r.level}',
                     ),
                     _Row(label: '푼 문제', value: '${r.solvedCount}'),
                     _Row(label: '못 푼 문제', value: '${r.unsolvedCount}'),

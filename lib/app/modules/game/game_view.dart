@@ -33,7 +33,17 @@ class GameView extends GetView<GameController> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Center(
               child: Obx(() {
-                final s = controller.secondsLeft.value;
+                if (controller.isPractice) {
+                  return Text(
+                    '${controller.elapsed.value}초',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  );
+                }
+                final s = controller.remainingSeconds;
                 final color = s <= 10 ? Colors.red : null;
                 return Text(
                   '$s초',
@@ -59,10 +69,18 @@ class GameView extends GetView<GameController> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Obx(() {
-              final progress =
-                  controller.secondsLeft.value / GameController.totalSeconds;
+              // Practice: show problem progression. Challenge: show remaining
+              // time so the bar drains visually as the countdown runs out.
+              final double value;
+              if (controller.isPractice) {
+                value = (controller.currentIndex.value + 1) /
+                    controller.totalProblems;
+              } else {
+                value = controller.remainingSeconds /
+                    GameController.totalSeconds;
+              }
               return LinearProgressIndicator(
-                value: progress.clamp(0.0, 1.0),
+                value: value.clamp(0.0, 1.0),
                 minHeight: 8,
               );
             }),

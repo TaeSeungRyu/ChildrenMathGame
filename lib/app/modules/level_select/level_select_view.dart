@@ -34,6 +34,8 @@ class LevelSelectView extends GetView<LevelSelectController> {
               ),
             ),
             const SizedBox(height: 16),
+            const _ModeToggle(),
+            const SizedBox(height: 16),
             ...List.generate(5, (i) {
               final level = i + 1;
               return Padding(
@@ -72,5 +74,55 @@ class LevelSelectView extends GetView<LevelSelectController> {
       default:
         return '';
     }
+  }
+}
+
+class _ModeToggle extends GetView<LevelSelectController> {
+  const _ModeToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final practice = controller.isPractice.value;
+      return Column(
+        children: [
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment<bool>(
+                value: false,
+                label: Text(
+                  '도전',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                icon: Icon(Icons.timer),
+              ),
+              ButtonSegment<bool>(
+                value: true,
+                label: Text(
+                  '연습',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                icon: Icon(Icons.spa),
+              ),
+            ],
+            selected: {practice},
+            onSelectionChanged: (s) => controller.setPractice(s.first),
+            style: ButtonStyle(
+              padding: WidgetStateProperty.all(
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            practice ? '시간 제한 없이 풀어요 (기록 미저장)' : '180초 안에 10문제!',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
+      );
+    });
   }
 }

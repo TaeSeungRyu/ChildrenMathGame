@@ -10,7 +10,7 @@ A children's math game (초등학생용). Flow:
 2. **Home** (`/home`) — picks one of four operations (덧셈/뺄셈/곱셈/나눗셈), plus "도장판" / "구구단" / "결과보기" buttons.
 3. **Level select** (`/level-select`) — 5 levels with progressive operand digit pairing (see "Difficulty rules" below).
    - **Times table select** (`/times-table-select`) — alternate entry from Home for practice mode. Picks 2단~9단 and jumps straight into the game.
-4. **Game** (`/game`) — 10 problems (or 9 for 구구단), 120-second hard cap. Game ends on whichever comes first; remaining unanswered problems count as wrong. Times-table runs are flagged via `tableNumber` in `Get.arguments` — they share the same screen + flow but skip record persistence.
+4. **Game** (`/game`) — 10 problems (or 9 for 구구단), 180-second hard cap **in challenge mode only**. Game ends on whichever comes first; remaining unanswered problems count as wrong. The session is either **challenge** (timer + record save) or **practice** (no timer, no record save). Practice is opted into from the level-select segmented toggle, and times-table runs are always practice. The flag travels via `Get.arguments['isPractice']` (auto-true when `tableNumber` is set).
 5. **Result** (`/result`) — shows correct/wrong counts, elapsed time, and persists a `GameRecord` (`finishedAt`, `type`, `level`, `correctCount`, `wrongCount`, `elapsedSeconds`) via `RecordService`. Elapsed time is computed as `totalSeconds - secondsLeft.value` at finish, so it equals the full 120s when the timer expires.
 6. **Records** (`/records`) — list of past records, newest first. Each row has a delete button that opens an `AlertDialog` confirm; only on **확인** does the record get removed via `RecordService.delete` and from the in-memory `Rx` list.
 
@@ -36,7 +36,11 @@ If you change these rules, update **both** the `_digitsForLevel` table here and 
 
 ### Times-table practice mode
 
-`ProblemGenerator.generateTimesTable(int table)` returns the 9 problems `1×N..9×N` (shuffled, `N` always the left operand). `GameController` enters this mode when `Get.arguments['tableNumber']` is non-null — in that case `type`/`level` args are ignored, `level` is set to 0 as a placeholder, and `_finish` skips the `RecordService.add` call so practice runs never appear in streak/badges/records. The Result screen renders "X단 연습" in the game-info row instead of "type 레벨 N", and never shows a "신기록" badge for practice runs.
+`ProblemGenerator.generateTimesTable(int table)` returns the 9 problems `1×N..9×N` (shuffled, `N` always the left operand). `GameController` enters this mode when `Get.arguments['tableNumber']` is non-null — in that case `type`/`level` args are ignored, `level` is set to 0 as a placeholder, and `isPractice` is forced to `true`. The Result screen renders "X단 연습" in the game-info row instead of "type 레벨 N", and never shows a "신기록" badge for practice runs.
+
+### Challenge vs Practice
+
+A run is either **challenge** (`isPractice == false`, default) or **practice** (`isPractice == true`). The timer infrastructure is shared: a single `elapsed` Rx counts up every second; challenge mode derives `remainingSeconds = totalSeconds - elapsed` and `_finish`-es at zero, while practice mode lets `elapsed` count up forever and never auto-finishes. Practice runs are not saved via `RecordService` (only "real" challenges contribute to streak/badges/stats), and the Result screen skips the new-record check for them. `GameView` swaps the AppBar timer (countdown red ↔ informational gray elapsed) and the progress bar (time drain ↔ problem progression) based on the mode. Don't reintroduce the old `secondsLeft` countdown Rx — derive from `elapsed`.
 
 ## Architecture
 

@@ -6,14 +6,9 @@
 
 - [x] **1. 효과음 + 햅틱** — `SfxService`, Kenney Interface Sounds (CC0), 홈 음소거 토글, 게임/복습 전 영역 훅 완료.
 - [x] **2. 구구단 전용 연습 모드** *(2026-05-11)* — `ProblemGenerator.generateTimesTable`, `times_table_select` 모듈, `GameController`/`ResultController` `tableNumber` arg 분기, 홈 3분할 버튼 추가. 연습 결과는 기록/연속출석/배지에 영향 없음.
+- [x] **3. 시간 무제한 "연습 모드"** *(2026-05-11)* — `LevelSelectView`에 도전/연습 세그먼트 토글, `GameController` `secondsLeft`(카운트다운) → `elapsed`(카운트업) 리팩터 + `isPractice` 플래그 분기, 연습 시 AppBar 타이머는 회색 경과시간 표시 + 프로그레스바는 문제 진행률로 전환, 구구단은 isPractice 자동 true 합류 (180s 카운트다운 제거). `flutter test` 27/27 통과.
 
 ## 대기
-
-- [ ] **3. 시간 무제한 "연습 모드"**
-  - 시나리오: 게임 시작 전 "도전 / 연습" 토글. 연습은 타이머 없음, 결과는 저장 옵션.
-  - 영향: `GameController.totalSeconds` 제거 가능성, `GameRecord`에 `mode` 필드 추가 또는 별도 키 분리.
-  - 마이그레이션: `game_records_v4` → `v5` 키 bump 필요 (스키마 변경 시).
-  - 고려: 연습 결과를 저장할지 여부 → 저장 시 통계/배지에서 분리할지 결정 필요.
 
 - [ ] **4. 약점 분석 & 추천**
   - `RecordService.all()`의 attempts를 집계 → 연산 × 자리수 × 정답률 표.
