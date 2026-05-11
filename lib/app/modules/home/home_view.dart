@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../data/models/game_type.dart';
+import '../../data/services/sfx_service.dart';
 import 'home_controller.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -17,6 +18,7 @@ class HomeView extends GetView<HomeController> {
           style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: const [_MuteToggle()],
       ),
       body: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -110,6 +112,25 @@ class HomeView extends GetView<HomeController> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _MuteToggle extends StatelessWidget {
+  const _MuteToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final sfx = Get.find<SfxService>();
+    return Obx(
+      () => IconButton(
+        tooltip: sfx.isMuted.value ? '효과음 켜기' : '효과음 끄기',
+        icon: Icon(
+          sfx.isMuted.value ? Icons.volume_off : Icons.volume_up,
+          size: 28,
+        ),
+        onPressed: sfx.toggleMute,
+      ),
     );
   }
 }

@@ -48,23 +48,26 @@ class _AnsweringBody extends GetView<ReviewController> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          child: Center(
-            child: Obx(
-              () => FittedBox(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Center(
+              child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(
-                  '${controller.current.questionText} = ?',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.bold,
+                child: Obx(
+                  () => Text(
+                    '${controller.current.questionText} = ?',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 56,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         const _AnswerDisplay(),
         const SizedBox(height: 12),
         const _Keypad(),

@@ -61,31 +61,34 @@ class GameView extends GetView<GameController> {
             }),
             const SizedBox(height: 16),
             SizedBox(
-              height: 100,
+              height: 80,
               child: Lottie.asset(
                 'assets/lottie/game_character.json',
                 fit: BoxFit.contain,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Expanded(
-              child: Center(
-                child: Obx(
-                  () => FittedBox(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Center(
+                  child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text(
-                      '${controller.current.questionText} = ?',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 56,
-                        fontWeight: FontWeight.bold,
+                    child: Obx(
+                      () => Text(
+                        '${controller.current.questionText} = ?',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 56,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             _AnswerDisplay(),
             const SizedBox(height: 12),
             _Keypad(),

@@ -1,13 +1,21 @@
 import 'package:children_math_game/app/data/models/game_type.dart';
 import 'package:children_math_game/app/data/models/problem_attempt.dart';
+import 'package:children_math_game/app/data/services/sfx_service.dart';
 import 'package:children_math_game/app/modules/review/review_binding.dart';
 import 'package:children_math_game/app/modules/review/review_controller.dart';
 import 'package:children_math_game/app/modules/review/review_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    SfxService.audioBackendEnabled = false;
+    await Get.putAsync<SfxService>(() => SfxService().init());
+  });
+
   tearDown(() async {
     await Get.deleteAll(force: true);
   });

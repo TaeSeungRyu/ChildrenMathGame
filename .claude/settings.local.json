@@ -13,7 +13,9 @@
       "Bash(python3 -c ' *)",
       "Bash(curl -sSL -o assets/lottie/game_character.json \"https://raw.githubusercontent.com/xvrh/lottie-flutter/master/example/assets/lottiefiles/dog.json\")",
       "Bash(python *)",
-      "Bash(dart run *)"
+      "Bash(dart run *)",
+      "Bash(gh api *)",
+      "PowerShell($lic = Invoke-RestMethod \"https://raw.githubusercontent.com/Calinou/kenney-interface-sounds/master/addons/kenney_interface_sounds/LICENSE.txt\"; $lic.Substring\\(0, [Math]::Min\\(500, $lic.Length\\)\\))"
     ]
   }
 }

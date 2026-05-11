@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/problem_attempt.dart';
+import '../../data/services/sfx_service.dart';
 
 enum ReviewPhase { answering, feedback, done }
 
@@ -17,6 +17,8 @@ class ReviewController extends GetxController {
   final lastWasCorrect = false.obs;
   final retryCorrectCount = 0.obs;
 
+  final SfxService _sfx = Get.find<SfxService>();
+
   ProblemAttempt get current => problems[currentIndex.value];
   int get totalCount => problems.length;
   bool get isLast => currentIndex.value >= problems.length - 1;
@@ -30,12 +32,14 @@ class ReviewController extends GetxController {
   void appendDigit(String digit) {
     if (phase.value != ReviewPhase.answering) return;
     if (answer.value.length >= maxAnswerLength) return;
+    _sfx.click();
     answer.value = answer.value + digit;
   }
 
   void deleteLast() {
     if (phase.value != ReviewPhase.answering) return;
     if (answer.value.isEmpty) return;
+    _sfx.click();
     answer.value = answer.value.substring(0, answer.value.length - 1);
   }
 
@@ -64,9 +68,9 @@ class ReviewController extends GetxController {
     lastWasCorrect.value = correct;
     if (correct) {
       retryCorrectCount.value += 1;
-      HapticFeedback.lightImpact();
+      _sfx.correct();
     } else {
-      HapticFeedback.mediumImpact();
+      _sfx.wrong();
     }
     phase.value = ReviewPhase.feedback;
   }
@@ -74,6 +78,7 @@ class ReviewController extends GetxController {
   void next() {
     if (phase.value != ReviewPhase.feedback) return;
     if (isLast) {
+      _sfx.finish();
       phase.value = ReviewPhase.done;
       return;
     }

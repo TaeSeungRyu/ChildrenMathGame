@@ -9,11 +9,13 @@ import '../../data/models/problem.dart';
 import '../../data/models/problem_attempt.dart';
 import '../../data/services/problem_generator.dart';
 import '../../data/services/record_service.dart';
+import '../../data/services/sfx_service.dart';
 import '../../routes/app_routes.dart';
 
 class GameController extends GetxController {
   static const totalSeconds = 180;
   static const totalProblems = ProblemGenerator.totalProblems;
+  static const tickWarningThreshold = 5;
 
   late final GameType type;
   late final int level;
@@ -30,6 +32,8 @@ class GameController extends GetxController {
 
   Timer? _ticker;
   bool _finished = false;
+
+  final SfxService _sfx = Get.find<SfxService>();
 
   Problem get current => problems[currentIndex.value];
 
@@ -51,6 +55,9 @@ class GameController extends GetxController {
         _finish();
       } else {
         secondsLeft.value -= 1;
+        if (secondsLeft.value <= tickWarningThreshold) {
+          _sfx.tick();
+        }
       }
     });
   }
@@ -64,12 +71,14 @@ class GameController extends GetxController {
   void appendDigit(String digit) {
     if (_finished) return;
     if (answer.value.length >= maxAnswerLength) return;
+    _sfx.click();
     answer.value = answer.value + digit;
   }
 
   void deleteLast() {
     if (_finished) return;
     if (answer.value.isEmpty) return;
+    _sfx.click();
     answer.value = answer.value.substring(0, answer.value.length - 1);
   }
 
@@ -97,6 +106,11 @@ class GameController extends GetxController {
     final parsed = int.tryParse(text);
     _answers[currentIndex.value] = parsed;
     _attempted[currentIndex.value] = true;
+    if (parsed != null && parsed == current.answer) {
+      _sfx.correct();
+    } else {
+      _sfx.wrong();
+    }
     answer.value = '';
     if (currentIndex.value + 1 >= totalProblems) {
       _finish();
@@ -110,6 +124,7 @@ class GameController extends GetxController {
     _finished = true;
     _ticker?.cancel();
     _ticker = null;
+    _sfx.finish();
 
     var correct = 0;
     var wrong = 0;
