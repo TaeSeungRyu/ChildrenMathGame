@@ -3,11 +3,15 @@ import 'package:get/get.dart';
 import '../../data/models/game_type.dart';
 import '../../data/services/record_service.dart';
 import '../../routes/app_routes.dart';
+import '../../shared/weakness.dart';
 
 class HomeController extends GetxController {
   final RecordService _records = Get.find<RecordService>();
 
   late final int streakDays = _records.currentStreak();
+  late final WeaknessAnalysis weakness = analyzeWeakness(_records.all());
+
+  WeaknessBucket? get recommendation => weakness.recommendation;
 
   void selectGame(GameType type) {
     Get.toNamed(AppRoutes.levelSelect, arguments: type);
@@ -23,5 +27,16 @@ class HomeController extends GetxController {
 
   void openTimesTable() {
     Get.toNamed(AppRoutes.timesTableSelect);
+  }
+
+  void startRecommended(WeaknessBucket bucket) {
+    Get.toNamed(
+      AppRoutes.game,
+      arguments: {
+        'type': bucket.type,
+        'level': bucket.level,
+        'isPractice': true,
+      },
+    );
   }
 }

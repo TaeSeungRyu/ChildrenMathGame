@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 
 import '../../data/models/game_type.dart';
 import '../../data/services/sfx_service.dart';
+import '../../shared/weakness.dart';
 import 'home_controller.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -48,7 +49,15 @@ class HomeView extends GetView<HomeController> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            if (controller.recommendation != null) ...[
+              _RecommendationCard(
+                bucket: controller.recommendation!,
+                onTap: () =>
+                    controller.startRecommended(controller.recommendation!),
+              ),
+              const SizedBox(height: 12),
+            ],
             Expanded(
               child: Column(
                 children: [
@@ -188,6 +197,73 @@ class _StreakBadge extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _RecommendationCard extends StatelessWidget {
+  const _RecommendationCard({required this.bucket, required this.onTap});
+
+  final WeaknessBucket bucket;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final percent = (bucket.accuracy * 100).round();
+    return Card(
+      color: scheme.tertiaryContainer,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: scheme.tertiary,
+                child: Icon(
+                  Icons.tips_and_updates,
+                  color: scheme.onTertiary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '오늘 ${bucket.type.label} 레벨 ${bucket.level} '
+                      '연습 어때?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: scheme.onTertiaryContainer,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '최근 정답률 $percent%',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: scheme.onTertiaryContainer.withValues(
+                          alpha: 0.8,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: scheme.onTertiaryContainer,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

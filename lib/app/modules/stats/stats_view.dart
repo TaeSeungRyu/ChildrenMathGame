@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 
 import '../../data/models/game_type.dart';
 import '../../shared/date_format.dart';
+import '../../shared/weakness.dart';
 import 'stats_controller.dart';
 
 class StatsView extends GetView<StatsController> {
@@ -50,6 +51,10 @@ class StatsView extends GetView<StatsController> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                const _SectionTitle('약점 분석 (연산 × 레벨)'),
+                const SizedBox(height: 8),
+                _WeaknessGrid(weakness: controller.weakness),
               ],
             ),
     );
@@ -300,4 +305,108 @@ Color _accuracyColor(double accuracy, bool played) {
   if (accuracy >= 0.8) return Colors.green;
   if (accuracy >= 0.5) return Colors.orange;
   return Colors.red;
+}
+
+class _WeaknessGrid extends StatelessWidget {
+  const _WeaknessGrid({required this.weakness});
+
+  final WeaknessAnalysis weakness;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const SizedBox(width: 40),
+                for (final l in StatsController.levels)
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'L$l',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            for (final type in GameType.values) ...[
+              _WeaknessRow(type: type, weakness: weakness),
+              if (type != GameType.values.last) const SizedBox(height: 6),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WeaknessRow extends StatelessWidget {
+  const _WeaknessRow({required this.type, required this.weakness});
+
+  final GameType type;
+  final WeaknessAnalysis weakness;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 40,
+          child: Text(
+            type.symbol,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        for (final l in StatsController.levels)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: _WeaknessCell(bucket: weakness.bucketFor(type, l)),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _WeaknessCell extends StatelessWidget {
+  const _WeaknessCell({required this.bucket});
+
+  final WeaknessBucket? bucket;
+
+  @override
+  Widget build(BuildContext context) {
+    final b = bucket;
+    final played = b != null && b.attemptsCount > 0;
+    final color = _accuracyColor(b?.accuracy ?? 0, played);
+    return Container(
+      height: 32,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: played ? 0.9 : 0.25),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        played ? '${(b.accuracy * 100).round()}%' : '-',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: played ? Colors.white : Colors.grey.shade600,
+        ),
+      ),
+    );
+  }
 }

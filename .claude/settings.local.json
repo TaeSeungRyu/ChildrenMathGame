@@ -15,7 +15,8 @@
       "Bash(python *)",
       "Bash(dart run *)",
       "Bash(gh api *)",
-      "PowerShell($lic = Invoke-RestMethod \"https://raw.githubusercontent.com/Calinou/kenney-interface-sounds/master/addons/kenney_interface_sounds/LICENSE.txt\"; $lic.Substring\\(0, [Math]::Min\\(500, $lic.Length\\)\\))"
+      "PowerShell($lic = Invoke-RestMethod \"https://raw.githubusercontent.com/Calinou/kenney-interface-sounds/master/addons/kenney_interface_sounds/LICENSE.txt\"; $lic.Substring\\(0, [Math]::Min\\(500, $lic.Length\\)\\))",
+      "Bash(git status *)"
     ]
   }
 }

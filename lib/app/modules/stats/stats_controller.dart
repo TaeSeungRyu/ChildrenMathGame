@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../data/models/game_record.dart';
 import '../../data/models/game_type.dart';
 import '../../data/services/record_service.dart';
+import '../../shared/weakness.dart';
 
 class StatsAggregate {
   StatsAggregate({
@@ -30,6 +31,7 @@ class StatsController extends GetxController {
   late final StatsAggregate overall;
   late final Map<GameType, StatsAggregate> byType;
   late final Map<int, StatsAggregate> byLevel;
+  late final WeaknessAnalysis weakness;
 
   @override
   void onInit() {
@@ -44,6 +46,7 @@ class StatsController extends GetxController {
       for (final l in levels)
         l: _aggregate(all.where((r) => r.level == l)),
     };
+    weakness = analyzeWeakness(all);
   }
 
   StatsAggregate _aggregate(Iterable<GameRecord> records) {
