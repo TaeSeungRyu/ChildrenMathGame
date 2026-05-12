@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 
 import '../../data/models/daily_mission.dart';
 import '../../data/models/game_type.dart';
+import '../../data/services/profile_service.dart';
 import '../../data/services/sfx_service.dart';
 import '../../shared/weakness.dart';
 import 'home_controller.dart';
@@ -15,12 +16,18 @@ class HomeView extends GetView<HomeController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          '게임 선택',
-          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-        ),
+        title: Obx(() {
+          final name = Get.find<ProfileService>().name.value;
+          return Text(
+            '$name의 게임',
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          );
+        }),
         centerTitle: true,
-        actions: const [_MuteToggle()],
+        actions: const [_NameEditButton(), _MuteToggle()],
       ),
       body: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -170,6 +177,66 @@ class _MuteToggle extends StatelessWidget {
       ),
     );
   }
+}
+
+class _NameEditButton extends StatelessWidget {
+  const _NameEditButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: '이름 바꾸기',
+      icon: const Icon(Icons.person, size: 28),
+      onPressed: () => _showNameEditDialog(context),
+    );
+  }
+}
+
+Future<void> _showNameEditDialog(BuildContext context) async {
+  final profile = Get.find<ProfileService>();
+  final controller = TextEditingController(text: profile.name.value);
+  // Pre-select so typing replaces the current value in one shot.
+  controller.selection = TextSelection(
+    baseOffset: 0,
+    extentOffset: controller.text.length,
+  );
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) {
+      return AlertDialog(
+        title: const Text('이름 바꾸기'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: ProfileService.maxNameLength,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          decoration: const InputDecoration(
+            hintText: '이름을 입력하세요',
+            counterText: '',
+          ),
+          onSubmitted: (value) {
+            profile.setName(value);
+            Navigator.of(ctx).pop();
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('취소', style: TextStyle(fontSize: 16)),
+          ),
+          FilledButton(
+            onPressed: () {
+              profile.setName(controller.text);
+              Navigator.of(ctx).pop();
+            },
+            child: const Text('저장', style: TextStyle(fontSize: 16)),
+          ),
+        ],
+      );
+    },
+  );
+  controller.dispose();
 }
 
 class _StreakBadge extends StatelessWidget {

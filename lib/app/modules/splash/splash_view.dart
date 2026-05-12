@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../data/services/profile_service.dart';
 import 'splash_controller.dart';
 
 class SplashView extends GetView<SplashController> {
@@ -9,6 +10,7 @@ class SplashView extends GetView<SplashController> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final profile = Get.find<ProfileService>();
     return Scaffold(
       backgroundColor: scheme.primary,
       body: Center(
@@ -17,13 +19,25 @@ class SplashView extends GetView<SplashController> {
           children: [
             Icon(Icons.calculate, size: 128, color: scheme.onPrimary),
             const SizedBox(height: 24),
-            Text(
-              '어린이 수학 게임',
-              style: TextStyle(
-                fontFamily: Theme.of(context).textTheme.displayLarge?.fontFamily,
-                fontSize: 56,
-                color: scheme.onPrimary,
-                height: 1.1,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Obx(
+                  () => Text(
+                    '${profile.name.value}의 수학 게임',
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: TextStyle(
+                      fontFamily:
+                          Theme.of(context).textTheme.displayLarge?.fontFamily,
+                      fontSize: 56,
+                      color: scheme.onPrimary,
+                      height: 1.1,
+                    ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 8),

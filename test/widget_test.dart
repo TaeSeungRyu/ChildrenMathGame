@@ -1,3 +1,4 @@
+import 'package:children_math_game/app/data/services/profile_service.dart';
 import 'package:children_math_game/app/data/services/record_service.dart';
 import 'package:children_math_game/app/data/services/sfx_service.dart';
 import 'package:children_math_game/main.dart';
@@ -9,6 +10,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     SfxService.audioBackendEnabled = false;
+    await Get.putAsync<ProfileService>(() => ProfileService().init());
     await Get.putAsync<RecordService>(() => RecordService().init());
     await Get.putAsync<SfxService>(() => SfxService().init());
   });

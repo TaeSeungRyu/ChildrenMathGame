@@ -3,9 +3,11 @@ import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../data/models/problem_attempt.dart';
+import '../../data/services/profile_service.dart';
 import '../../routes/app_routes.dart';
 import '../../shared/attempt_tile.dart';
 import '../../shared/date_format.dart';
+import '../../shared/korean_particle.dart';
 import '../../shared/mixed_label.dart';
 import 'result_controller.dart';
 
@@ -65,7 +67,9 @@ class ResultView extends GetView<ResultController> {
                         color: isNewBest ? Colors.amber.shade800 : null,
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 12),
+                    _Greeting(score: r.correctCount, total: r.totalCount),
+                    const SizedBox(height: 20),
                     _Row(
                       label: '게임',
                       value: controller.isTimesTable
@@ -141,6 +145,36 @@ class ResultView extends GetView<ResultController> {
         ),
       ),
     );
+  }
+}
+
+class _Greeting extends StatelessWidget {
+  const _Greeting({required this.score, required this.total});
+
+  final int score;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = Get.find<ProfileService>();
+    return Obx(() {
+      final addressed = addressedName(profile.name.value);
+      final phrase = _phraseFor(score, total);
+      return Text(
+        addressed.isEmpty ? phrase : '$addressed, $phrase',
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      );
+    });
+  }
+
+  String _phraseFor(int correct, int total) {
+    if (total == 0) return '다음에 다시 해 보자!';
+    final ratio = correct / total;
+    if (ratio >= 1.0) return '완벽해! 🎉';
+    if (ratio >= 0.8) return '아주 잘했어!';
+    if (ratio >= 0.5) return '잘했어!';
+    return '괜찮아, 계속 해 보자!';
   }
 }
 

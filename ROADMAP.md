@@ -11,6 +11,7 @@
 - [x] **5. 콤보 시스템 (연속 정답 보너스)** *(2026-05-12)* — `GameController.comboCount` Rx (정답 +1 / 오답 리셋), 마일스톤 `{3, 5, 7, 10}` 도달 시 `SfxService.combo()` (heavyImpact 햅틱). `GameView`의 캐릭터 영역 우상단에 `_ComboIndicator` 플로팅 (count<2 숨김, AnimatedSwitcher elastic scale, 마일스톤이면 금색 그라데이션). `GameRecord.maxCombo` 옵셔널 필드 추가 (fromJson 누락 시 0 폴백 → `_storageKey` 유지). 결과·기록 상세에 "최고 콤보 N" 표시 (≥2일 때만). 배지 `combo_5`/`combo_10` 추가 — 진행도는 `records.maxCombo`의 최댓값에서 산정, 연습 모드는 기록 미저장이라 자동으로 카운트 제외. `flutter test` 44/44 통과.
 - [x] **7. 일일 미션 (3개/일)** *(2026-05-12)* — `lib/app/data/models/daily_mission.dart` (`DailyMission` + `DailyMissionStatus` + `DailyMissionType` enum: correctAnswers / perfectGames / achieveCombo / correctInType). `lib/app/shared/daily_missions.dart` 순수 모듈로 `generateDailyMissions(day)` (Y*10000+M*100+D 시드 deterministic shuffle + dedupeKey로 같은 shape 제외, 풀 11개 중 3개 픽) + `evaluateDailyMissions(records, now)` (오늘 날짜 레코드만 필터, 타입별 progress 계산). 진행 상태는 RecordService에서 derive — 별도 mutation/persistence 불필요 (연습 모드는 기록 미저장이라 자동 제외). `HomeController.missions` + `missionsCompleted`. 홈 배너 아래 `_DailyMissionCard` (체크 아이콘·취소선·진행도 `X / Y`·완료 시 primary 컬러 + Icons.celebration). `flutter test` 56/56 통과.
 - [x] **A. 혼합 사칙연산 모드** *(2026-05-12)* — `GameType.mixed` enum 값 추가 (`혼` 심볼, `혼합` 라벨, record 레벨에만 등장; `Problem`/`ProblemGenerator._one`의 mixed 케이스는 명시적으로 throw). `ProblemGenerator.generateMixed(allowedTypes, level)`로 각 문제를 selected ops 중 무작위 픽 (기존 `_one`/`_digitsForLevel` 재사용). 신규 `mixed_select` 모듈 (FilterChip 4종 토글, 마지막 1개 lock, 도전/연습 segmented, 레벨 5개 버튼). `GameController`에 `mixedTypes` arg + `isMixed` 분기. `ResultController._computeNewPerfectBest`는 mixed 시 false 반환 (op 조합이 달라 시간 비교 불공정). Result/RecordDetail/Records에 `componentLabel(record)` 헬퍼로 "혼합 (덧셈+뺄셈+곱셈) 레벨 3" 표기. `weakness.dart`는 mixed records 제외 (추천 카드는 단일 type+level 진입). `daily_missions.dart` `correctInType` progress는 attempts 기반으로 변경 → 혼합 런 안의 개별 op 정답도 미션 크레딧 받음. `all_ops_perfect` 배지는 mixed 제외한 4 op만 체크. 홈 하단 버튼 4분할 (도장판/혼합/구구단/기록). `flutter test` 64/64 통과.
+- [x] **B. 사용자 이름 (단일 프로필)** *(2026-05-12)* — `ProfileService` (GetxService, SharedPreferences 키 `profile_name_v1`, 기본값 `'연수'`, `maxNameLength=10`, `setName`은 trim+clamp+empty 거부). main.dart에서 `putAsync`로 등록. 스플래시는 `Obx`로 `'${name}의 수학 게임'` 반응형 렌더링. 홈 AppBar 타이틀이 `'${name}의 게임'`으로 바뀌고 우상단에 person 아이콘 → `AlertDialog` (TextField 자동 포커스·중앙 정렬·maxLength·onSubmitted로 즉시 저장). 결과 화면에 `_Greeting` — Korean vocative particle을 자동 매칭하는 `addressedName` 헬퍼(`lib/app/shared/korean_particle.dart`: Hangul jongseong 검사로 야/아 분기, 비-한글은 무첨)와 정답률(100/80/50/0)에 따른 4단계 칭찬 문구. `flutter test` 73/73 통과. (아바타·다중 프로필은 후속 작업으로 분리.)
 
 ## 대기
 
@@ -35,12 +36,12 @@
   - 새 라우트 `/time-attack-select` + 결과 저장 키 별도 분리 (기존 `GameRecord`에 mode enum 추가 또는 새 모델).
   - 새로운 재미와 흥미. 중간 작업량 (새 모드 파이프라인).
 
-- [ ] **10. 사용자 프로필 (아바타 + 이름)**
-  - 첫 실행 시 이름 + 아바타(이모지 또는 아이콘) 선택 화면.
-  - 홈/결과/기록 화면 상단에 표시.
-  - 다중 프로필 지원 — 형제자매가 한 기기 공유 시 각자 기록 분리. 프로필 전환 셀렉터.
-  - SharedPreferences 키 prefix를 `profile_<id>_` 형태로 변경 (기존 키는 default 프로필로 마이그레이션).
-  - 어린이 친화 personalization. 작은~중간 작업량 (다중 프로필이 비용 큼; 단일 프로필만 하면 작음).
+- [ ] **10. 사용자 프로필 확장 (아바타 + 다중 프로필)**
+  - 이름 입력은 B에서 단일 프로필로 완료 (`ProfileService`). 남은 작업:
+  - 아바타 — 이모지 또는 아이콘 풀에서 선택. `ProfileService.avatar` 추가.
+  - 첫 실행 온보딩 — 처음 켰을 때 이름+아바타 선택 화면(스플래시 후 라우팅 분기).
+  - 다중 프로필 — 형제자매용. `ProfileService`를 `profiles: List` + `activeId`로 확장. SharedPreferences 키 prefix를 `profile_<id>_` 형태로 변경하고 기존 키는 default 프로필로 마이그레이션. 프로필 전환 셀렉터(홈 AppBar 또는 설정).
+  - 다중 프로필이 비용 큼 — 별도 phase로 분해 권장.
 
 ## 아이디어 풀 (브레인스토밍)
 
