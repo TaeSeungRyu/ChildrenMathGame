@@ -22,6 +22,9 @@ void main() {
   testWidgets('splash screen is shown on launch', (tester) async {
     await tester.pumpWidget(const MyApp());
     await tester.pump();
-    expect(find.text('연수의 수학 게임'), findsOneWidget);
+    expect(
+      find.text('${ProfileService.defaultName}의 수학 게임'),
+      findsOneWidget,
+    );
   });
 }

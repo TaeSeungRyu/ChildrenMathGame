@@ -14,10 +14,10 @@ void main() {
       await Get.deleteAll(force: true);
     });
 
-    test('defaults to "연수" on fresh install', () async {
+    test('defaults to "어린이" on fresh install', () async {
       final svc = await ProfileService().init();
       expect(svc.name.value, ProfileService.defaultName);
-      expect(ProfileService.defaultName, '연수');
+      expect(ProfileService.defaultName, '어린이');
     });
 
     test('setName persists across re-init', () async {

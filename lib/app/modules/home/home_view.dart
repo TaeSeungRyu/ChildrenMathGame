@@ -187,56 +187,79 @@ class _NameEditButton extends StatelessWidget {
     return IconButton(
       tooltip: '이름 바꾸기',
       icon: const Icon(Icons.person, size: 28),
-      onPressed: () => _showNameEditDialog(context),
+      onPressed: () => showDialog<void>(
+        context: context,
+        builder: (_) => const _NameEditDialog(),
+      ),
     );
   }
 }
 
-Future<void> _showNameEditDialog(BuildContext context) async {
-  final profile = Get.find<ProfileService>();
-  final controller = TextEditingController(text: profile.name.value);
-  // Pre-select so typing replaces the current value in one shot.
-  controller.selection = TextSelection(
-    baseOffset: 0,
-    extentOffset: controller.text.length,
-  );
-  await showDialog<void>(
-    context: context,
-    builder: (ctx) {
-      return AlertDialog(
-        title: const Text('이름 바꾸기'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: ProfileService.maxNameLength,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          decoration: const InputDecoration(
-            hintText: '이름을 입력하세요',
-            counterText: '',
-          ),
-          onSubmitted: (value) {
-            profile.setName(value);
-            Navigator.of(ctx).pop();
-          },
+class _NameEditDialog extends StatefulWidget {
+  const _NameEditDialog();
+
+  @override
+  State<_NameEditDialog> createState() => _NameEditDialogState();
+}
+
+class _NameEditDialogState extends State<_NameEditDialog> {
+  // Owning the controller in a State (rather than the calling closure) lets
+  // Flutter dispose it only after the TextField is fully torn down, avoiding
+  // the InheritedElement `_dependents.isEmpty` assertion that fires when a
+  // controller is disposed before its listeners have unregistered.
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = Get.find<ProfileService>();
+    _controller = TextEditingController(text: profile.name.value);
+    // Pre-select so typing replaces the current value in one shot.
+    _controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _controller.text.length,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    Get.find<ProfileService>().setName(_controller.text);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('이름 바꾸기'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: ProfileService.maxNameLength,
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        decoration: const InputDecoration(
+          hintText: '이름을 입력하세요',
+          counterText: '',
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('취소', style: TextStyle(fontSize: 16)),
-          ),
-          FilledButton(
-            onPressed: () {
-              profile.setName(controller.text);
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('저장', style: TextStyle(fontSize: 16)),
-          ),
-        ],
-      );
-    },
-  );
-  controller.dispose();
+        onSubmitted: (_) => _save(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('취소', style: TextStyle(fontSize: 16)),
+        ),
+        FilledButton(
+          onPressed: _save,
+          child: const Text('저장', style: TextStyle(fontSize: 16)),
+        ),
+      ],
+    );
+  }
 }
 
 class _StreakBadge extends StatelessWidget {
