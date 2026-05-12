@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'app/data/services/custom_stamp_service.dart';
 import 'app/data/services/profile_service.dart';
 import 'app/data/services/record_service.dart';
 import 'app/data/services/sfx_service.dart';
@@ -15,6 +16,7 @@ Future<void> main() async {
   await Get.putAsync<ProfileService>(() => ProfileService().init());
   await Get.putAsync<RecordService>(() => RecordService().init());
   await Get.putAsync<SfxService>(() => SfxService().init());
+  await Get.putAsync<CustomStampService>(() => CustomStampService().init());
   runApp(const MyApp());
 }
 

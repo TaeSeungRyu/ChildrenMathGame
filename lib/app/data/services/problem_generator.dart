@@ -79,9 +79,14 @@ class ProblemGenerator {
     }
   }
 
-  /// Builds [totalProblems] problems picking each one's operation at random
-  /// from [allowedTypes]. `mixed` itself must not appear in [allowedTypes];
-  /// each chosen operation is generated at the given [level] difficulty.
+  /// Builds [totalProblems] problems whose operations come from [allowedTypes].
+  /// `mixed` itself must not appear in [allowedTypes]. Each chosen operation is
+  /// generated at the given [level] difficulty.
+  ///
+  /// Distribution is round-robin (every allowed type gets at least one slot
+  /// when allowed.length <= totalProblems), then shuffled. This avoids the
+  /// pure-random failure mode where 10 spins could all land on one type and
+  /// leave the player thinking the mix was broken.
   static List<Problem> generateMixed(
     List<GameType> allowedTypes,
     int level,
@@ -94,10 +99,11 @@ class ProblemGenerator {
         'allowedTypes cannot contain GameType.mixed itself',
       );
     }
-    return List.generate(totalProblems, (_) {
-      final t = allowedTypes[_random.nextInt(allowedTypes.length)];
-      return _one(t, level);
-    });
+    final slots = <GameType>[
+      for (var i = 0; i < totalProblems; i++)
+        allowedTypes[i % allowedTypes.length],
+    ]..shuffle(_random);
+    return [for (final t in slots) _one(t, level)];
   }
 
   static (int, int) _digitsForLevel(int level) {

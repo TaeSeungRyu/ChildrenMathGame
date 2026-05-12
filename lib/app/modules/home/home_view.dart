@@ -82,49 +82,37 @@ class HomeView extends GetView<HomeController> {
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 56,
+              height:55,
               child: Row(
                 children: [
                   Expanded(
-                    child: FilledButton.tonalIcon(
-                      icon: const Icon(Icons.emoji_events, size: 15),
-                      label: const Text(
-                        '도장',
-                        style: TextStyle(fontSize: 15),
-                      ),
+                    child: _QuickAction(
+                      icon: Icons.emoji_events,
+                      label: '도장',
                       onPressed: controller.openBadges,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 2),
                   Expanded(
-                    child: FilledButton.tonalIcon(
-                      icon: const Icon(Icons.shuffle, size: 15),
-                      label: const Text(
-                        '혼합',
-                        style: TextStyle(fontSize: 15),
-                      ),
+                    child: _QuickAction(
+                      icon: Icons.shuffle,
+                      label: '혼합',
                       onPressed: controller.openMixed,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 2),
                   Expanded(
-                    child: FilledButton.tonalIcon(
-                      icon: const Icon(Icons.grid_view, size: 15),
-                      label: const Text(
-                        '구구',
-                        style: TextStyle(fontSize: 15),
-                      ),
+                    child: _QuickAction(
+                      icon: Icons.grid_view,
+                      label: '구구',
                       onPressed: controller.openTimesTable,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 2),
                   Expanded(
-                    child: FilledButton.tonalIcon(
-                      icon: const Icon(Icons.bar_chart, size: 15),
-                      label: const Text(
-                        '기록',
-                        style: TextStyle(fontSize: 15),
-                      ),
+                    child: _QuickAction(
+                      icon: Icons.bar_chart,
+                      label: '기록',
                       onPressed: controller.openRecords,
                     ),
                   ),
@@ -156,6 +144,43 @@ class HomeView extends GetView<HomeController> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.tonal(
+      onPressed: onPressed,
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+        minimumSize: const Size.fromHeight(64),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 20),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.visible,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
     );
   }
 }

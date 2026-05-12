@@ -23,6 +23,34 @@ void main() {
       }
     });
 
+    test('every allowed type appears at least once (2-type mix)', () {
+      const allowed = [GameType.addition, GameType.subtraction];
+      // Round-robin distribution is deterministic enough that a single run
+      // must already hit every type; loop only to guard against regressions.
+      for (var i = 0; i < 20; i++) {
+        final problems = ProblemGenerator.generateMixed(allowed, 2);
+        final seen = problems.map((p) => p.type).toSet();
+        for (final t in allowed) {
+          expect(seen, contains(t), reason: 'run #$i missed $t');
+        }
+      }
+    });
+
+    test('every allowed type appears at least once (3-type mix)', () {
+      const allowed = [
+        GameType.addition,
+        GameType.subtraction,
+        GameType.multiplication,
+      ];
+      for (var i = 0; i < 20; i++) {
+        final problems = ProblemGenerator.generateMixed(allowed, 2);
+        final seen = problems.map((p) => p.type).toSet();
+        for (final t in allowed) {
+          expect(seen, contains(t), reason: 'run #$i missed $t');
+        }
+      }
+    });
+
     test('answers are always integers and consistent', () {
       // Division within a mixed game still yields integer answers (the
       // generator's retry loop guarantees it).

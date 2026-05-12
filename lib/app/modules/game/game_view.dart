@@ -120,8 +120,12 @@ class GameView extends GetView<GameController> {
                       () => Text(
                         '${controller.current.questionText} = ?',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 56,
+                        style: TextStyle(
+                          // Mixed mode mixes operations of varying operand
+                          // lengths back-to-back; a smaller base size keeps
+                          // FittedBox from yo-yoing the rendered text between
+                          // problems.
+                          fontSize: controller.isMixed ? 44 : 56,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
