@@ -21,6 +21,10 @@ class Problem {
         return a * b;
       case GameType.division:
         return a ~/ b;
+      case GameType.mixed:
+        // A single Problem never has type=mixed — only the GameRecord's
+        // roll-up type can. Anything reaching here is a programmer error.
+        throw StateError('Problem.type must be a concrete operation');
     }
   }
 }

@@ -80,32 +80,43 @@ class HomeView extends GetView<HomeController> {
                 children: [
                   Expanded(
                     child: FilledButton.tonalIcon(
-                      icon: const Icon(Icons.emoji_events),
+                      icon: const Icon(Icons.emoji_events, size: 15),
                       label: const Text(
-                        '도장판',
-                        style: TextStyle(fontSize: 16),
+                        '도장',
+                        style: TextStyle(fontSize: 15),
                       ),
                       onPressed: controller.openBadges,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: FilledButton.tonalIcon(
-                      icon: const Icon(Icons.grid_view),
+                      icon: const Icon(Icons.shuffle, size: 15),
                       label: const Text(
-                        '구구단',
-                        style: TextStyle(fontSize: 16),
+                        '혼합',
+                        style: TextStyle(fontSize: 15),
+                      ),
+                      onPressed: controller.openMixed,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      icon: const Icon(Icons.grid_view, size: 15),
+                      label: const Text(
+                        '구구',
+                        style: TextStyle(fontSize: 15),
                       ),
                       onPressed: controller.openTimesTable,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: FilledButton.tonalIcon(
-                      icon: const Icon(Icons.bar_chart),
+                      icon: const Icon(Icons.bar_chart, size: 15),
                       label: const Text(
-                        '결과보기',
-                        style: TextStyle(fontSize: 16),
+                        '기록',
+                        style: TextStyle(fontSize: 15),
                       ),
                       onPressed: controller.openRecords,
                     ),

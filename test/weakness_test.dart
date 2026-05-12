@@ -170,6 +170,22 @@ void main() {
       expect(result.recommendation!.type, GameType.addition);
     });
 
+    test('mixed-type records are excluded from analysis', () {
+      // Recommendation card sends users to a single (type, level) drill, so
+      // mixed runs (which bundle several ops) shouldn't influence the pick.
+      final records = [
+        _record(
+          type: GameType.mixed,
+          level: 3,
+          correct: 0,
+          wrong: 10,
+        ),
+      ];
+      final result = analyzeWeakness(records);
+      expect(result.buckets, isEmpty);
+      expect(result.recommendation, isNull);
+    });
+
     test('level 0 records (times-table practice) are excluded', () {
       // Times-table runs are practice-only and use level 0 as a placeholder.
       // They shouldn't influence weakness analysis even if they leaked through.

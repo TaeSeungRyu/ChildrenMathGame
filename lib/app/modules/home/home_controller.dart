@@ -35,6 +35,10 @@ class HomeController extends GetxController {
     Get.toNamed(AppRoutes.timesTableSelect);
   }
 
+  void openMixed() {
+    Get.toNamed(AppRoutes.mixedSelect);
+  }
+
   void startRecommended(WeaknessBucket bucket) {
     Get.toNamed(
       AppRoutes.game,

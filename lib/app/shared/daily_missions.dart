@@ -3,6 +3,7 @@ import 'dart:math';
 import '../data/models/daily_mission.dart';
 import '../data/models/game_record.dart';
 import '../data/models/game_type.dart';
+import '../data/models/problem_attempt.dart';
 
 // Static pool of possible daily missions. The day-seeded shuffle picks 3
 // distinct shapes (by `dedupeKey`) from here. Keep targets achievable in
@@ -90,9 +91,18 @@ int _progressFor(DailyMission m, List<GameRecord> todays) {
         (m, r) => r.maxCombo > m ? r.maxCombo : m,
       );
     case DailyMissionType.correctInType:
-      return todays
-          .where((r) => r.type == m.gameType)
-          .fold<int>(0, (s, r) => s + r.correctCount);
+      // Count per-attempt rather than per-record so mixed-mode runs still
+      // credit individual operation hits (e.g. "곱셈 10 정답" mission credits
+      // the 곱셈 problems inside a 혼합 run).
+      var n = 0;
+      for (final r in todays) {
+        for (final a in r.attempts) {
+          if (a.type == m.gameType && a.status == AttemptStatus.correct) {
+            n++;
+          }
+        }
+      }
+      return n;
   }
 }
 

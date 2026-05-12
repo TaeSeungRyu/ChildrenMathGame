@@ -25,6 +25,9 @@ class GameController extends GetxController {
   late final List<Problem> problems;
   // Non-null when the session is a "단 연습" (times-table practice) run.
   late final int? tableNumber;
+  // Non-null when the session is a 혼합 모드 run — holds the user-selected
+  // operations. `type` rolls up to `GameType.mixed` in this case.
+  late final List<GameType>? mixedTypes;
   // True when this run does not impose a time limit and does not persist a
   // record. Auto-true for times-table runs; otherwise comes from level select.
   late final bool isPractice;
@@ -51,6 +54,7 @@ class GameController extends GetxController {
   Problem get current => problems[currentIndex.value];
   int get totalProblems => problems.length;
   bool get isTimesTable => tableNumber != null;
+  bool get isMixed => mixedTypes != null;
   int get remainingSeconds =>
       (totalSeconds - elapsed.value).clamp(0, totalSeconds);
 
@@ -59,11 +63,17 @@ class GameController extends GetxController {
     super.onInit();
     final args = Get.arguments as Map;
     tableNumber = args['tableNumber'] as int?;
+    mixedTypes = (args['mixedTypes'] as List?)?.cast<GameType>();
     if (isTimesTable) {
       type = GameType.multiplication;
       level = 0;
       problems = ProblemGenerator.generateTimesTable(tableNumber!);
       isPractice = true;
+    } else if (isMixed) {
+      type = GameType.mixed;
+      level = args['level'] as int;
+      problems = ProblemGenerator.generateMixed(mixedTypes!, level);
+      isPractice = (args['isPractice'] as bool?) ?? false;
     } else {
       type = args['type'] as GameType;
       level = args['level'] as int;
@@ -208,6 +218,7 @@ class GameController extends GetxController {
       arguments: {
         'record': record,
         'tableNumber': tableNumber,
+        'mixedTypes': mixedTypes,
         'isPractice': isPractice,
       },
     );

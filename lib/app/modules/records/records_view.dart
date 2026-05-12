@@ -3,8 +3,10 @@ import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../data/models/game_record.dart';
+import '../../data/models/game_type.dart';
 import '../../routes/app_routes.dart';
 import '../../shared/date_format.dart';
+import '../../shared/mixed_label.dart';
 import 'records_controller.dart';
 
 class RecordsView extends GetView<RecordsController> {
@@ -186,7 +188,9 @@ class _RecordTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${record.type.label} 레벨 ${record.level}',
+                      record.type == GameType.mixed
+                          ? '혼합 (${componentLabel(record)}) 레벨 ${record.level}'
+                          : '${record.type.label} 레벨 ${record.level}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,

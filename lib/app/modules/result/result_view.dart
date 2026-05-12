@@ -6,6 +6,7 @@ import '../../data/models/problem_attempt.dart';
 import '../../routes/app_routes.dart';
 import '../../shared/attempt_tile.dart';
 import '../../shared/date_format.dart';
+import '../../shared/mixed_label.dart';
 import 'result_controller.dart';
 
 class ResultView extends GetView<ResultController> {
@@ -69,9 +70,12 @@ class ResultView extends GetView<ResultController> {
                       label: '게임',
                       value: controller.isTimesTable
                           ? '${controller.tableNumber}단 연습'
-                          : controller.isPractice
-                              ? '${r.type.label} 레벨 ${r.level} (연습)'
-                              : '${r.type.label} 레벨 ${r.level}',
+                          : controller.isMixed
+                              ? '혼합 (${componentLabel(r)}) 레벨 ${r.level}'
+                                  '${controller.isPractice ? ' (연습)' : ''}'
+                              : controller.isPractice
+                                  ? '${r.type.label} 레벨 ${r.level} (연습)'
+                                  : '${r.type.label} 레벨 ${r.level}',
                     ),
                     _Row(label: '푼 문제', value: '${r.solvedCount}'),
                     _Row(label: '못 푼 문제', value: '${r.unsolvedCount}'),

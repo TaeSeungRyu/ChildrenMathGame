@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../data/models/game_type.dart';
 import '../../data/models/problem_attempt.dart';
 import '../../routes/app_routes.dart';
 import '../../shared/attempt_tile.dart';
 import '../../shared/date_format.dart';
+import '../../shared/mixed_label.dart';
 import 'record_detail_controller.dart';
 
 class RecordDetailView extends GetView<RecordDetailController> {
@@ -35,7 +37,9 @@ class RecordDetailView extends GetView<RecordDetailController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${r.type.label} 레벨 ${r.level}',
+                    r.type == GameType.mixed
+                        ? '혼합 (${componentLabel(r)}) 레벨 ${r.level}'
+                        : '${r.type.label} 레벨 ${r.level}',
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,

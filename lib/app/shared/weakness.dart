@@ -53,6 +53,12 @@ WeaknessAnalysis analyzeWeakness(
     // Times-table practice runs use level 0 as a placeholder and aren't part
     // of the leveled difficulty progression — skip them for weakness analysis.
     if (r.level < 1) continue;
+    // Mixed runs bundle multiple operations under the same `level` but at the
+    // record level the `type` is `mixed`. The per-op accuracy could be
+    // reconstructed from `attempts`, but the recommendation card sends the
+    // user to a single (type, level) drill which doesn't match — skip until
+    // the recommendation pipeline supports mixed bundles.
+    if (r.type == GameType.mixed) continue;
     final key = '${r.type.name}|${r.level}';
     for (final a in r.attempts) {
       totalByKey[key] = (totalByKey[key] ?? 0) + 1;

@@ -214,7 +214,11 @@ List<BadgeStatus> evaluateBadges(
     ),
     BadgeStatus.simple(
       badge: _allOpsPerfect,
-      unlocked: perfectOps.length == GameType.values.length,
+      // "사칙연산 정복" — the 4 real operations. `mixed` is a roll-up and
+      // shouldn't be required (and a single-op perfect can never be `mixed`).
+      unlocked: GameType.values
+          .where((t) => t != GameType.mixed)
+          .every(perfectOps.contains),
     ),
     BadgeStatus.progress(badge: _combo5, current: bestCombo, target: 5),
     BadgeStatus.progress(badge: _combo10, current: bestCombo, target: 10),

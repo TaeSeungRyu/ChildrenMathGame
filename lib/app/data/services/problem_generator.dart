@@ -72,7 +72,32 @@ class ProblemGenerator {
             type: type,
           );
         }
+      case GameType.mixed:
+        // `mixed` is a record-level roll-up; callers must dispatch to
+        // [generateMixed] with a concrete type list instead.
+        throw ArgumentError('Use generateMixed for GameType.mixed');
     }
+  }
+
+  /// Builds [totalProblems] problems picking each one's operation at random
+  /// from [allowedTypes]. `mixed` itself must not appear in [allowedTypes];
+  /// each chosen operation is generated at the given [level] difficulty.
+  static List<Problem> generateMixed(
+    List<GameType> allowedTypes,
+    int level,
+  ) {
+    if (allowedTypes.isEmpty) {
+      throw ArgumentError('allowedTypes must contain at least one operation');
+    }
+    if (allowedTypes.contains(GameType.mixed)) {
+      throw ArgumentError(
+        'allowedTypes cannot contain GameType.mixed itself',
+      );
+    }
+    return List.generate(totalProblems, (_) {
+      final t = allowedTypes[_random.nextInt(allowedTypes.length)];
+      return _one(t, level);
+    });
   }
 
   static (int, int) _digitsForLevel(int level) {

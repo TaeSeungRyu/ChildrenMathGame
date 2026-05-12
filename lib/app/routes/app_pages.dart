@@ -20,6 +20,8 @@ import '../modules/stats/stats_binding.dart';
 import '../modules/stats/stats_view.dart';
 import '../modules/splash/splash_binding.dart';
 import '../modules/splash/splash_view.dart';
+import '../modules/mixed_select/mixed_select_binding.dart';
+import '../modules/mixed_select/mixed_select_view.dart';
 import '../modules/times_table_select/times_table_select_binding.dart';
 import '../modules/times_table_select/times_table_select_view.dart';
 import 'app_routes.dart';
@@ -80,6 +82,11 @@ abstract class AppPages {
       name: AppRoutes.timesTableSelect,
       page: () => const TimesTableSelectView(),
       binding: TimesTableSelectBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.mixedSelect,
+      page: () => const MixedSelectView(),
+      binding: MixedSelectBinding(),
     ),
   ];
 }

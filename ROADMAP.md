@@ -10,6 +10,7 @@
 - [x] **4. 약점 분석 & 추천** *(2026-05-12)* — `lib/app/shared/weakness.dart`로 순수 집계 모듈 분리 (`analyzeWeakness(records, recentN=10, threshold=0.6, minAttempts=5)`). 최근 N판 attempts를 (type×level)로 묶어 정답률·추천 버킷 산출 (동점 시 낮은 레벨 → enum 순). `StatsController`/`HomeController`가 공유; 통계 화면에 4×5 약점 그리드, 홈 상단에 추천 카드 (탭 시 해당 type+level 연습 모드로 직진). 구구단 placeholder인 `level == 0` 레코드는 분석에서 제외. `flutter test` 38/38 통과.
 - [x] **5. 콤보 시스템 (연속 정답 보너스)** *(2026-05-12)* — `GameController.comboCount` Rx (정답 +1 / 오답 리셋), 마일스톤 `{3, 5, 7, 10}` 도달 시 `SfxService.combo()` (heavyImpact 햅틱). `GameView`의 캐릭터 영역 우상단에 `_ComboIndicator` 플로팅 (count<2 숨김, AnimatedSwitcher elastic scale, 마일스톤이면 금색 그라데이션). `GameRecord.maxCombo` 옵셔널 필드 추가 (fromJson 누락 시 0 폴백 → `_storageKey` 유지). 결과·기록 상세에 "최고 콤보 N" 표시 (≥2일 때만). 배지 `combo_5`/`combo_10` 추가 — 진행도는 `records.maxCombo`의 최댓값에서 산정, 연습 모드는 기록 미저장이라 자동으로 카운트 제외. `flutter test` 44/44 통과.
 - [x] **7. 일일 미션 (3개/일)** *(2026-05-12)* — `lib/app/data/models/daily_mission.dart` (`DailyMission` + `DailyMissionStatus` + `DailyMissionType` enum: correctAnswers / perfectGames / achieveCombo / correctInType). `lib/app/shared/daily_missions.dart` 순수 모듈로 `generateDailyMissions(day)` (Y*10000+M*100+D 시드 deterministic shuffle + dedupeKey로 같은 shape 제외, 풀 11개 중 3개 픽) + `evaluateDailyMissions(records, now)` (오늘 날짜 레코드만 필터, 타입별 progress 계산). 진행 상태는 RecordService에서 derive — 별도 mutation/persistence 불필요 (연습 모드는 기록 미저장이라 자동 제외). `HomeController.missions` + `missionsCompleted`. 홈 배너 아래 `_DailyMissionCard` (체크 아이콘·취소선·진행도 `X / Y`·완료 시 primary 컬러 + Icons.celebration). `flutter test` 56/56 통과.
+- [x] **A. 혼합 사칙연산 모드** *(2026-05-12)* — `GameType.mixed` enum 값 추가 (`혼` 심볼, `혼합` 라벨, record 레벨에만 등장; `Problem`/`ProblemGenerator._one`의 mixed 케이스는 명시적으로 throw). `ProblemGenerator.generateMixed(allowedTypes, level)`로 각 문제를 selected ops 중 무작위 픽 (기존 `_one`/`_digitsForLevel` 재사용). 신규 `mixed_select` 모듈 (FilterChip 4종 토글, 마지막 1개 lock, 도전/연습 segmented, 레벨 5개 버튼). `GameController`에 `mixedTypes` arg + `isMixed` 분기. `ResultController._computeNewPerfectBest`는 mixed 시 false 반환 (op 조합이 달라 시간 비교 불공정). Result/RecordDetail/Records에 `componentLabel(record)` 헬퍼로 "혼합 (덧셈+뺄셈+곱셈) 레벨 3" 표기. `weakness.dart`는 mixed records 제외 (추천 카드는 단일 type+level 진입). `daily_missions.dart` `correctInType` progress는 attempts 기반으로 변경 → 혼합 런 안의 개별 op 정답도 미션 크레딧 받음. `all_ops_perfect` 배지는 mixed 제외한 4 op만 체크. 홈 하단 버튼 4분할 (도장판/혼합/구구단/기록). `flutter test` 64/64 통과.
 
 ## 대기
 
@@ -56,7 +57,6 @@
 - 다크 모드 — `ThemeMode` 토글 (시스템/라이트/다크). `main.dart` 테마 + 설정 화면.
 
 **새 게임 모드**
-- 혼합 사칙연산 — 한 게임에 4연산 무작위. `GameType.mixed` 또는 레벨 옵션. `ProblemGenerator.generateMixed`.
 - 30문제 시험지 모드 — 시간 제한 없이 30문제 정답률만 평가. 시험 대비용.
 - 카운트다운 라운드 — 문제당 5~10초 개별 제한. 빠른 판단 훈련.
 

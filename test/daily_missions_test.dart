@@ -1,8 +1,20 @@
 import 'package:children_math_game/app/data/models/daily_mission.dart';
 import 'package:children_math_game/app/data/models/game_record.dart';
 import 'package:children_math_game/app/data/models/game_type.dart';
+import 'package:children_math_game/app/data/models/problem_attempt.dart';
 import 'package:children_math_game/app/shared/daily_missions.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+ProblemAttempt _attempt(GameType type, AttemptStatus status) {
+  return ProblemAttempt(
+    operandA: 1,
+    operandB: 1,
+    type: type,
+    correctAnswer: 2,
+    userAnswer: status == AttemptStatus.correct ? 2 : 0,
+    status: status,
+  );
+}
 
 GameRecord _record({
   required GameType type,
@@ -13,6 +25,13 @@ GameRecord _record({
   int maxCombo = 0,
   required DateTime at,
 }) {
+  // Attempts mirror the counts so attempts-based queries (correctInType) and
+  // count-based queries (correctAnswers/perfectGames) agree.
+  final attempts = [
+    for (var i = 0; i < correct; i++) _attempt(type, AttemptStatus.correct),
+    for (var i = 0; i < wrong; i++) _attempt(type, AttemptStatus.wrong),
+    for (var i = 0; i < unsolved; i++) _attempt(type, AttemptStatus.unsolved),
+  ];
   return GameRecord(
     finishedAt: at,
     type: type,
@@ -21,7 +40,7 @@ GameRecord _record({
     wrongCount: wrong,
     unsolvedCount: unsolved,
     elapsedSeconds: 60,
-    attempts: const [],
+    attempts: attempts,
     maxCombo: maxCombo,
   );
 }
@@ -219,6 +238,59 @@ void main() {
         (s) => s.mission.type == DailyMissionType.perfectGames,
       );
       expect(status.progress, 1);
+    });
+
+    test('correctInType credits per-attempt matches in mixed runs', () {
+      // Find a day with a correctInType mission so we can target its gameType.
+      DateTime? day;
+      DailyMission? mission;
+      for (var d = 1; d <= 50; d++) {
+        final candidate = DateTime(2026, 5, d, 10);
+        final ms = generateDailyMissions(candidate);
+        final m = ms.firstWhere(
+          (m) => m.type == DailyMissionType.correctInType,
+          orElse: () => const DailyMission(
+            type: DailyMissionType.perfectGames,
+            target: -1,
+          ),
+        );
+        if (m.target > 0) {
+          day = candidate;
+          mission = m;
+          break;
+        }
+      }
+      expect(mission, isNotNull);
+
+      // Mixed run with attempts of the target type mixed with another type.
+      final other = GameType.values.firstWhere(
+        (t) => t != mission!.gameType && t != GameType.mixed,
+      );
+      final attempts = [
+        _attempt(mission!.gameType!, AttemptStatus.correct),
+        _attempt(mission.gameType!, AttemptStatus.correct),
+        _attempt(mission.gameType!, AttemptStatus.correct),
+        _attempt(other, AttemptStatus.correct),
+        _attempt(other, AttemptStatus.correct),
+      ];
+      final mixedRecord = GameRecord(
+        finishedAt: day!,
+        type: GameType.mixed,
+        level: 2,
+        correctCount: 5,
+        wrongCount: 0,
+        unsolvedCount: 0,
+        elapsedSeconds: 60,
+        attempts: attempts,
+      );
+      final result = evaluateDailyMissions([mixedRecord], now: day);
+      final status = result.firstWhere(
+        (s) =>
+            s.mission.type == DailyMissionType.correctInType &&
+            s.mission.gameType == mission!.gameType,
+      );
+      // Three matching attempts in the mixed run should count.
+      expect(status.progress, 3);
     });
 
     test('correctInType only counts matching operation', () {
