@@ -16,7 +16,7 @@ class StatsView extends GetView<StatsController> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          '통계',
+          '학습 결과',
           style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
