@@ -11,8 +11,11 @@ class GameRecord {
     required this.unsolvedCount,
     required this.elapsedSeconds,
     required this.attempts,
+    this.maxCombo = 0,
   });
 
+  // `maxCombo` is read with a null fallback so old records persisted before
+  // the field existed still load. New writes always include it.
   factory GameRecord.fromJson(Map<String, dynamic> json) => GameRecord(
     finishedAt: DateTime.parse(json['finishedAt'] as String),
     type: GameType.values.byName(json['type'] as String),
@@ -24,6 +27,7 @@ class GameRecord {
     attempts: (json['attempts'] as List<dynamic>)
         .map((e) => ProblemAttempt.fromJson(e as Map<String, dynamic>))
         .toList(),
+    maxCombo: (json['maxCombo'] as int?) ?? 0,
   );
 
   final DateTime finishedAt;
@@ -34,6 +38,7 @@ class GameRecord {
   final int unsolvedCount;
   final int elapsedSeconds;
   final List<ProblemAttempt> attempts;
+  final int maxCombo;
 
   int get solvedCount => correctCount + wrongCount;
   int get totalCount => correctCount + wrongCount + unsolvedCount;
@@ -47,5 +52,6 @@ class GameRecord {
     'unsolvedCount': unsolvedCount,
     'elapsedSeconds': elapsedSeconds,
     'attempts': attempts.map((a) => a.toJson()).toList(),
+    'maxCombo': maxCombo,
   };
 }

@@ -109,6 +109,20 @@ const _allOpsPerfect = AchievementBadge(
   icon: Icons.emoji_events,
   color: Color(0xFFFFC107),
 );
+const _combo5 = AchievementBadge(
+  id: 'combo_5',
+  title: '5 연속 정답',
+  description: '한 게임에서 5문제 연속 정답',
+  icon: Icons.local_fire_department,
+  color: Color(0xFFFB8C00),
+);
+const _combo10 = AchievementBadge(
+  id: 'combo_10',
+  title: '10 연속 정답',
+  description: '한 게임에서 10문제 연속 정답',
+  icon: Icons.electric_bolt,
+  color: Color(0xFFE65100),
+);
 
 const allBadges = <AchievementBadge>[
   _firstGame,
@@ -126,6 +140,8 @@ const allBadges = <AchievementBadge>[
   _perfect5,
   _perfect20,
   _allOpsPerfect,
+  _combo5,
+  _combo10,
 ];
 
 bool _isPerfect(GameRecord r) =>
@@ -137,6 +153,10 @@ List<BadgeStatus> evaluateBadges(
 }) {
   final totalCorrect = records.fold<int>(0, (s, r) => s + r.correctCount);
   final perfectCount = records.where(_isPerfect).length;
+  final bestCombo = records.fold<int>(
+    0,
+    (m, r) => r.maxCombo > m ? r.maxCombo : m,
+  );
   final perfectOps = <GameType>{
     for (final r in records)
       if (_isPerfect(r)) r.type,
@@ -196,5 +216,7 @@ List<BadgeStatus> evaluateBadges(
       badge: _allOpsPerfect,
       unlocked: perfectOps.length == GameType.values.length,
     ),
+    BadgeStatus.progress(badge: _combo5, current: bestCombo, target: 5),
+    BadgeStatus.progress(badge: _combo10, current: bestCombo, target: 10),
   ];
 }

@@ -9,6 +9,7 @@ GameRecord _record({
   required int correct,
   int wrong = 0,
   int unsolved = 0,
+  int maxCombo = 0,
   DateTime? at,
 }) {
   return GameRecord(
@@ -20,6 +21,7 @@ GameRecord _record({
     unsolvedCount: unsolved,
     elapsedSeconds: 60,
     attempts: const [],
+    maxCombo: maxCombo,
   );
 }
 
@@ -30,7 +32,7 @@ void main() {
   group('evaluateBadges', () {
     test('all locked when no records', () {
       final result = evaluateBadges(const [], maxStreak: 0);
-      expect(result.length, 15);
+      expect(result.length, 17);
       expect(result.every((b) => !b.unlocked), isTrue);
     });
 
@@ -142,6 +144,61 @@ void main() {
       ], maxStreak: 0);
       expect(
         result.firstWhere((b) => b.badge.id == 'all_ops_perfect').unlocked,
+        isTrue,
+      );
+    });
+
+    test('combo_5/combo_10 read the best maxCombo across all records', () {
+      // No combos yet — both locked, progress reads 0.
+      var result = evaluateBadges(
+        [_record(type: GameType.addition, level: 1, correct: 5, wrong: 5)],
+        maxStreak: 0,
+      );
+      final c5 = result.firstWhere((b) => b.badge.id == 'combo_5');
+      expect(c5.unlocked, isFalse);
+      expect(c5.current, 0);
+
+      // A 5-combo unlocks combo_5 but not combo_10.
+      result = evaluateBadges(
+        [
+          _record(
+            type: GameType.addition,
+            level: 1,
+            correct: 5,
+            wrong: 5,
+            maxCombo: 5,
+          ),
+        ],
+        maxStreak: 0,
+      );
+      expect(
+        result.firstWhere((b) => b.badge.id == 'combo_5').unlocked,
+        isTrue,
+      );
+      final c10 = result.firstWhere((b) => b.badge.id == 'combo_10');
+      expect(c10.unlocked, isFalse);
+      expect(c10.current, 5);
+
+      // Picks the max across records.
+      result = evaluateBadges(
+        [
+          _record(
+            type: GameType.addition,
+            level: 1,
+            correct: 5,
+            maxCombo: 3,
+          ),
+          _record(
+            type: GameType.multiplication,
+            level: 1,
+            correct: 10,
+            maxCombo: 10,
+          ),
+        ],
+        maxStreak: 0,
+      );
+      expect(
+        result.firstWhere((b) => b.badge.id == 'combo_10').unlocked,
         isTrue,
       );
     });

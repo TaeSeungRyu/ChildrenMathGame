@@ -70,7 +70,8 @@ class RecordDetailView extends GetView<RecordDetailController> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '소요 ${formatElapsedSeconds(r.elapsedSeconds)}',
+                    '소요 ${formatElapsedSeconds(r.elapsedSeconds)}'
+                    '${r.maxCombo >= 2 ? '  ·  최고 콤보 ${r.maxCombo} 연속' : ''}',
                     style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ],

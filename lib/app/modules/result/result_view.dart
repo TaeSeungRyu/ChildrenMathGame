@@ -77,6 +77,8 @@ class ResultView extends GetView<ResultController> {
                     _Row(label: '못 푼 문제', value: '${r.unsolvedCount}'),
                     _Row(label: '맞은 문제', value: '${r.correctCount}'),
                     _Row(label: '틀린 문제', value: '${r.wrongCount}'),
+                    if (r.maxCombo >= 2)
+                      _Row(label: '최고 콤보', value: '${r.maxCombo} 연속'),
                     _Row(
                       label: '소요 시간',
                       value: formatElapsedSeconds(r.elapsedSeconds),

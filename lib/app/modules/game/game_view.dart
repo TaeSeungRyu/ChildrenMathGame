@@ -87,9 +87,22 @@ class GameView extends GetView<GameController> {
             const SizedBox(height: 16),
             SizedBox(
               height: 80,
-              child: Lottie.asset(
-                'assets/lottie/game_character.json',
-                fit: BoxFit.contain,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Lottie.asset(
+                      'assets/lottie/game_character.json',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Obx(
+                      () => _ComboIndicator(count: controller.comboCount.value),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 12),
@@ -221,6 +234,82 @@ class _Keypad extends GetView<GameController> {
       backgroundColor: color,
       foregroundColor: Colors.white,
       fontSize: 22,
+    );
+  }
+}
+
+class _ComboIndicator extends StatelessWidget {
+  const _ComboIndicator({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    // 1 correct isn't a "streak" — hide until 2. Empty placeholder keeps the
+    // Positioned slot stable so the indicator animates in/out cleanly.
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      transitionBuilder: (child, anim) {
+        return ScaleTransition(
+          scale: Tween<double>(begin: 0.5, end: 1.0)
+              .chain(CurveTween(curve: Curves.elasticOut))
+              .animate(anim),
+          child: FadeTransition(opacity: anim, child: child),
+        );
+      },
+      child: count < 2
+          ? const SizedBox.shrink(key: ValueKey('combo-empty'))
+          : _ComboPill(key: ValueKey('combo-$count'), count: count),
+    );
+  }
+}
+
+class _ComboPill extends StatelessWidget {
+  const _ComboPill({super.key, required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final isMilestone = GameController.comboMilestones.contains(count);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isMilestone
+              ? const [Color(0xFFFFB300), Color(0xFFFF6F00)]
+              : const [Color(0xFFFF8A65), Color(0xFFE53935)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.deepOrange.withValues(alpha: 0.35),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.local_fire_department,
+            color: Colors.white,
+            size: 18,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$count 연속',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

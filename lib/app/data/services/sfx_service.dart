@@ -74,6 +74,13 @@ class SfxService extends GetxService {
     _play(_tickAsset);
   }
 
+  // Combo milestone celebration. Audio is intentionally omitted — `correct()`
+  // fires on the same submit, so we'd just double up. The heavy haptic alone
+  // is the extra emphasis that distinguishes a milestone from a normal hit.
+  void combo() {
+    HapticFeedback.heavyImpact();
+  }
+
   void _play(String assetPath) {
     if (isMuted.value) return;
     final player = _player;

@@ -16,6 +16,9 @@ class GameController extends GetxController {
   static const totalSeconds = 180;
   static const tickWarningThreshold = 5;
   static const maxAnswerLength = 6;
+  // Combo thresholds that trigger the celebratory cue. Hit-once per ascent —
+  // re-hitting after a reset re-fires (intended: each new streak earns it).
+  static const comboMilestones = {3, 5, 7, 10};
 
   late final GameType type;
   late final int level;
@@ -32,6 +35,10 @@ class GameController extends GetxController {
   // informational up-counter (practice).
   final elapsed = 0.obs;
   final answer = ''.obs;
+  // Current consecutive-correct streak within this game. Resets on any
+  // wrong/empty submission. `maxCombo` tracks the peak for the final record.
+  final comboCount = 0.obs;
+  int _maxCombo = 0;
 
   late final List<int?> _answers;
   late final List<bool> _attempted;
@@ -128,8 +135,14 @@ class GameController extends GetxController {
     _attempted[currentIndex.value] = true;
     if (parsed != null && parsed == current.answer) {
       _sfx.correct();
+      comboCount.value += 1;
+      if (comboCount.value > _maxCombo) _maxCombo = comboCount.value;
+      if (comboMilestones.contains(comboCount.value)) {
+        _sfx.combo();
+      }
     } else {
       _sfx.wrong();
+      comboCount.value = 0;
     }
     answer.value = '';
     if (currentIndex.value + 1 >= problems.length) {
@@ -183,6 +196,7 @@ class GameController extends GetxController {
       unsolvedCount: unsolved,
       elapsedSeconds: elapsed.value,
       attempts: attempts,
+      maxCombo: _maxCombo,
     );
     // Practice + 구구단 runs don't write to history — keeps streak/badges/stats
     // free of "casual practice" noise.
