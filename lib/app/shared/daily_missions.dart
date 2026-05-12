@@ -93,12 +93,14 @@ int _progressFor(DailyMission m, List<GameRecord> todays) {
     case DailyMissionType.correctInType:
       // Count per-attempt rather than per-record so mixed-mode runs still
       // credit individual operation hits (e.g. "곱셈 10 정답" mission credits
-      // the 곱셈 problems inside a 혼합 run).
+      // the 곱셈 problems inside a 혼합 run). For compound attempts each
+      // constituent op in the chain counts once toward its matching mission.
       var n = 0;
       for (final r in todays) {
         for (final a in r.attempts) {
-          if (a.type == m.gameType && a.status == AttemptStatus.correct) {
-            n++;
+          if (a.status != AttemptStatus.correct) continue;
+          for (final op in a.operations) {
+            if (op == m.gameType) n++;
           }
         }
       }

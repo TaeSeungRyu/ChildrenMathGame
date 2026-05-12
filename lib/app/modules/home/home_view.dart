@@ -29,7 +29,7 @@ class HomeView extends GetView<HomeController> {
         centerTitle: true,
         actions: const [_NameEditButton(), _MuteToggle()],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           16,
           16,
@@ -39,7 +39,7 @@ class HomeView extends GetView<HomeController> {
         child: Column(
           children: [
             SizedBox(
-              height: 140,
+              height: 120,
               child: Stack(
                 children: [
                   Positioned.fill(
@@ -71,18 +71,12 @@ class HomeView extends GetView<HomeController> {
               ),
               const SizedBox(height: 12),
             ],
-            Expanded(
-              child: Column(
-                children: [
-                  Expanded(child: _tileRow(0, 1)),
-                  const SizedBox(height: 16),
-                  Expanded(child: _tileRow(2, 3)),
-                ],
-              ),
-            ),
+            SizedBox(height: 130, child: _tileRow(0, 1)),
+            const SizedBox(height: 12),
+            SizedBox(height: 130, child: _tileRow(2, 3)),
             const SizedBox(height: 16),
             SizedBox(
-              height:55,
+              height: 64,
               child: Row(
                 children: [
                   Expanded(
@@ -92,7 +86,7 @@ class HomeView extends GetView<HomeController> {
                       onPressed: controller.openBadges,
                     ),
                   ),
-                  const SizedBox(width: 2),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: _QuickAction(
                       icon: Icons.shuffle,
@@ -100,7 +94,7 @@ class HomeView extends GetView<HomeController> {
                       onPressed: controller.openMixed,
                     ),
                   ),
-                  const SizedBox(width: 2),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: _QuickAction(
                       icon: Icons.grid_view,
@@ -108,7 +102,7 @@ class HomeView extends GetView<HomeController> {
                       onPressed: controller.openTimesTable,
                     ),
                   ),
-                  const SizedBox(width: 2),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: _QuickAction(
                       icon: Icons.bar_chart,
@@ -164,20 +158,22 @@ class _QuickAction extends StatelessWidget {
     return FilledButton.tonal(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-        minimumSize: const Size.fromHeight(64),
+        // No minimumSize: parent SizedBox supplies the height, and adding
+        // a conflicting min here is what was triggering RenderFlex overflow.
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 20),
+          Icon(icon, size: 18),
           const SizedBox(height: 2),
           Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.visible,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ],
       ),

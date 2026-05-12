@@ -53,16 +53,28 @@ class _AnsweringBody extends GetView<ReviewController> {
             child: Center(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Obx(
-                  () => Text(
-                    '${controller.current.questionText} = ?',
+                child: Obx(() {
+                  final a = controller.current;
+                  final ops = a.operations.length;
+                  final double base;
+                  if (ops <= 1) {
+                    base = 56;
+                  } else if (ops == 2) {
+                    base = 44;
+                  } else if (ops == 3) {
+                    base = 38;
+                  } else {
+                    base = 32;
+                  }
+                  return Text(
+                    '${a.questionText} = ?',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 56,
+                    style: TextStyle(
+                      fontSize: base,
                       fontWeight: FontWeight.bold,
                     ),
-                  ),
-                ),
+                  );
+                }),
               ),
             ),
           ),

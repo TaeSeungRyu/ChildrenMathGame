@@ -15,7 +15,11 @@ import '../../routes/app_routes.dart';
 class GameController extends GetxController {
   static const totalSeconds = 180;
   static const tickWarningThreshold = 5;
-  static const maxAnswerLength = 6;
+  // Default cap is 6; compound mixed problems can produce wider answers (e.g.
+  // 3-digit × 3-digit chains can climb past a million), so the entry limit
+  // widens via [maxAnswerLength].
+  static const _defaultMaxAnswerLength = 6;
+  static const _compoundMaxAnswerLength = 10;
   // Combo thresholds that trigger the celebratory cue. Hit-once per ascent —
   // re-hitting after a reset re-fires (intended: each new streak earns it).
   static const comboMilestones = {3, 5, 7, 10};
@@ -55,6 +59,8 @@ class GameController extends GetxController {
   int get totalProblems => problems.length;
   bool get isTimesTable => tableNumber != null;
   bool get isMixed => mixedTypes != null;
+  int get maxAnswerLength =>
+      isMixed ? _compoundMaxAnswerLength : _defaultMaxAnswerLength;
   int get remainingSeconds =>
       (totalSeconds - elapsed.value).clamp(0, totalSeconds);
 
@@ -194,6 +200,8 @@ class GameController extends GetxController {
           correctAnswer: p.answer,
           userAnswer: _answers[i],
           status: status,
+          operands: p.isCompound ? p.operands : null,
+          operations: p.isCompound ? p.operations : null,
         ),
       );
     }

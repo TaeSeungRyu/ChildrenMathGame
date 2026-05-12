@@ -116,20 +116,31 @@ class GameView extends GetView<GameController> {
                 child: Center(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Obx(
-                      () => Text(
-                        '${controller.current.questionText} = ?',
+                    child: Obx(() {
+                      final p = controller.current;
+                      // Compound chains are visibly longer; step the base size
+                      // down with operator count so FittedBox doesn't shrink
+                      // problem-to-problem in a distracting way.
+                      final ops = p.operations.length;
+                      final double base;
+                      if (ops <= 1) {
+                        base = 56;
+                      } else if (ops == 2) {
+                        base = 44;
+                      } else if (ops == 3) {
+                        base = 38;
+                      } else {
+                        base = 32;
+                      }
+                      return Text(
+                        '${p.questionText} = ?',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          // Mixed mode mixes operations of varying operand
-                          // lengths back-to-back; a smaller base size keeps
-                          // FittedBox from yo-yoing the rendered text between
-                          // problems.
-                          fontSize: controller.isMixed ? 44 : 56,
+                          fontSize: base,
                           fontWeight: FontWeight.bold,
                         ),
-                      ),
-                    ),
+                      );
+                    }),
                   ),
                 ),
               ),

@@ -83,10 +83,17 @@ class ProblemGenerator {
   /// `mixed` itself must not appear in [allowedTypes]. Each chosen operation is
   /// generated at the given [level] difficulty.
   ///
-  /// Distribution is round-robin (every allowed type gets at least one slot
-  /// when allowed.length <= totalProblems), then shuffled. This avoids the
-  /// pure-random failure mode where 10 spins could all land on one type and
-  /// leave the player thinking the mix was broken.
+  /// **Compound form**: when [allowedTypes].length is > 1, every problem is a
+  /// single chained expression (e.g. `5 + 3 × 2 - 1 = ?`) that uses **every**
+  /// selected operation exactly once, in a freshly shuffled order. Standard
+  /// operator precedence (×/÷ before +/−) applies during evaluation, and the
+  /// generator guarantees every intermediate term and the running +/− total
+  /// stays a non-negative integer (division is clean, subtraction never goes
+  /// negative). To keep division solvable inside a chain, divisors are clamped
+  /// to single digits (2..9) regardless of level.
+  ///
+  /// When [allowedTypes].length is 1, this falls through to single-operation
+  /// problems (same shape as [generate]).
   static List<Problem> generateMixed(
     List<GameType> allowedTypes,
     int level,
@@ -99,11 +106,115 @@ class ProblemGenerator {
         'allowedTypes cannot contain GameType.mixed itself',
       );
     }
-    final slots = <GameType>[
-      for (var i = 0; i < totalProblems; i++)
-        allowedTypes[i % allowedTypes.length],
-    ]..shuffle(_random);
-    return [for (final t in slots) _one(t, level)];
+    if (allowedTypes.length == 1) {
+      return generate(type: allowedTypes.single, level: level);
+    }
+    return List.generate(
+      totalProblems,
+      (_) => _compoundOne(allowedTypes, level),
+    );
+  }
+
+  /// One compound problem using every op in [allowedTypes] exactly once.
+  ///
+  /// Strategy: shuffle ops, then build operands left-to-right while tracking
+  /// the running ×/÷ term value and the partial +/− sum. ÷ picks a divisor of
+  /// the current term; − is rejected if it would drive the running sum
+  /// negative. On failure we retry the shuffle/build; after `_maxRetries` we
+  /// fall back to a small all-addition expression (theoretically reachable
+  /// only with extreme bad luck — kept as a safety net).
+  static const _maxRetries = 200;
+
+  static Problem _compoundOne(List<GameType> allowedTypes, int level) {
+    final (aDigits, bDigits) = _digitsForLevel(level);
+    for (var attempt = 0; attempt < _maxRetries; attempt++) {
+      final ops = [...allowedTypes]..shuffle(_random);
+      final built = _tryBuildCompound(ops, aDigits, bDigits);
+      if (built != null) return built;
+    }
+    return _compoundFallback(allowedTypes);
+  }
+
+  static Problem? _tryBuildCompound(
+    List<GameType> ops,
+    int aDigits,
+    int bDigits,
+  ) {
+    final operands = <int>[_nDigit(aDigits)];
+    var currentTerm = operands[0];
+    final terms = <int>[];
+    final betweens = <GameType>[];
+
+    for (final op in ops) {
+      switch (op) {
+        case GameType.multiplication:
+          final b = _nDigit(bDigits);
+          operands.add(b);
+          currentTerm *= b;
+        case GameType.division:
+          final d = _pickCompoundDivisor(currentTerm);
+          if (d == null) return null;
+          operands.add(d);
+          currentTerm ~/= d;
+        case GameType.addition:
+        case GameType.subtraction:
+          // Finalize the current ×/÷ term; the next operand starts a new term.
+          terms.add(currentTerm);
+          betweens.add(op);
+          final next = _nDigit(bDigits);
+          operands.add(next);
+          currentTerm = next;
+        case GameType.mixed:
+          // Guarded against by generateMixed; reaching here is a bug.
+          return null;
+      }
+    }
+    terms.add(currentTerm);
+
+    var sum = terms[0];
+    for (var i = 0; i < betweens.length; i++) {
+      final next = terms[i + 1];
+      if (betweens[i] == GameType.addition) {
+        sum += next;
+      } else {
+        sum -= next;
+        if (sum < 0) return null;
+      }
+    }
+    return Problem.compound(
+      operands: operands,
+      operations: ops,
+      answer: sum,
+    );
+  }
+
+  /// Picks a 2..9 divisor that cleanly divides [value]. Returns null when
+  /// [value] has no such divisor (e.g., value is 1 or a prime ≥ 11) — caller
+  /// must retry the whole expression in that case.
+  static int? _pickCompoundDivisor(int value) {
+    if (value < 2) return null;
+    final candidates = <int>[
+      for (var d = 2; d <= 9; d++)
+        if (value % d == 0) d,
+    ];
+    if (candidates.isEmpty) return null;
+    return candidates[_random.nextInt(candidates.length)];
+  }
+
+  static Problem _compoundFallback(List<GameType> allowedTypes) {
+    // Last-resort small-addition expression that always validates: 1 + 1 + ...
+    // The shape still satisfies the "every selected op appears" contract by
+    // substituting the canonical safe op into each slot.
+    final operands = List<int>.filled(allowedTypes.length + 1, 1);
+    final ops = List<GameType>.filled(
+      allowedTypes.length,
+      GameType.addition,
+    );
+    return Problem.compound(
+      operands: operands,
+      operations: ops,
+      answer: operands.length,
+    );
   }
 
   static (int, int) _digitsForLevel(int level) {

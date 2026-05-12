@@ -3,76 +3,16 @@ import 'package:children_math_game/app/data/services/problem_generator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('ProblemGenerator.generateMixed', () {
-    test('produces totalProblems problems', () {
+  group('ProblemGenerator.generateMixed (single type)', () {
+    test('single-type selection still yields simple problems', () {
       final problems = ProblemGenerator.generateMixed(
-        const [GameType.addition, GameType.subtraction],
-        2,
+        const [GameType.multiplication],
+        1,
       );
       expect(problems, hasLength(ProblemGenerator.totalProblems));
-    });
-
-    test('every problem uses one of the allowed types', () {
-      const allowed = [GameType.addition, GameType.multiplication];
-      // Run a few times to reduce the chance of an unlucky type miss.
-      for (var i = 0; i < 5; i++) {
-        final problems = ProblemGenerator.generateMixed(allowed, 1);
-        for (final p in problems) {
-          expect(allowed, contains(p.type));
-        }
-      }
-    });
-
-    test('every allowed type appears at least once (2-type mix)', () {
-      const allowed = [GameType.addition, GameType.subtraction];
-      // Round-robin distribution is deterministic enough that a single run
-      // must already hit every type; loop only to guard against regressions.
-      for (var i = 0; i < 20; i++) {
-        final problems = ProblemGenerator.generateMixed(allowed, 2);
-        final seen = problems.map((p) => p.type).toSet();
-        for (final t in allowed) {
-          expect(seen, contains(t), reason: 'run #$i missed $t');
-        }
-      }
-    });
-
-    test('every allowed type appears at least once (3-type mix)', () {
-      const allowed = [
-        GameType.addition,
-        GameType.subtraction,
-        GameType.multiplication,
-      ];
-      for (var i = 0; i < 20; i++) {
-        final problems = ProblemGenerator.generateMixed(allowed, 2);
-        final seen = problems.map((p) => p.type).toSet();
-        for (final t in allowed) {
-          expect(seen, contains(t), reason: 'run #$i missed $t');
-        }
-      }
-    });
-
-    test('answers are always integers and consistent', () {
-      // Division within a mixed game still yields integer answers (the
-      // generator's retry loop guarantees it).
-      final problems = ProblemGenerator.generateMixed(
-        const [GameType.division, GameType.multiplication],
-        3,
-      );
       for (final p in problems) {
-        expect(p.answer, isA<int>());
-        switch (p.type) {
-          case GameType.addition:
-            expect(p.answer, p.operandA + p.operandB);
-          case GameType.subtraction:
-            expect(p.answer, p.operandA - p.operandB);
-          case GameType.multiplication:
-            expect(p.answer, p.operandA * p.operandB);
-          case GameType.division:
-            expect(p.operandA % p.operandB, 0);
-            expect(p.answer, p.operandA ~/ p.operandB);
-          case GameType.mixed:
-            fail('Problem.type must never be mixed');
-        }
+        expect(p.type, GameType.multiplication);
+        expect(p.isCompound, isFalse);
       }
     });
 
@@ -92,15 +32,162 @@ void main() {
         throwsArgumentError,
       );
     });
+  });
 
-    test('single-type allowedTypes produces problems all of that type', () {
+  group('ProblemGenerator.generateMixed (compound)', () {
+    test('produces totalProblems problems for 2-type mix', () {
       final problems = ProblemGenerator.generateMixed(
-        const [GameType.multiplication],
-        1,
+        const [GameType.addition, GameType.subtraction],
+        2,
       );
-      for (final p in problems) {
-        expect(p.type, GameType.multiplication);
+      expect(problems, hasLength(ProblemGenerator.totalProblems));
+    });
+
+    test('every problem is compound and uses every selected op exactly once',
+        () {
+      const allowed = [
+        GameType.addition,
+        GameType.subtraction,
+        GameType.multiplication,
+      ];
+      for (var i = 0; i < 30; i++) {
+        final problems = ProblemGenerator.generateMixed(allowed, 2);
+        for (final p in problems) {
+          expect(p.isCompound, isTrue);
+          expect(p.operations, hasLength(allowed.length));
+          expect(p.operations.toSet(), equals(allowed.toSet()));
+          expect(p.operands, hasLength(allowed.length + 1));
+        }
       }
     });
+
+    test('compound problems for 4-type mix include all four ops', () {
+      const allowed = [
+        GameType.addition,
+        GameType.subtraction,
+        GameType.multiplication,
+        GameType.division,
+      ];
+      for (var i = 0; i < 30; i++) {
+        final problems = ProblemGenerator.generateMixed(allowed, 1);
+        for (final p in problems) {
+          expect(p.operations.toSet(), equals(allowed.toSet()));
+        }
+      }
+    });
+
+    test('answer matches precedence-aware evaluation of operands/operations',
+        () {
+      const allowed = [
+        GameType.addition,
+        GameType.multiplication,
+        GameType.subtraction,
+      ];
+      for (var i = 0; i < 30; i++) {
+        final problems = ProblemGenerator.generateMixed(allowed, 3);
+        for (final p in problems) {
+          expect(p.answer, _evalWithPrecedence(p.operands, p.operations));
+        }
+      }
+    });
+
+    test('all intermediate values stay non-negative integers', () {
+      const allowed = [
+        GameType.addition,
+        GameType.subtraction,
+        GameType.multiplication,
+        GameType.division,
+      ];
+      for (var i = 0; i < 30; i++) {
+        final problems = ProblemGenerator.generateMixed(allowed, 3);
+        for (final p in problems) {
+          final trace = _intermediateValues(p.operands, p.operations);
+          for (final v in trace) {
+            expect(v, isNonNegative, reason: '$trace for ${p.questionText}');
+          }
+        }
+      }
+    });
+
+    test('questionText renders the full chain', () {
+      final problems = ProblemGenerator.generateMixed(
+        const [GameType.addition, GameType.multiplication],
+        1,
+      );
+      final p = problems.first;
+      final expected =
+          '${p.operands[0]} ${p.operations[0].symbol} ${p.operands[1]} '
+          '${p.operations[1].symbol} ${p.operands[2]}';
+      expect(p.questionText, expected);
+    });
   });
+}
+
+// Mirrors the generator's evaluation contract so tests can independently
+// verify answers (×/÷ first, then +/− left-to-right).
+int _evalWithPrecedence(List<int> operands, List<GameType> operations) {
+  final terms = <int>[];
+  final betweens = <GameType>[];
+  var current = operands[0];
+  for (var i = 0; i < operations.length; i++) {
+    final op = operations[i];
+    final next = operands[i + 1];
+    if (op == GameType.multiplication) {
+      current *= next;
+    } else if (op == GameType.division) {
+      current ~/= next;
+    } else {
+      terms.add(current);
+      betweens.add(op);
+      current = next;
+    }
+  }
+  terms.add(current);
+  var sum = terms[0];
+  for (var i = 0; i < betweens.length; i++) {
+    sum = betweens[i] == GameType.addition
+        ? sum + terms[i + 1]
+        : sum - terms[i + 1];
+  }
+  return sum;
+}
+
+// All term-level and +/- running totals as the chain evaluates, in order.
+List<int> _intermediateValues(
+  List<int> operands,
+  List<GameType> operations,
+) {
+  final trace = <int>[];
+  final terms = <int>[];
+  final betweens = <GameType>[];
+  var current = operands[0];
+  trace.add(current);
+  for (var i = 0; i < operations.length; i++) {
+    final op = operations[i];
+    final next = operands[i + 1];
+    if (op == GameType.multiplication) {
+      current *= next;
+      trace.add(current);
+    } else if (op == GameType.division) {
+      // Division cleanliness is part of the contract.
+      expect(current % next, 0);
+      current ~/= next;
+      trace.add(current);
+    } else {
+      terms.add(current);
+      betweens.add(op);
+      current = next;
+      trace.add(current);
+    }
+  }
+  terms.add(current);
+  var sum = terms[0];
+  trace.add(sum);
+  for (var i = 0; i < betweens.length; i++) {
+    sum = betweens[i] == GameType.addition
+        ? sum + terms[i + 1]
+        : sum - terms[i + 1];
+    trace.add(sum);
+  }
+  return trace;
 }
