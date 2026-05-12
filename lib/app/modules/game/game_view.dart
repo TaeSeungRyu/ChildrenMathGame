@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
@@ -88,6 +90,8 @@ class GameView extends GetView<GameController> {
             SizedBox(
               height: 80,
               child: Stack(
+                // Don't clip — sparkle bursts radiate beyond the 80px row.
+                clipBehavior: Clip.none,
                 children: [
                   Positioned.fill(
                     child: Lottie.asset(
@@ -238,55 +242,169 @@ class _Keypad extends GetView<GameController> {
   }
 }
 
-class _ComboIndicator extends StatelessWidget {
+class _ComboIndicator extends StatefulWidget {
   const _ComboIndicator({required this.count});
 
   final int count;
 
   @override
+  State<_ComboIndicator> createState() => _ComboIndicatorState();
+}
+
+class _ComboIndicatorState extends State<_ComboIndicator>
+    with TickerProviderStateMixin {
+  // Slow breathing scale + glow while the streak is alive.
+  late final AnimationController _pulse = AnimationController(
+    duration: const Duration(milliseconds: 900),
+    vsync: this,
+  )..repeat(reverse: true);
+
+  // One-shot sparkle burst that fires at milestone counts (3/5/7/10).
+  late final AnimationController _burst = AnimationController(
+    duration: const Duration(milliseconds: 700),
+    vsync: this,
+  );
+
+  @override
+  void didUpdateWidget(covariant _ComboIndicator old) {
+    super.didUpdateWidget(old);
+    if (widget.count != old.count &&
+        GameController.comboMilestones.contains(widget.count)) {
+      _burst.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    _burst.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // 1 correct isn't a "streak" — hide until 2. Empty placeholder keeps the
-    // Positioned slot stable so the indicator animates in/out cleanly.
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 220),
-      transitionBuilder: (child, anim) {
-        return ScaleTransition(
-          scale: Tween<double>(begin: 0.5, end: 1.0)
-              .chain(CurveTween(curve: Curves.elasticOut))
-              .animate(anim),
-          child: FadeTransition(opacity: anim, child: child),
-        );
-      },
-      child: count < 2
-          ? const SizedBox.shrink(key: ValueKey('combo-empty'))
-          : _ComboPill(key: ValueKey('combo-$count'), count: count),
+    return SizedBox(
+      width: 160,
+      height: 60,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedBuilder(
+            animation: _burst,
+            builder: (_, _) {
+              if (_burst.isDismissed) return const SizedBox.shrink();
+              return _SparkleBurst(progress: _burst.value);
+            },
+          ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            switchInCurve: Curves.elasticOut,
+            transitionBuilder: (child, anim) {
+              return ScaleTransition(
+                scale: Tween<double>(begin: 0.4, end: 1.0).animate(anim),
+                child: FadeTransition(opacity: anim, child: child),
+              );
+            },
+            child: widget.count < 2
+                ? const SizedBox.shrink(key: ValueKey('combo-empty'))
+                : KeyedSubtree(
+                    key: ValueKey('combo-${widget.count}'),
+                    child: AnimatedBuilder(
+                      animation: _pulse,
+                      builder: (_, child) {
+                        // 0..1..0 triangle: produces a smooth in-out pulse.
+                        final t = (_pulse.value * 2 - 1).abs();
+                        return Transform.scale(
+                          scale: 1.0 + 0.05 * t,
+                          child: child,
+                        );
+                      },
+                      child: _ComboPill(count: widget.count),
+                    ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
 
+class _ComboTier {
+  const _ComboTier({required this.colors, required this.icon, required this.fontSize});
+  final List<Color> colors;
+  final IconData icon;
+  final double fontSize;
+}
+
+_ComboTier _tierFor(int count) {
+  if (count >= 10) {
+    return const _ComboTier(
+      colors: [
+        Color(0xFFFFD54F),
+        Color(0xFFFF6F00),
+        Color(0xFFE11D48),
+        Color(0xFF8E24AA),
+      ],
+      icon: Icons.auto_awesome,
+      fontSize: 18,
+    );
+  }
+  if (count >= 7) {
+    return const _ComboTier(
+      colors: [Color(0xFFEC407A), Color(0xFF8E24AA)],
+      icon: Icons.electric_bolt,
+      fontSize: 17,
+    );
+  }
+  if (count >= 5) {
+    return const _ComboTier(
+      colors: [Color(0xFFFF6F00), Color(0xFFE11D48)],
+      icon: Icons.bolt,
+      fontSize: 16,
+    );
+  }
+  if (count >= 3) {
+    return const _ComboTier(
+      colors: [Color(0xFFFF8A65), Color(0xFFE53935)],
+      icon: Icons.local_fire_department,
+      fontSize: 15,
+    );
+  }
+  return const _ComboTier(
+    colors: [Color(0xFFFFAB91), Color(0xFFFF8A65)],
+    icon: Icons.local_fire_department,
+    fontSize: 14,
+  );
+}
+
 class _ComboPill extends StatelessWidget {
-  const _ComboPill({super.key, required this.count});
+  const _ComboPill({required this.count});
 
   final int count;
 
   @override
   Widget build(BuildContext context) {
-    final isMilestone = GameController.comboMilestones.contains(count);
+    final tier = _tierFor(count);
+    final glow = tier.colors.last;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isMilestone
-              ? const [Color(0xFFFFB300), Color(0xFFFF6F00)]
-              : const [Color(0xFFFF8A65), Color(0xFFE53935)],
+          colors: tier.colors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.85),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.deepOrange.withValues(alpha: 0.35),
-            blurRadius: 8,
+            color: glow.withValues(alpha: 0.55),
+            blurRadius: 16,
+            spreadRadius: 1,
             offset: const Offset(0, 2),
           ),
         ],
@@ -294,24 +412,118 @@ class _ComboPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.local_fire_department,
+          Icon(
+            tier.icon,
             color: Colors.white,
-            size: 18,
+            size: tier.fontSize + 4,
           ),
           const SizedBox(width: 4),
           Text(
             '$count 연속',
-            style: const TextStyle(
-              fontSize: 14,
+            style: TextStyle(
+              fontSize: tier.fontSize,
               fontWeight: FontWeight.bold,
               color: Colors.white,
+              shadows: const [
+                Shadow(
+                  color: Colors.black26,
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _SparkleBurst extends StatelessWidget {
+  const _SparkleBurst({required this.progress});
+
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: CustomPaint(
+        size: const Size(160, 60),
+        painter: _BurstPainter(progress: progress),
+      ),
+    );
+  }
+}
+
+class _BurstPainter extends CustomPainter {
+  _BurstPainter({required this.progress});
+
+  final double progress;
+
+  // 8 sparkles fly outward — colors cycle through the rainbow so the burst
+  // reads as celebratory at any milestone (not tied to current tier).
+  static const _colors = <Color>[
+    Color(0xFFFF6F00),
+    Color(0xFFFFB300),
+    Color(0xFFFFEB3B),
+    Color(0xFF4CAF50),
+    Color(0xFF03A9F4),
+    Color(0xFF3F51B5),
+    Color(0xFF9C27B0),
+    Color(0xFFE91E63),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxR = size.width * 0.42;
+    final eased = Curves.easeOutCubic.transform(progress.clamp(0.0, 1.0));
+    final radius = maxR * eased;
+    final fade = (1.0 - progress).clamp(0.0, 1.0);
+    final starSize = 7.0 * fade + 1.0;
+    final rotation = progress * math.pi; // sparkles tumble as they fly
+
+    for (var i = 0; i < _colors.length; i++) {
+      final angle = (i / _colors.length) * 2 * math.pi;
+      final p = Offset(
+        center.dx + radius * math.cos(angle),
+        center.dy + radius * math.sin(angle),
+      );
+      final paint = Paint()
+        ..color = _colors[i].withValues(alpha: fade)
+        ..style = PaintingStyle.fill;
+      _drawStar(canvas, p, starSize, rotation, paint);
+    }
+  }
+
+  void _drawStar(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    double rotation,
+    Paint paint,
+  ) {
+    if (radius <= 0) return;
+    final path = Path();
+    const points = 4;
+    for (var i = 0; i < points * 2; i++) {
+      final r = i.isEven ? radius : radius * 0.4;
+      final angle = rotation + (i * math.pi / points);
+      final x = center.dx + r * math.cos(angle);
+      final y = center.dy + r * math.sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BurstPainter old) =>
+      old.progress != progress;
 }
 
 class _KeypadButton extends StatelessWidget {
