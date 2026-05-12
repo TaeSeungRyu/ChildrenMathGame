@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
 
+import '../../data/models/daily_mission.dart';
 import '../../data/models/game_type.dart';
 import '../../data/services/record_service.dart';
 import '../../routes/app_routes.dart';
+import '../../shared/daily_missions.dart';
 import '../../shared/weakness.dart';
 
 class HomeController extends GetxController {
@@ -10,8 +12,12 @@ class HomeController extends GetxController {
 
   late final int streakDays = _records.currentStreak();
   late final WeaknessAnalysis weakness = analyzeWeakness(_records.all());
+  late final List<DailyMissionStatus> missions = evaluateDailyMissions(
+    _records.all(),
+  );
 
   WeaknessBucket? get recommendation => weakness.recommendation;
+  int get missionsCompleted => missions.where((m) => m.isComplete).length;
 
   void selectGame(GameType type) {
     Get.toNamed(AppRoutes.levelSelect, arguments: type);

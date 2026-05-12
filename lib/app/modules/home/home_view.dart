@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
+import '../../data/models/daily_mission.dart';
 import '../../data/models/game_type.dart';
 import '../../data/services/sfx_service.dart';
 import '../../shared/weakness.dart';
@@ -48,6 +49,11 @@ class HomeView extends GetView<HomeController> {
                     ),
                 ],
               ),
+            ),
+            const SizedBox(height: 12),
+            _DailyMissionCard(
+              missions: controller.missions,
+              completed: controller.missionsCompleted,
             ),
             const SizedBox(height: 12),
             if (controller.recommendation != null) ...[
@@ -202,6 +208,128 @@ class _StreakBadge extends StatelessWidget {
   }
 }
 
+class _DailyMissionCard extends StatelessWidget {
+  const _DailyMissionCard({required this.missions, required this.completed});
+
+  final List<DailyMissionStatus> missions;
+  final int completed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final allDone = completed == missions.length && missions.isNotEmpty;
+    return Card(
+      color: allDone ? scheme.primary : scheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  allDone ? Icons.celebration : Icons.flag,
+                  size: 20,
+                  color: allDone
+                      ? scheme.onPrimary
+                      : scheme.onPrimaryContainer,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  allDone ? '오늘의 미션 완료!' : '오늘의 미션',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: allDone
+                        ? scheme.onPrimary
+                        : scheme.onPrimaryContainer,
+                  ),
+                ),
+                const Spacer(),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.star,
+                      size: 18,
+                      color: allDone
+                          ? const Color(0xFFFFD54F)
+                          : scheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      '$completed / ${missions.length}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: allDone
+                            ? scheme.onPrimary
+                            : scheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            for (var i = 0; i < missions.length; i++) ...[
+              _MissionRow(status: missions[i], onPrimary: allDone),
+              if (i != missions.length - 1) const SizedBox(height: 2),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MissionRow extends StatelessWidget {
+  const _MissionRow({required this.status, required this.onPrimary});
+
+  final DailyMissionStatus status;
+  // True when parent card uses the primary (filled) background — text needs
+  // onPrimary instead of onPrimaryContainer for contrast.
+  final bool onPrimary;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final base = onPrimary ? scheme.onPrimary : scheme.onPrimaryContainer;
+    final muted = base.withValues(alpha: 0.75);
+    final done = status.isComplete;
+    return Row(
+      children: [
+        Icon(
+          done ? Icons.check_circle : Icons.radio_button_unchecked,
+          size: 18,
+          color: done ? const Color(0xFF66BB6A) : muted,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            status.mission.description,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: done ? FontWeight.w600 : FontWeight.normal,
+              color: base,
+              decoration: done ? TextDecoration.lineThrough : null,
+              decorationColor: muted,
+            ),
+          ),
+        ),
+        Text(
+          '${status.progressClamped} / ${status.mission.target}',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: muted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _RecommendationCard extends StatelessWidget {
   const _RecommendationCard({required this.bucket, required this.onTap});
 
@@ -290,7 +418,7 @@ class _GameTile extends StatelessWidget {
               Text(
                 type.symbol,
                 style: TextStyle(
-                  fontSize: 72,
+                  fontSize: 52,
                   fontWeight: FontWeight.bold,
                   color: scheme.onPrimaryContainer,
                 ),
