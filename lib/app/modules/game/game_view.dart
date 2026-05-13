@@ -15,15 +15,25 @@ class GameView extends GetView<GameController> {
       appBar: AppBar(
         title: Obx(
           () {
-            final progress =
-                '${controller.currentIndex.value + 1} / ${controller.totalProblems}';
-            final prefix = controller.isTimesTable
-                ? '${controller.tableNumber}단  '
-                : '';
+            final String text;
+            if (controller.isTimeAttack) {
+              // Time attack has no fixed problem count — show the running
+              // score instead so the player sees their progress at a glance.
+              text =
+                  '맞춤 ${controller.correctCount.value} · '
+                  '시도 ${controller.currentIndex.value}';
+            } else {
+              final progress =
+                  '${controller.currentIndex.value + 1} / ${controller.totalProblems}';
+              final prefix = controller.isTimesTable
+                  ? '${controller.tableNumber}단  '
+                  : '';
+              text = '$prefix$progress';
+            }
             return Text(
-              '$prefix$progress',
+              text,
               style: const TextStyle(
-                fontSize: 28,
+                fontSize: 26,
                 fontWeight: FontWeight.bold,
               ),
             );
@@ -35,7 +45,7 @@ class GameView extends GetView<GameController> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Center(
               child: Obx(() {
-                if (controller.isPractice) {
+                if (controller.isPractice && !controller.isTimeAttack) {
                   return Text(
                     '${controller.elapsed.value}초',
                     style: TextStyle(
@@ -71,15 +81,16 @@ class GameView extends GetView<GameController> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Obx(() {
-              // Practice: show problem progression. Challenge: show remaining
-              // time so the bar drains visually as the countdown runs out.
+              // Practice: show problem progression. Challenge / time attack:
+              // show remaining time so the bar drains visually as the
+              // countdown runs out.
               final double value;
-              if (controller.isPractice) {
+              if (controller.isPractice && !controller.isTimeAttack) {
                 value = (controller.currentIndex.value + 1) /
                     controller.totalProblems;
               } else {
                 value = controller.remainingSeconds /
-                    GameController.totalSeconds;
+                    controller.totalSeconds;
               }
               return LinearProgressIndicator(
                 value: value.clamp(0.0, 1.0),

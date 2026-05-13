@@ -4,6 +4,7 @@ import '../data/models/daily_mission.dart';
 import '../data/models/game_record.dart';
 import '../data/models/game_type.dart';
 import '../data/models/problem_attempt.dart';
+import '../data/models/session_mode.dart';
 
 // Static pool of possible daily missions. The day-seeded shuffle picks 3
 // distinct shapes (by `dedupeKey`) from here. Keep targets achievable in
@@ -108,5 +109,8 @@ int _progressFor(DailyMission m, List<GameRecord> todays) {
   }
 }
 
+// Mirrors badges.dart: only fixed-length challenge runs can be "perfect".
 bool _isPerfect(GameRecord r) =>
-    r.totalCount > 0 && r.correctCount == r.totalCount;
+    r.mode == SessionMode.challenge &&
+    r.totalCount > 0 &&
+    r.correctCount == r.totalCount;

@@ -83,39 +83,47 @@ class _ModeToggle extends GetView<LevelSelectController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final practice = controller.isPractice.value;
+      final mode = controller.mode.value;
       return Column(
         children: [
-          SegmentedButton<bool>(
+          SegmentedButton<LevelSelectMode>(
             segments: const [
-              ButtonSegment<bool>(
-                value: false,
+              ButtonSegment<LevelSelectMode>(
+                value: LevelSelectMode.challenge,
                 label: Text(
                   '도전',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 icon: Icon(Icons.timer),
               ),
-              ButtonSegment<bool>(
-                value: true,
+              ButtonSegment<LevelSelectMode>(
+                value: LevelSelectMode.timeAttack,
+                label: Text(
+                  '타임어택',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                icon: Icon(Icons.flash_on),
+              ),
+              ButtonSegment<LevelSelectMode>(
+                value: LevelSelectMode.practice,
                 label: Text(
                   '연습',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 icon: Icon(Icons.spa),
               ),
             ],
-            selected: {practice},
-            onSelectionChanged: (s) => controller.setPractice(s.first),
+            selected: {mode},
+            onSelectionChanged: (s) => controller.setMode(s.first),
             style: ButtonStyle(
               padding: WidgetStateProperty.all(
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            practice ? '시간 제한 없이 풀어요 (기록 미저장)' : '180초 안에 10문제!',
+            _modeHint(mode),
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade700,
@@ -124,5 +132,16 @@ class _ModeToggle extends GetView<LevelSelectController> {
         ],
       );
     });
+  }
+
+  String _modeHint(LevelSelectMode mode) {
+    switch (mode) {
+      case LevelSelectMode.challenge:
+        return '180초 안에 10문제!';
+      case LevelSelectMode.timeAttack:
+        return '60초 동안 최대한 많이!';
+      case LevelSelectMode.practice:
+        return '시간 제한 없이 풀어요 (기록 미저장)';
+    }
   }
 }

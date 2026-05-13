@@ -12,6 +12,13 @@ class ProblemGenerator {
     return List.generate(totalProblems, (_) => _one(type, level));
   }
 
+  /// Single-problem generator for open-ended modes (e.g. time-attack) that
+  /// need to lazily append problems as the player advances. Same difficulty
+  /// rules as [generate].
+  static Problem generateOne({required GameType type, required int level}) {
+    return _one(type, level);
+  }
+
   /// 1×N .. 9×N for the given [table] (2..9), shuffled. The table number is
   /// always the left operand so the question reads as "N × k = ?".
   static List<Problem> generateTimesTable(int table) {

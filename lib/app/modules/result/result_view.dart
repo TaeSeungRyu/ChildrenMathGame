@@ -17,7 +17,8 @@ class ResultView extends GetView<ResultController> {
   @override
   Widget build(BuildContext context) {
     final r = controller.record;
-    final isNewBest = controller.isNewPerfectBest;
+    final isNewBest = controller.isNewBest;
+    final isTimeAttack = controller.isTimeAttack;
     final reviewable = r.attempts
         .where((a) => a.status != AttemptStatus.correct)
         .toList();
@@ -52,11 +53,15 @@ class ResultView extends GetView<ResultController> {
                     ),
                     if (isNewBest) ...[
                       const SizedBox(height: 8),
-                      const _NewRecordBadge(),
+                      _NewRecordBadge(label: isTimeAttack
+                          ? '최다 정답 신기록!'
+                          : '최단 시간 신기록!'),
                     ],
                     const SizedBox(height: 16),
                     _ScoreText(
-                      text: '${r.correctCount} / ${r.totalCount}',
+                      text: isTimeAttack
+                          ? '${r.correctCount}'
+                          : '${r.correctCount} / ${r.totalCount}',
                       highlight: isNewBest,
                     ),
                     Text(
@@ -77,9 +82,11 @@ class ResultView extends GetView<ResultController> {
                           : controller.isMixed
                               ? '혼합 (${componentLabel(r)}) 레벨 ${r.level}'
                                   '${controller.isPractice ? ' (연습)' : ''}'
-                              : controller.isPractice
-                                  ? '${r.type.label} 레벨 ${r.level} (연습)'
-                                  : '${r.type.label} 레벨 ${r.level}',
+                              : controller.isTimeAttack
+                                  ? '${r.type.label} 레벨 ${r.level} (타임어택)'
+                                  : controller.isPractice
+                                      ? '${r.type.label} 레벨 ${r.level} (연습)'
+                                      : '${r.type.label} 레벨 ${r.level}',
                     ),
                     _Row(label: '푼 문제', value: '${r.solvedCount}'),
                     _Row(label: '못 푼 문제', value: '${r.unsolvedCount}'),
@@ -228,7 +235,9 @@ class _ScoreText extends StatelessWidget {
 }
 
 class _NewRecordBadge extends StatelessWidget {
-  const _NewRecordBadge();
+  const _NewRecordBadge({required this.label});
+
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -258,14 +267,14 @@ class _NewRecordBadge extends StatelessWidget {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.emoji_events, color: Colors.white, size: 26),
-            SizedBox(width: 8),
+            const Icon(Icons.emoji_events, color: Colors.white, size: 26),
+            const SizedBox(width: 8),
             Text(
-              '최단 시간 신기록!',
-              style: TextStyle(
+              label,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

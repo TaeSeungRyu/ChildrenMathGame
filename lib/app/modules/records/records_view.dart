@@ -187,14 +187,25 @@ class _RecordTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      record.type == GameType.mixed
-                          ? '혼합 (${componentLabel(record)}) 레벨 ${record.level}'
-                          : '${record.type.label} 레벨 ${record.level}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            record.type == GameType.mixed
+                                ? '혼합 (${componentLabel(record)}) 레벨 ${record.level}'
+                                : '${record.type.label} 레벨 ${record.level}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (record.isTimeAttack) ...[
+                          const SizedBox(width: 6),
+                          const _TimeAttackChip(),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -239,6 +250,37 @@ class _RecordTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TimeAttackChip extends StatelessWidget {
+  const _TimeAttackChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E0),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFFB8C00), width: 1),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.flash_on, size: 12, color: Color(0xFFE65100)),
+          SizedBox(width: 2),
+          Text(
+            '타임어택',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFFE65100),
+            ),
+          ),
+        ],
       ),
     );
   }

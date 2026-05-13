@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/models/achievement_badge.dart';
 import '../data/models/game_record.dart';
 import '../data/models/game_type.dart';
+import '../data/models/session_mode.dart';
 
 const _firstGame = AchievementBadge(
   id: 'first_game',
@@ -144,8 +145,14 @@ const allBadges = <AchievementBadge>[
   _combo10,
 ];
 
+// "Perfect" is a property of fixed-length challenge runs: every problem
+// attempted and every answer correct. Time attack is open-ended (the in-flight
+// problem is always unsolved by construction), so a time-attack record is
+// never considered perfect — regardless of how the timer happens to land.
 bool _isPerfect(GameRecord r) =>
-    r.totalCount > 0 && r.correctCount == r.totalCount;
+    r.mode == SessionMode.challenge &&
+    r.totalCount > 0 &&
+    r.correctCount == r.totalCount;
 
 List<BadgeStatus> evaluateBadges(
   List<GameRecord> records, {
