@@ -124,6 +124,41 @@ const _combo10 = AchievementBadge(
   icon: Icons.electric_bolt,
   color: Color(0xFFE65100),
 );
+const _firstTimeAttack = AchievementBadge(
+  id: 'first_time_attack',
+  title: '타임어택 첫 도전',
+  description: '타임어택을 1번 완료',
+  icon: Icons.flash_on,
+  color: Color(0xFFFF7043),
+);
+const _taCorrect50 = AchievementBadge(
+  id: 'ta_correct_50',
+  title: '타임어택 50',
+  description: '타임어택 누적 정답 50개',
+  icon: Icons.timer,
+  color: Color(0xFFFF5722),
+);
+const _taCorrect100 = AchievementBadge(
+  id: 'ta_correct_100',
+  title: '타임어택 100',
+  description: '타임어택 누적 정답 100개',
+  icon: Icons.speed,
+  color: Color(0xFFE64A19),
+);
+const _taCorrect150 = AchievementBadge(
+  id: 'ta_correct_150',
+  title: '타임어택 150',
+  description: '타임어택 누적 정답 150개',
+  icon: Icons.rocket_launch,
+  color: Color(0xFFD84315),
+);
+const _taCorrect200 = AchievementBadge(
+  id: 'ta_correct_200',
+  title: '타임어택 200',
+  description: '타임어택 누적 정답 200개',
+  icon: Icons.hourglass_bottom,
+  color: Color(0xFFBF360C),
+);
 
 const allBadges = <AchievementBadge>[
   _firstGame,
@@ -143,6 +178,11 @@ const allBadges = <AchievementBadge>[
   _allOpsPerfect,
   _combo5,
   _combo10,
+  _firstTimeAttack,
+  _taCorrect50,
+  _taCorrect100,
+  _taCorrect150,
+  _taCorrect200,
 ];
 
 // "Perfect" is a property of fixed-length challenge runs: every problem
@@ -159,6 +199,13 @@ List<BadgeStatus> evaluateBadges(
   required int maxStreak,
 }) {
   final totalCorrect = records.fold<int>(0, (s, r) => s + r.correctCount);
+  final timeAttackRecords = records.where(
+    (r) => r.mode == SessionMode.timeAttack,
+  );
+  final taCorrect = timeAttackRecords.fold<int>(
+    0,
+    (s, r) => s + r.correctCount,
+  );
   final perfectCount = records.where(_isPerfect).length;
   final bestCombo = records.fold<int>(
     0,
@@ -229,5 +276,29 @@ List<BadgeStatus> evaluateBadges(
     ),
     BadgeStatus.progress(badge: _combo5, current: bestCombo, target: 5),
     BadgeStatus.progress(badge: _combo10, current: bestCombo, target: 10),
+    BadgeStatus.simple(
+      badge: _firstTimeAttack,
+      unlocked: timeAttackRecords.isNotEmpty,
+    ),
+    BadgeStatus.progress(
+      badge: _taCorrect50,
+      current: taCorrect,
+      target: 50,
+    ),
+    BadgeStatus.progress(
+      badge: _taCorrect100,
+      current: taCorrect,
+      target: 100,
+    ),
+    BadgeStatus.progress(
+      badge: _taCorrect150,
+      current: taCorrect,
+      target: 150,
+    ),
+    BadgeStatus.progress(
+      badge: _taCorrect200,
+      current: taCorrect,
+      target: 200,
+    ),
   ];
 }

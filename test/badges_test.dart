@@ -1,5 +1,6 @@
 import 'package:children_math_game/app/data/models/game_record.dart';
 import 'package:children_math_game/app/data/models/game_type.dart';
+import 'package:children_math_game/app/data/models/session_mode.dart';
 import 'package:children_math_game/app/shared/badges.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -10,6 +11,7 @@ GameRecord _record({
   int wrong = 0,
   int unsolved = 0,
   int maxCombo = 0,
+  SessionMode mode = SessionMode.challenge,
   DateTime? at,
 }) {
   return GameRecord(
@@ -22,6 +24,7 @@ GameRecord _record({
     elapsedSeconds: 60,
     attempts: const [],
     maxCombo: maxCombo,
+    mode: mode,
   );
 }
 
@@ -32,7 +35,7 @@ void main() {
   group('evaluateBadges', () {
     test('all locked when no records', () {
       final result = evaluateBadges(const [], maxStreak: 0);
-      expect(result.length, 17);
+      expect(result.length, 22);
       expect(result.every((b) => !b.unlocked), isTrue);
     });
 
@@ -202,6 +205,50 @@ void main() {
         isTrue,
       );
     });
+
+    test(
+      'first_time_attack and ta_correct_* only count time-attack records',
+      () {
+        // Only challenge records — time-attack badges all locked, even though
+        // challenge correctCount is high.
+        var result = evaluateBadges([
+          _record(type: GameType.addition, level: 1, correct: 80),
+        ], maxStreak: 0);
+        expect(
+          result.firstWhere((b) => b.badge.id == 'first_time_attack').unlocked,
+          isFalse,
+        );
+        final ta50challenge = result.firstWhere(
+          (b) => b.badge.id == 'ta_correct_50',
+        );
+        expect(ta50challenge.unlocked, isFalse);
+        expect(ta50challenge.current, 0);
+
+        // One time-attack record unlocks first_time_attack and contributes to
+        // the cumulative counters.
+        result = evaluateBadges([
+          _record(type: GameType.addition, level: 1, correct: 80),
+          _record(
+            type: GameType.addition,
+            level: 1,
+            correct: 60,
+            mode: SessionMode.timeAttack,
+          ),
+        ], maxStreak: 0);
+        expect(
+          result.firstWhere((b) => b.badge.id == 'first_time_attack').unlocked,
+          isTrue,
+        );
+        expect(
+          result.firstWhere((b) => b.badge.id == 'ta_correct_50').unlocked,
+          isTrue,
+        );
+        final ta100 = result.firstWhere((b) => b.badge.id == 'ta_correct_100');
+        expect(ta100.unlocked, isFalse);
+        expect(ta100.current, 60);
+        expect(ta100.target, 100);
+      },
+    );
 
     test('perfect_5/perfect_20 count perfect games', () {
       final records = [
