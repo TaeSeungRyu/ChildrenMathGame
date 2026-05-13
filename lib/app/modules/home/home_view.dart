@@ -16,18 +16,9 @@ class HomeView extends GetView<HomeController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Obx(() {
-          final name = Get.find<ProfileService>().name.value;
-          return Text(
-            '$name의 게임',
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          );
-        }),
+        title: const _EditableTitle(),
         centerTitle: true,
-        actions: const [_NameEditButton(), _MuteToggle()],
+        actions: const [_MuteToggle()],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
@@ -200,19 +191,47 @@ class _MuteToggle extends StatelessWidget {
   }
 }
 
-class _NameEditButton extends StatelessWidget {
-  const _NameEditButton();
+class _EditableTitle extends StatelessWidget {
+  const _EditableTitle();
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: '이름 바꾸기',
-      icon: const Icon(Icons.person, size: 28),
-      onPressed: () => showDialog<void>(
-        context: context,
-        builder: (_) => const _NameEditDialog(),
-      ),
-    );
+    return Obx(() {
+      final name = Get.find<ProfileService>().name.value;
+      return InkWell(
+        onTap: () => showDialog<void>(
+          context: context,
+          builder: (_) => const _NameEditDialog(),
+        ),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          // Generous padding so kids hit the tap area easily; AppBar height
+          // still fits because the title row's intrinsic size is the text.
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '$name의 게임',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.edit,
+                size: 20,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.55),
+                semanticLabel: '이름 바꾸기',
+              ),
+            ],
+          ),
+        ),
+      );
+    });
   }
 }
 
