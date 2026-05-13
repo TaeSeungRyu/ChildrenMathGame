@@ -12,7 +12,7 @@ String vocativeParticle(String name) {
   return (last - 0xAC00) % 28 == 0 ? '야' : '아';
 }
 
-/// "연수야" / "민준아" — the name with the right vocative attached.
+/// "어린이야" / "민준아" — the name with the right vocative attached.
 String addressedName(String name) {
   return '$name${vocativeParticle(name)}';
 }

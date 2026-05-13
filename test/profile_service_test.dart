@@ -36,12 +36,12 @@ void main() {
 
     test('setName rejects empty / whitespace-only input', () async {
       final svc = await ProfileService().init();
-      await svc.setName('연수');
+      await svc.setName('어린이');
       await svc.setName('   ');
       // Unchanged from prior valid set.
-      expect(svc.name.value, '연수');
+      expect(svc.name.value, '어린이');
       await svc.setName('');
-      expect(svc.name.value, '연수');
+      expect(svc.name.value, '어린이');
     });
 
     test('setName clamps to maxNameLength', () async {
@@ -55,7 +55,7 @@ void main() {
   group('vocativeParticle', () {
     test('returns "야" for names ending in vowel (no jongseong)', () {
       // 수, 아, 미 — all vowel-ending syllables.
-      expect(vocativeParticle('연수'), '야');
+      expect(vocativeParticle('어린이'), '야');
       expect(vocativeParticle('지아'), '야');
       expect(vocativeParticle('미'), '야');
     });
@@ -75,7 +75,7 @@ void main() {
     });
 
     test('addressedName attaches the right particle', () {
-      expect(addressedName('연수'), '연수야');
+      expect(addressedName('어린이'), '어린이야');
       expect(addressedName('민준'), '민준아');
       expect(addressedName('Alex'), 'Alex');
     });

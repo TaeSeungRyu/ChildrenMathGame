@@ -31,7 +31,7 @@
 
 `android/app/src/main/AndroidManifest.xml`에 추가:
 
-```xml
+```html
 <!-- Android 12+ BT 런타임 권한 -->
 <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
     android:usesPermissionFlags="neverForLocation" />

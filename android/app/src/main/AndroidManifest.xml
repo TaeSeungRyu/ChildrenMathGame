@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="children_math_game"
+        android:label="어린이 수학 게임"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app/data/services/custom_stamp_service.dart';
 import 'app/data/services/profile_service.dart';
@@ -37,7 +36,9 @@ class MyApp extends StatelessWidget {
           backgroundColor: Colors.blue,
           foregroundColor: Colors.white,
         ),
-        textTheme: GoogleFonts.juaTextTheme(),
+        // Bundled in assets/fonts/Jua-Regular.ttf — pubspec.yaml registers
+        // the family. No runtime fetch, works offline from first launch.
+        fontFamily: 'Jua',
         useMaterial3: true,
       ),
       initialRoute: AppRoutes.splash,
