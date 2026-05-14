@@ -17,7 +17,13 @@
       "Bash(gh api *)",
       "PowerShell($lic = Invoke-RestMethod \"https://raw.githubusercontent.com/Calinou/kenney-interface-sounds/master/addons/kenney_interface_sounds/LICENSE.txt\"; $lic.Substring\\(0, [Math]::Min\\(500, $lic.Length\\)\\))",
       "Bash(git status *)",
-      "PowerShell(New-Item *)"
+      "PowerShell(New-Item *)",
+      "Bash(flutter clean *)",
+      "Bash(flutter build *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell($img = Get-Item \"assets\\\\icon\\\\app_icon.png\"; Add-Type -AssemblyName System.Drawing; $bmp = New-Object System.Drawing.Bitmap $img.FullName; Write-Output \"Path: $\\($img.FullName\\)\"; Write-Output \"Size: $\\([math]::Round\\($img.Length/1KB, 1\\)\\) KB\"; Write-Output \"Dimensions: $\\($bmp.Width\\) x $\\($bmp.Height\\)\"; $bmp.Dispose\\(\\))",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $bmp = New-Object System.Drawing.Bitmap \"assets\\\\icon\\\\app_icon_512.png\"; Write-Output \"Dimensions: $\\($bmp.Width\\) x $\\($bmp.Height\\)\"; $bmp.Dispose\\(\\))",
+      "PowerShell(Get-Item *)"
     ]
   }
 }

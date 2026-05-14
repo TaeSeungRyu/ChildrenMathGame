@@ -46,3 +46,8 @@ app.*.map.json
 
 # Personal launch notes (Play Console procedure, tester lists, etc.)
 PLAY_STORE_LAUNCH.md
+
+# Release signing — NEVER commit. Loss = inability to update the app.
+*.jks
+*.keystore
+/android/key.properties
