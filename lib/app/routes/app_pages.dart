@@ -24,6 +24,8 @@ import '../modules/mixed_select/mixed_select_binding.dart';
 import '../modules/mixed_select/mixed_select_view.dart';
 import '../modules/times_table_select/times_table_select_binding.dart';
 import '../modules/times_table_select/times_table_select_view.dart';
+import '../modules/tutorial/tutorial_binding.dart';
+import '../modules/tutorial/tutorial_view.dart';
 import 'app_routes.dart';
 
 abstract class AppPages {
@@ -87,6 +89,11 @@ abstract class AppPages {
       name: AppRoutes.mixedSelect,
       page: () => const MixedSelectView(),
       binding: MixedSelectBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.tutorial,
+      page: () => const TutorialView(),
+      binding: TutorialBinding(),
     ),
   ];
 }

@@ -6,6 +6,7 @@ import '../../data/models/daily_mission.dart';
 import '../../data/models/game_type.dart';
 import '../../data/services/profile_service.dart';
 import '../../data/services/sfx_service.dart';
+import '../../routes/app_routes.dart';
 import '../../shared/weakness.dart';
 import 'home_controller.dart';
 
@@ -18,7 +19,7 @@ class HomeView extends GetView<HomeController> {
       appBar: AppBar(
         title: const _EditableTitle(),
         centerTitle: true,
-        actions: const [_MuteToggle()],
+        actions: const [_TutorialButton(), _MuteToggle()],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
@@ -168,6 +169,19 @@ class _QuickAction extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _TutorialButton extends StatelessWidget {
+  const _TutorialButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: '도움말',
+      icon: const Icon(Icons.help_outline, size: 28),
+      onPressed: () => Get.toNamed(AppRoutes.tutorial),
     );
   }
 }
