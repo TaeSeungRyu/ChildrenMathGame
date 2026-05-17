@@ -1,6 +1,12 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/problem_attempt.dart';
 import '../../data/services/profile_service.dart';
@@ -11,8 +17,64 @@ import '../../shared/korean_particle.dart';
 import '../../shared/mixed_label.dart';
 import 'result_controller.dart';
 
-class ResultView extends GetView<ResultController> {
+class ResultView extends StatefulWidget {
   const ResultView({super.key});
+
+  @override
+  State<ResultView> createState() => _ResultViewState();
+}
+
+class _ResultViewState extends State<ResultView> {
+  final ResultController controller = Get.find<ResultController>();
+  final GlobalKey _shareKey = GlobalKey();
+  bool _sharing = false;
+
+  Future<void> _share() async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    try {
+      final boundary = _shareKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (bytes == null) return;
+      final pngBytes = bytes.buffer.asUint8List();
+      final tempDir = await getTemporaryDirectory();
+      final file = File(
+        '${tempDir.path}/math_result_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await file.writeAsBytes(pngBytes);
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: _summaryText(),
+      );
+    } catch (_) {
+      // 공유 취소 또는 실패는 조용히 무시한다.
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  String _summaryText() {
+    final r = controller.record;
+    final label = controller.isTimesTable
+        ? '${controller.tableNumber}단 연습'
+        : controller.isMixed
+              ? '혼합(${componentLabel(r)}) 레벨 ${r.level}'
+                    '${controller.isPractice ? ' 연습' : ''}'
+              : controller.isTimeAttack
+                    ? '${r.type.label} 레벨 ${r.level} 타임어택'
+                    : controller.isPractice
+                          ? '${r.type.label} 레벨 ${r.level} 연습'
+                          : '${r.type.label} 레벨 ${r.level}';
+    final score = controller.isTimeAttack
+        ? '${r.correctCount}문제 정답'
+        : '${r.correctCount} / ${r.totalCount} 정답';
+    final time = formatElapsedSeconds(r.elapsedSeconds);
+    final newBest = controller.isNewBest ? '\n🏆 신기록 달성!' : '';
+    return '🎯 어린이 수학 게임\n$label · $score · $time$newBest';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +91,19 @@ class ResultView extends GetView<ResultController> {
           style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: '공유하기',
+            onPressed: _sharing ? null : _share,
+            icon: _sharing
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.share),
+          ),
+        ],
       ),
       body: Padding(
         padding: EdgeInsets.fromLTRB(
@@ -43,60 +118,87 @@ class ResultView extends GetView<ResultController> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      height: isNewBest ? 200 : 140,
-                      child: Lottie.asset(
-                        'assets/lottie/result_celebrate.json',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                    if (isNewBest) ...[
-                      const SizedBox(height: 8),
-                      _NewRecordBadge(label: isTimeAttack
-                          ? '최다 정답 신기록!'
-                          : '최단 시간 신기록!'),
-                    ],
-                    const SizedBox(height: 16),
-                    _ScoreText(
-                      text: isTimeAttack
-                          ? '${r.correctCount}'
-                          : '${r.correctCount} / ${r.totalCount}',
-                      highlight: isNewBest,
-                    ),
-                    Text(
-                      isNewBest ? '신기록 달성!' : '맞춘 문제',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: isNewBest ? FontWeight.bold : null,
-                        color: isNewBest ? Colors.amber.shade800 : null,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _Greeting(score: r.correctCount, total: r.totalCount),
-                    const SizedBox(height: 20),
-                    _Row(
-                      label: '게임',
-                      value: controller.isTimesTable
-                          ? '${controller.tableNumber}단 연습'
-                          : controller.isMixed
-                              ? '혼합 (${componentLabel(r)}) 레벨 ${r.level}'
-                                  '${controller.isPractice ? ' (연습)' : ''}'
-                              : controller.isTimeAttack
+                    RepaintBoundary(
+                      key: _shareKey,
+                      child: Container(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              height: isNewBest ? 200 : 140,
+                              child: Lottie.asset(
+                                'assets/lottie/result_celebrate.json',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            if (isNewBest) ...[
+                              const SizedBox(height: 8),
+                              _NewRecordBadge(
+                                label: isTimeAttack
+                                    ? '최다 정답 신기록!'
+                                    : '최단 시간 신기록!',
+                              ),
+                            ],
+                            const SizedBox(height: 16),
+                            _ScoreText(
+                              text: isTimeAttack
+                                  ? '${r.correctCount}'
+                                  : '${r.correctCount} / ${r.totalCount}',
+                              highlight: isNewBest,
+                            ),
+                            Text(
+                              isNewBest ? '신기록 달성!' : '맞춘 문제',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: isNewBest ? FontWeight.bold : null,
+                                color: isNewBest ? Colors.amber.shade800 : null,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _Greeting(
+                              score: r.correctCount,
+                              total: r.totalCount,
+                            ),
+                            const SizedBox(height: 20),
+                            _Row(
+                              label: '게임',
+                              value: controller.isTimesTable
+                                  ? '${controller.tableNumber}단 연습'
+                                  : controller.isMixed
+                                  ? '혼합 (${componentLabel(r)}) 레벨 ${r.level}'
+                                        '${controller.isPractice ? ' (연습)' : ''}'
+                                  : controller.isTimeAttack
                                   ? '${r.type.label} 레벨 ${r.level} (타임어택)'
                                   : controller.isPractice
-                                      ? '${r.type.label} 레벨 ${r.level} (연습)'
-                                      : '${r.type.label} 레벨 ${r.level}',
-                    ),
-                    _Row(label: '푼 문제', value: '${r.solvedCount}'),
-                    _Row(label: '못 푼 문제', value: '${r.unsolvedCount}'),
-                    _Row(label: '맞은 문제', value: '${r.correctCount}'),
-                    _Row(label: '틀린 문제', value: '${r.wrongCount}'),
-                    if (r.maxCombo >= 2)
-                      _Row(label: '최고 콤보', value: '${r.maxCombo} 연속'),
-                    _Row(
-                      label: '소요 시간',
-                      value: formatElapsedSeconds(r.elapsedSeconds),
+                                  ? '${r.type.label} 레벨 ${r.level} (연습)'
+                                  : '${r.type.label} 레벨 ${r.level}',
+                            ),
+                            _Row(label: '푼 문제', value: '${r.solvedCount}'),
+                            _Row(label: '못 푼 문제', value: '${r.unsolvedCount}'),
+                            _Row(label: '맞은 문제', value: '${r.correctCount}'),
+                            _Row(label: '틀린 문제', value: '${r.wrongCount}'),
+                            if (r.maxCombo >= 2)
+                              _Row(
+                                label: '최고 콤보',
+                                value: '${r.maxCombo} 연속',
+                              ),
+                            _Row(
+                              label: '소요 시간',
+                              value: formatElapsedSeconds(r.elapsedSeconds),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              '🎯 어린이 수학 게임',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade500,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     const Align(
@@ -142,10 +244,7 @@ class ResultView extends GetView<ResultController> {
               height: 56,
               child: FilledButton(
                 onPressed: () => Get.offAllNamed(AppRoutes.home),
-                child: const Text(
-                  '홈으로',
-                  style: TextStyle(fontSize: 20),
-                ),
+                child: const Text('홈으로', style: TextStyle(fontSize: 20)),
               ),
             ),
           ],
@@ -227,8 +326,7 @@ class _ScoreText extends StatelessWidget {
       tween: Tween(begin: 0.6, end: 1.0),
       duration: const Duration(milliseconds: 700),
       curve: Curves.elasticOut,
-      builder: (context, t, child) =>
-          Transform.scale(scale: t, child: child),
+      builder: (context, t, child) => Transform.scale(scale: t, child: child),
       child: Text(text, style: style),
     );
   }
