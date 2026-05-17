@@ -12,4 +12,5 @@ abstract class AppRoutes {
   static const timesTableSelect = '/times-table-select';
   static const mixedSelect = '/mixed-select';
   static const tutorial = '/tutorial';
+  static const wrongNotebook = '/wrong-notebook';
 }

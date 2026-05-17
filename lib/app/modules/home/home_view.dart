@@ -97,6 +97,14 @@ class HomeView extends GetView<HomeController> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: _QuickAction(
+                      icon: Icons.menu_book,
+                      label: '오답',
+                      onPressed: controller.openWrongNotebook,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: _QuickAction(
                       icon: Icons.bar_chart,
                       label: '기록',
                       onPressed: controller.openRecords,

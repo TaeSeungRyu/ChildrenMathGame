@@ -39,6 +39,10 @@ class HomeController extends GetxController {
     Get.toNamed(AppRoutes.mixedSelect);
   }
 
+  void openWrongNotebook() {
+    Get.toNamed(AppRoutes.wrongNotebook);
+  }
+
   void startRecommended(WeaknessBucket bucket) {
     Get.toNamed(
       AppRoutes.game,
