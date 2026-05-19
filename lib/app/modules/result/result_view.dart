@@ -63,11 +63,14 @@ class _ResultViewState extends State<ResultView> {
         : controller.isMixed
               ? '혼합(${componentLabel(r)}) 레벨 ${r.level}'
                     '${controller.isPractice ? ' 연습' : ''}'
-              : controller.isTimeAttack
-                    ? '${r.type.label} 레벨 ${r.level} 타임어택'
-                    : controller.isPractice
-                          ? '${r.type.label} 레벨 ${r.level} 연습'
-                          : '${r.type.label} 레벨 ${r.level}';
+              : controller.isEquation
+                    ? '방정식(${componentLabel(r)}) 레벨 ${r.level}'
+                          '${controller.isPractice ? ' 연습' : ''}'
+                    : controller.isTimeAttack
+                          ? '${r.type.label} 레벨 ${r.level} 타임어택'
+                          : controller.isPractice
+                                ? '${r.type.label} 레벨 ${r.level} 연습'
+                                : '${r.type.label} 레벨 ${r.level}';
     final score = controller.isTimeAttack
         ? '${r.correctCount}문제 정답'
         : '${r.correctCount} / ${r.totalCount} 정답';
@@ -167,6 +170,9 @@ class _ResultViewState extends State<ResultView> {
                                   ? '${controller.tableNumber}단 연습'
                                   : controller.isMixed
                                   ? '혼합 (${componentLabel(r)}) 레벨 ${r.level}'
+                                        '${controller.isPractice ? ' (연습)' : ''}'
+                                  : controller.isEquation
+                                  ? '방정식 (${componentLabel(r)}) 레벨 ${r.level}'
                                         '${controller.isPractice ? ' (연습)' : ''}'
                                   : controller.isTimeAttack
                                   ? '${r.type.label} 레벨 ${r.level} (타임어택)'

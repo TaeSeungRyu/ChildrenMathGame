@@ -45,6 +45,14 @@ class Problem {
     return buf.toString();
   }
 
+  /// "A op ? = C" rendering used in equation (방정식) mode: operandB is the
+  /// hidden value the player solves for, C is the computed result. Only valid
+  /// for single-op problems — equation mode never produces compound chains.
+  String get equationQuestionText {
+    assert(!isCompound, 'equation form is only defined for single-op problems');
+    return '$operandA ${type.symbol} ? = $answer';
+  }
+
   static int _calc(int a, int b, GameType t) {
     switch (t) {
       case GameType.addition:
@@ -56,8 +64,9 @@ class Problem {
       case GameType.division:
         return a ~/ b;
       case GameType.mixed:
-        // A single Problem never has type=mixed — only the GameRecord's
-        // roll-up type can. Anything reaching here is a programmer error.
+      case GameType.equation:
+        // A single Problem only ever has a concrete op as its type — roll-up
+        // labels live on the GameRecord, not on individual problems.
         throw StateError('Problem.type must be a concrete operation');
     }
   }

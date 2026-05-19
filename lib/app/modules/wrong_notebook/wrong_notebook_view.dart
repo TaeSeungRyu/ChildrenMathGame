@@ -205,7 +205,9 @@ class _EntryTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${a.questionText} = ${a.correctAnswer}',
+                      a.isEquation
+                          ? '${a.questionText}    (? = ${a.correctAnswer})'
+                          : '${a.questionText} = ${a.correctAnswer}',
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,

@@ -80,9 +80,11 @@ class ProblemGenerator {
           );
         }
       case GameType.mixed:
-        // `mixed` is a record-level roll-up; callers must dispatch to
-        // [generateMixed] with a concrete type list instead.
-        throw ArgumentError('Use generateMixed for GameType.mixed');
+      case GameType.equation:
+        // Roll-up labels never drive problem generation directly. `mixed`
+        // dispatches through [generateMixed]; `equation` reuses [generate]
+        // with the chosen sub-op before rolling up at the record level.
+        throw ArgumentError('Roll-up GameType cannot generate problems');
     }
   }
 
@@ -172,7 +174,9 @@ class ProblemGenerator {
           operands.add(next);
           currentTerm = next;
         case GameType.mixed:
-          // Guarded against by generateMixed; reaching here is a bug.
+        case GameType.equation:
+          // Roll-up labels are guarded against by generateMixed/the equation
+          // entry point; reaching either here is a bug.
           return null;
       }
     }

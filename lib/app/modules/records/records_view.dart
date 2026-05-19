@@ -193,6 +193,8 @@ class _RecordTile extends StatelessWidget {
                           child: Text(
                             record.type == GameType.mixed
                                 ? '혼합 (${componentLabel(record)}) 레벨 ${record.level}'
+                                : record.type == GameType.equation
+                                ? '방정식 (${componentLabel(record)}) 레벨 ${record.level}'
                                 : '${record.type.label} 레벨 ${record.level}',
                             style: const TextStyle(
                               fontSize: 18,

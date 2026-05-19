@@ -143,8 +143,13 @@ class GameView extends GetView<GameController> {
                       } else {
                         base = 32;
                       }
+                      // 방정식: "A op ? = C" with operandB hidden behind ?.
+                      // Other modes: forward "A op B = ?" prompt.
+                      final text = controller.isEquation
+                          ? p.equationQuestionText
+                          : '${p.questionText} = ?';
                       return Text(
-                        '${p.questionText} = ?',
+                        text,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: base,

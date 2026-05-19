@@ -39,6 +39,10 @@ class HomeController extends GetxController {
     Get.toNamed(AppRoutes.mixedSelect);
   }
 
+  void openEquation() {
+    Get.toNamed(AppRoutes.equationSelect);
+  }
+
   void openWrongNotebook() {
     Get.toNamed(AppRoutes.wrongNotebook);
   }

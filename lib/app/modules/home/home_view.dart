@@ -63,9 +63,11 @@ class HomeView extends GetView<HomeController> {
               ),
               const SizedBox(height: 12),
             ],
-            SizedBox(height: 130, child: _tileRow(0, 1)),
+            SizedBox(height: 120, child: _tileRow(GameType.addition, GameType.subtraction)),
             const SizedBox(height: 12),
-            SizedBox(height: 130, child: _tileRow(2, 3)),
+            SizedBox(height: 120, child: _tileRow(GameType.multiplication, GameType.division)),
+            const SizedBox(height: 12),
+            SizedBox(height: 120, child: _tileRow(GameType.mixed, GameType.equation)),
             const SizedBox(height: 16),
             SizedBox(
               height: 64,
@@ -76,14 +78,6 @@ class HomeView extends GetView<HomeController> {
                       icon: Icons.emoji_events,
                       label: '도장',
                       onPressed: controller.openBadges,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _QuickAction(
-                      icon: Icons.shuffle,
-                      label: '혼합',
-                      onPressed: controller.openMixed,
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -119,26 +113,34 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _tileRow(int leftIdx, int rightIdx) {
-    final left = GameType.values[leftIdx];
-    final right = GameType.values[rightIdx];
+  Widget _tileRow(GameType left, GameType right) {
     return Row(
       children: [
         Expanded(
-          child: _GameTile(
-            type: left,
-            onTap: () => controller.selectGame(left),
-          ),
+          child: _GameTile(type: left, onTap: () => _tapHandler(left)),
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: _GameTile(
-            type: right,
-            onTap: () => controller.selectGame(right),
-          ),
+          child: _GameTile(type: right, onTap: () => _tapHandler(right)),
         ),
       ],
     );
+  }
+
+  // Roll-up types (혼합/방정식) have their own selection screens; concrete ops
+  // share the level-select route.
+  void _tapHandler(GameType t) {
+    switch (t) {
+      case GameType.mixed:
+        controller.openMixed();
+      case GameType.equation:
+        controller.openEquation();
+      case GameType.addition:
+      case GameType.subtraction:
+      case GameType.multiplication:
+      case GameType.division:
+        controller.selectGame(t);
+    }
   }
 }
 

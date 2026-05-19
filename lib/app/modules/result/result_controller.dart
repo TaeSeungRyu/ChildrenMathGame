@@ -12,9 +12,11 @@ class ResultController extends GetxController {
   late final List<GameType>? mixedTypes;
   late final bool isPractice;
   late final bool isTimeAttack;
+  late final bool isEquation;
+  late final GameType? equationType;
   // True when a perfect (no-wrong) challenge run beat the prior best
   // elapsedSeconds at this (type, level). Always false for practice/mixed/
-  // time attack.
+  // time attack/equation.
   late final bool isNewPerfectBest;
   // True when a time-attack run beat the prior best correctCount at this
   // (type, level). Always false outside time attack.
@@ -33,6 +35,8 @@ class ResultController extends GetxController {
     mixedTypes = (args['mixedTypes'] as List?)?.cast<GameType>();
     isPractice = (args['isPractice'] as bool?) ?? false;
     isTimeAttack = (args['isTimeAttack'] as bool?) ?? false;
+    isEquation = (args['isEquation'] as bool?) ?? false;
+    equationType = args['equationType'] as GameType?;
     isNewPerfectBest = _computeNewPerfectBest();
     isNewTimeAttackBest = _computeNewTimeAttackBest();
   }
@@ -54,6 +58,10 @@ class ResultController extends GetxController {
     // Mixed runs at the same (type, level) can have different operation sets,
     // so comparing elapsed time across them isn't a fair "신기록" — skip.
     if (isMixed) return false;
+    // Equation runs at the same (type, level) bucket can use any of the four
+    // underlying ops, so the elapsed-time comparison isn't apples-to-apples
+    // until we segment by sub-op. Skip for now.
+    if (isEquation) return false;
     if (record.correctCount != record.totalCount) return false;
     final priors = Get.find<RecordService>().all().where(
       (r) =>

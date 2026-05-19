@@ -20,6 +20,8 @@ import '../modules/stats/stats_binding.dart';
 import '../modules/stats/stats_view.dart';
 import '../modules/splash/splash_binding.dart';
 import '../modules/splash/splash_view.dart';
+import '../modules/equation_select/equation_select_binding.dart';
+import '../modules/equation_select/equation_select_view.dart';
 import '../modules/mixed_select/mixed_select_binding.dart';
 import '../modules/mixed_select/mixed_select_view.dart';
 import '../modules/times_table_select/times_table_select_binding.dart';
@@ -91,6 +93,11 @@ abstract class AppPages {
       name: AppRoutes.mixedSelect,
       page: () => const MixedSelectView(),
       binding: MixedSelectBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.equationSelect,
+      page: () => const EquationSelectView(),
+      binding: EquationSelectBinding(),
     ),
     GetPage(
       name: AppRoutes.tutorial,

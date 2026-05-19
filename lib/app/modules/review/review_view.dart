@@ -66,8 +66,13 @@ class _AnsweringBody extends GetView<ReviewController> {
                   } else {
                     base = 32;
                   }
+                  // 방정식 attempts already render as "A op ? = C"; only
+                  // append "= ?" for forward problems.
+                  final text = a.isEquation
+                      ? a.questionText
+                      : '${a.questionText} = ?';
                   return Text(
-                    '${a.questionText} = ?',
+                    text,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: base,

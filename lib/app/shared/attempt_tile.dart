@@ -32,13 +32,28 @@ class AttemptTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 방정식: questionText already includes "= C"; show
+                  // "? = correctAnswer" beneath so the hidden value is
+                  // revealed. Other modes: append "= correctAnswer".
                   Text(
-                    '${attempt.questionText} = ${attempt.correctAnswer}',
+                    attempt.isEquation
+                        ? attempt.questionText
+                        : '${attempt.questionText} = ${attempt.correctAnswer}',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  if (attempt.isEquation) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '? = ${attempt.correctAnswer}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
                   if (showUserAnswer) ...[
                     const SizedBox(height: 4),
                     Text(

@@ -268,10 +268,10 @@ List<BadgeStatus> evaluateBadges(
     ),
     BadgeStatus.simple(
       badge: _allOpsPerfect,
-      // "사칙연산 정복" — the 4 real operations. `mixed` is a roll-up and
-      // shouldn't be required (and a single-op perfect can never be `mixed`).
+      // "사칙연산 정복" — the 4 real operations. Roll-up types (혼합/방정식)
+      // shouldn't be required, and a single-op perfect can never be a roll-up.
       unlocked: GameType.values
-          .where((t) => t != GameType.mixed)
+          .where((t) => !t.isRollup)
           .every(perfectOps.contains),
     ),
     BadgeStatus.progress(badge: _combo5, current: bestCombo, target: 5),

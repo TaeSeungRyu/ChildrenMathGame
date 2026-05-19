@@ -56,6 +56,7 @@ String _signatureOf(ProblemAttempt a) {
 
 GameType _bucketOf(ProblemAttempt a) {
   if (a.isCompound) return GameType.mixed;
+  if (a.isEquation) return GameType.equation;
   return a.type;
 }
 

@@ -37,11 +37,18 @@ class GameController extends GetxController {
   // Non-null when the session is a 혼합 모드 run — holds the user-selected
   // operations. `type` rolls up to `GameType.mixed` in this case.
   late final List<GameType>? mixedTypes;
+  // True when this run is a 방정식 (equation) session — problems are
+  // generated for a single concrete op (held in [equationType]) but presented
+  // as "A op ? = C" and the player solves for operandB. `type` rolls up to
+  // `GameType.equation` for the record.
+  late final bool isEquation;
+  // Concrete op used to generate problems in equation mode. Null otherwise.
+  late final GameType? equationType;
   // True when this run does not impose a time limit and does not persist a
   // record. Auto-true for times-table runs; otherwise comes from level select.
   late final bool isPractice;
   // True for the 60-second open-ended race. Mutually exclusive with practice;
-  // not available for times-table or mixed sessions.
+  // not available for times-table, mixed, or equation sessions.
   late final bool isTimeAttack;
 
   final currentIndex = 0.obs;
@@ -86,22 +93,35 @@ class GameController extends GetxController {
     final args = Get.arguments as Map;
     tableNumber = args['tableNumber'] as int?;
     mixedTypes = (args['mixedTypes'] as List?)?.cast<GameType>();
+    isEquation = (args['isEquation'] as bool?) ?? false;
     if (isTimesTable) {
       type = GameType.multiplication;
       level = 0;
       problems = ProblemGenerator.generateTimesTable(tableNumber!);
       isPractice = true;
       isTimeAttack = false;
+      equationType = null;
     } else if (isMixed) {
       type = GameType.mixed;
       level = args['level'] as int;
       problems = ProblemGenerator.generateMixed(mixedTypes!, level);
       isPractice = (args['isPractice'] as bool?) ?? false;
       isTimeAttack = false;
+      equationType = null;
+    } else if (isEquation) {
+      // Equation runs always use a single concrete op; time attack is
+      // intentionally not offered (the player picked 도전/연습 only).
+      equationType = args['type'] as GameType;
+      type = GameType.equation;
+      level = args['level'] as int;
+      problems = ProblemGenerator.generate(type: equationType!, level: level);
+      isPractice = (args['isPractice'] as bool?) ?? false;
+      isTimeAttack = false;
     } else {
       type = args['type'] as GameType;
       level = args['level'] as int;
       isTimeAttack = (args['isTimeAttack'] as bool?) ?? false;
+      equationType = null;
       // Time attack starts with one problem and lazily appends more on each
       // submission. Challenge/practice get the full fixed-length batch.
       if (isTimeAttack) {
@@ -182,7 +202,8 @@ class GameController extends GetxController {
     final parsed = int.tryParse(text);
     _answers[currentIndex.value] = parsed;
     _attempted[currentIndex.value] = true;
-    if (parsed != null && parsed == current.answer) {
+    final expected = isEquation ? current.operandB : current.answer;
+    if (parsed != null && parsed == expected) {
       _sfx.correct();
       correctCount.value += 1;
       comboCount.value += 1;
@@ -223,11 +244,12 @@ class GameController extends GetxController {
     final attempts = <ProblemAttempt>[];
     for (var i = 0; i < problems.length; i++) {
       final p = problems[i];
+      final expected = isEquation ? p.operandB : p.answer;
       final AttemptStatus status;
       if (!_attempted[i]) {
         unsolved++;
         status = AttemptStatus.unsolved;
-      } else if (_answers[i] != null && _answers[i] == p.answer) {
+      } else if (_answers[i] != null && _answers[i] == expected) {
         correct++;
         status = AttemptStatus.correct;
       } else {
@@ -239,11 +261,12 @@ class GameController extends GetxController {
           operandA: p.operandA,
           operandB: p.operandB,
           type: p.type,
-          correctAnswer: p.answer,
+          correctAnswer: expected,
           userAnswer: _answers[i],
           status: status,
           operands: p.isCompound ? p.operands : null,
           operations: p.isCompound ? p.operations : null,
+          isEquation: isEquation,
         ),
       );
     }
@@ -272,6 +295,8 @@ class GameController extends GetxController {
         'mixedTypes': mixedTypes,
         'isPractice': isPractice,
         'isTimeAttack': isTimeAttack,
+        'isEquation': isEquation,
+        'equationType': equationType,
       },
     );
   }

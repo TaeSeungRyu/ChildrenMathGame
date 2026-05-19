@@ -42,6 +42,8 @@ class RecordDetailView extends GetView<RecordDetailController> {
                         child: Text(
                           r.type == GameType.mixed
                               ? '혼합 (${componentLabel(r)}) 레벨 ${r.level}'
+                              : r.type == GameType.equation
+                              ? '방정식 (${componentLabel(r)}) 레벨 ${r.level}'
                               : '${r.type.label} 레벨 ${r.level}',
                           style: const TextStyle(
                             fontSize: 22,

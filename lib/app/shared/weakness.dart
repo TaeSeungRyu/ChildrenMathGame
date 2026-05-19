@@ -57,8 +57,10 @@ WeaknessAnalysis analyzeWeakness(
     // record level the `type` is `mixed`. The per-op accuracy could be
     // reconstructed from `attempts`, but the recommendation card sends the
     // user to a single (type, level) drill which doesn't match — skip until
-    // the recommendation pipeline supports mixed bundles.
-    if (r.type == GameType.mixed) continue;
+    // the recommendation pipeline supports mixed bundles. Equation runs are
+    // skipped for the same reason: the recommendation would land in normal
+    // forward-style drills, not the equation flow.
+    if (r.type.isRollup) continue;
     final key = '${r.type.name}|${r.level}';
     for (final a in r.attempts) {
       totalByKey[key] = (totalByKey[key] ?? 0) + 1;
