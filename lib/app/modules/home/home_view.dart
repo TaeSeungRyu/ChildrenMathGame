@@ -63,11 +63,23 @@ class HomeView extends GetView<HomeController> {
               ),
               const SizedBox(height: 12),
             ],
-            SizedBox(height: 120, child: _tileRow(GameType.addition, GameType.subtraction)),
+            SizedBox(
+              height: 120,
+              child: _tileRow(
+                GameType.addition,
+                GameType.subtraction,
+                GameType.multiplication,
+              ),
+            ),
             const SizedBox(height: 12),
-            SizedBox(height: 120, child: _tileRow(GameType.multiplication, GameType.division)),
-            const SizedBox(height: 12),
-            SizedBox(height: 120, child: _tileRow(GameType.mixed, GameType.equation)),
+            SizedBox(
+              height: 120,
+              child: _tileRow(
+                GameType.division,
+                GameType.mixed,
+                GameType.equation,
+              ),
+            ),
             const SizedBox(height: 16),
             SizedBox(
               height: 64,
@@ -113,16 +125,14 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _tileRow(GameType left, GameType right) {
+  Widget _tileRow(GameType a, GameType b, GameType c) {
     return Row(
       children: [
-        Expanded(
-          child: _GameTile(type: left, onTap: () => _tapHandler(left)),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _GameTile(type: right, onTap: () => _tapHandler(right)),
-        ),
+        Expanded(child: _GameTile(type: a, onTap: () => _tapHandler(a))),
+        const SizedBox(width: 12),
+        Expanded(child: _GameTile(type: b, onTap: () => _tapHandler(b))),
+        const SizedBox(width: 12),
+        Expanded(child: _GameTile(type: c, onTap: () => _tapHandler(c))),
       ],
     );
   }
