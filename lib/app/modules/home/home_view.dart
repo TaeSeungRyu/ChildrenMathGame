@@ -21,105 +21,126 @@ class HomeView extends GetView<HomeController> {
         centerTitle: true,
         actions: const [_TutorialButton(), _MuteToggle()],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          16,
-          16,
-          MediaQuery.of(context).viewPadding.bottom + 16,
-        ),
-        child: Column(
-          children: [
-            SizedBox(
-              height: 120,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Lottie.asset(
-                      'assets/lottie/home_banner.json',
-                      fit: BoxFit.contain,
+      // Pattern: vertically center the game tiles in the space between the
+      // mission card and the bottom action bar, but fall back to scrolling on
+      // short screens so nothing clips. IntrinsicHeight + Spacer needs a
+      // bounded Column height, which `ConstrainedBox(minHeight: viewport - pad)`
+      // supplies via LayoutBuilder.
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          const verticalPad = 16.0;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, verticalPad, 16, verticalPad),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight - verticalPad * 2,
+              ),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 120,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Lottie.asset(
+                              'assets/lottie/home_banner.json',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          if (controller.streakDays >= 1)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: _StreakBadge(days: controller.streakDays),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                  if (controller.streakDays >= 1)
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: _StreakBadge(days: controller.streakDays),
+                    const SizedBox(height: 12),
+                    _DailyMissionCard(
+                      missions: controller.missions,
+                      completed: controller.missionsCompleted,
                     ),
-                ],
+                    if (controller.recommendation != null) ...[
+                      const SizedBox(height: 12),
+                      _RecommendationCard(
+                        bucket: controller.recommendation!,
+                        onTap: () => controller
+                            .startRecommended(controller.recommendation!),
+                      ),
+                    ],
+                    const Spacer(),
+                    SizedBox(
+                      height: 120,
+                      child: _tileRow(
+                        GameType.addition,
+                        GameType.subtraction,
+                        GameType.multiplication,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 120,
+                      child: _tileRow(
+                        GameType.division,
+                        GameType.mixed,
+                        GameType.equation,
+                      ),
+                    ),
+                    const Spacer(),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            _DailyMissionCard(
-              missions: controller.missions,
-              completed: controller.missionsCompleted,
-            ),
-            const SizedBox(height: 12),
-            if (controller.recommendation != null) ...[
-              _RecommendationCard(
-                bucket: controller.recommendation!,
-                onTap: () =>
-                    controller.startRecommended(controller.recommendation!),
-              ),
-              const SizedBox(height: 12),
-            ],
-            SizedBox(
-              height: 120,
-              child: _tileRow(
-                GameType.addition,
-                GameType.subtraction,
-                GameType.multiplication,
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 120,
-              child: _tileRow(
-                GameType.division,
-                GameType.mixed,
-                GameType.equation,
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 64,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _QuickAction(
-                      icon: Icons.emoji_events,
-                      label: '도장',
-                      onPressed: controller.openBadges,
-                    ),
+          );
+        },
+      ),
+      // Quick-action row is pinned to the bottom of the screen so it stays
+      // visible regardless of scroll position. SafeArea handles the system
+      // gesture/nav bar inset on Android.
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: SizedBox(
+            height: 64,
+            child: Row(
+              children: [
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.emoji_events,
+                    label: '도장',
+                    onPressed: controller.openBadges,
                   ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _QuickAction(
-                      icon: Icons.grid_view,
-                      label: '구구',
-                      onPressed: controller.openTimesTable,
-                    ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.grid_view,
+                    label: '구구',
+                    onPressed: controller.openTimesTable,
                   ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _QuickAction(
-                      icon: Icons.menu_book,
-                      label: '오답',
-                      onPressed: controller.openWrongNotebook,
-                    ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.menu_book,
+                    label: '오답',
+                    onPressed: controller.openWrongNotebook,
                   ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _QuickAction(
-                      icon: Icons.bar_chart,
-                      label: '기록',
-                      onPressed: controller.openRecords,
-                    ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.bar_chart,
+                    label: '기록',
+                    onPressed: controller.openRecords,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

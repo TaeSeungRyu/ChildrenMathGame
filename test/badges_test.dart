@@ -35,7 +35,7 @@ void main() {
   group('evaluateBadges', () {
     test('all locked when no records', () {
       final result = evaluateBadges(const [], maxStreak: 0);
-      expect(result.length, 22);
+      expect(result.length, 23);
       expect(result.every((b) => !b.unlocked), isTrue);
     });
 

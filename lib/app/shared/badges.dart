@@ -89,6 +89,13 @@ const _divMaster = AchievementBadge(
   glyph: '÷',
   color: Color(0xFFEC407A),
 );
+const _eqMaster = AchievementBadge(
+  id: 'eq_master',
+  title: '방정식 마스터',
+  description: '방정식 레벨 5 만점',
+  glyph: '?',
+  color: Color(0xFF8D6E63),
+);
 const _perfect5 = AchievementBadge(
   id: 'perfect_5',
   title: '만점 5회',
@@ -173,6 +180,7 @@ const allBadges = <AchievementBadge>[
   _subMaster,
   _mulMaster,
   _divMaster,
+  _eqMaster,
   _perfect5,
   _perfect20,
   _allOpsPerfect,
@@ -255,6 +263,10 @@ List<BadgeStatus> evaluateBadges(
     BadgeStatus.simple(
       badge: _divMaster,
       unlocked: hasMasterFor(GameType.division),
+    ),
+    BadgeStatus.simple(
+      badge: _eqMaster,
+      unlocked: hasMasterFor(GameType.equation),
     ),
     BadgeStatus.progress(
       badge: _perfect5,
