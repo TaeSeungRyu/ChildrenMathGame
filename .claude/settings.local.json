@@ -25,7 +25,8 @@
       "PowerShell(Add-Type -AssemblyName System.Drawing; $bmp = New-Object System.Drawing.Bitmap \"assets\\\\icon\\\\app_icon_512.png\"; Write-Output \"Dimensions: $\\($bmp.Width\\) x $\\($bmp.Height\\)\"; $bmp.Dispose\\(\\))",
       "PowerShell(Get-Item *)",
       "Bash(flutter --version)",
-      "Bash(Select-Object -First 3)"
+      "Bash(Select-Object -First 3)",
+      "PowerShell(flutter build *)"
     ]
   }
 }
