@@ -28,7 +28,9 @@
       "Bash(Select-Object -First 3)",
       "PowerShell(flutter build *)",
       "PowerShell(flutter analyze *)",
-      "PowerShell(flutter test *)"
+      "PowerShell(flutter test *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(adb *)"
     ]
   }
 }

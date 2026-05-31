@@ -116,13 +116,15 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  // 2x2 grid of the four concrete operations — taller tiles so the symbol
-  // dominates and the tap target is generous for younger kids.
+  // 2x2 grid of the four concrete operations — tall enough that the 52pt
+  // symbol + 24pt label fit inside the Card content area after the default
+  // Material 3 card margin (8px vertical) is subtracted. Going below ~128
+  // overflows once the Jua font's line metrics are factored in.
   Widget _basicOpsGrid() {
     return Column(
       children: [
         SizedBox(
-          height: 110,
+          height: 132,
           child: Row(
             children: [
               Expanded(child: _GameTile(type: GameType.addition, onTap: () => _tapHandler(GameType.addition))),
@@ -133,7 +135,7 @@ class HomeView extends GetView<HomeController> {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 110,
+          height: 132,
           child: Row(
             children: [
               Expanded(child: _GameTile(type: GameType.multiplication, onTap: () => _tapHandler(GameType.multiplication))),
@@ -709,27 +711,34 @@ class _GameTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
+        // FittedBox scaleDown guarantees the symbol+label combo never
+        // overflows even on narrow phones / large system text sizes; on
+        // normal screens it renders at the natural 52/24pt sizes.
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                type.symbol,
-                style: TextStyle(
-                  fontSize: 52,
-                  fontWeight: FontWeight.bold,
-                  color: scheme.onPrimaryContainer,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  type.symbol,
+                  style: TextStyle(
+                    fontSize: 52,
+                    fontWeight: FontWeight.bold,
+                    color: scheme.onPrimaryContainer,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                type.label,
-                style: TextStyle(
-                  fontSize: 24,
-                  color: scheme.onPrimaryContainer,
+                const SizedBox(height: 4),
+                Text(
+                  type.label,
+                  style: TextStyle(
+                    fontSize: 24,
+                    color: scheme.onPrimaryContainer,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
