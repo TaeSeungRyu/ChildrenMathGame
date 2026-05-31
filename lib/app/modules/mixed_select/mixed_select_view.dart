@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
+import '../../shared/op_tile.dart';
 import 'mixed_select_controller.dart';
 
 class MixedSelectView extends GetView<MixedSelectController> {
@@ -106,26 +107,20 @@ class _TypePicker extends GetView<MixedSelectController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      return Wrap(
-        spacing: 8,
-        runSpacing: 8,
+      // 2x2 grid — multi-select (FilterChip semantics). Last remaining op is
+      // locked via OpTile.enabled so the user can't end up with nothing
+      // selected.
+      return OpTileGrid(
         children: MixedSelectController.choices.map((t) {
           final selected = controller.selectedTypes.contains(t);
-          // The last remaining type is locked — the controller silently no-ops,
-          // but disabling the chip makes the constraint visible.
           final isOnlyOne =
               selected && controller.selectedTypes.length == 1;
-          return FilterChip(
-            label: Text(
-              '${t.symbol} ${t.label}',
-              style: const TextStyle(fontSize: 16),
-            ),
+          return OpTile(
+            symbol: t.symbol,
+            label: t.label,
             selected: selected,
-            onSelected: isOnlyOne ? null : (_) => controller.toggleType(t),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 6,
-            ),
+            enabled: !isOnlyOne,
+            onTap: () => controller.toggleType(t),
           );
         }).toList(),
       );

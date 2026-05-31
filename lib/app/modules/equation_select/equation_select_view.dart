@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
+import '../../shared/op_tile.dart';
 import 'equation_select_controller.dart';
 
 class EquationSelectView extends GetView<EquationSelectController> {
@@ -135,18 +136,14 @@ class _TypePicker extends GetView<EquationSelectController> {
   Widget build(BuildContext context) {
     return Obx(() {
       final selected = controller.selectedType.value;
-      return Wrap(
-        spacing: 8,
-        runSpacing: 8,
+      // 2x2 grid — single-select (ChoiceChip semantics).
+      return OpTileGrid(
         children: EquationSelectController.choices.map((t) {
-          return ChoiceChip(
-            label: Text(
-              '${t.symbol} ${t.label}',
-              style: const TextStyle(fontSize: 16),
-            ),
+          return OpTile(
+            symbol: t.symbol,
+            label: t.label,
             selected: t == selected,
-            onSelected: (_) => controller.setType(t),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            onTap: () => controller.setType(t),
           );
         }).toList(),
       );
