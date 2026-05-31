@@ -83,6 +83,7 @@ class ProblemAttempt {
         return operandA ~/ operandB;
       case GameType.mixed:
       case GameType.equation:
+      case GameType.flash:
         return 0;
     }
   }

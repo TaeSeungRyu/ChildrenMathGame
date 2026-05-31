@@ -81,9 +81,11 @@ class ProblemGenerator {
         }
       case GameType.mixed:
       case GameType.equation:
+      case GameType.flash:
         // Roll-up labels never drive problem generation directly. `mixed`
-        // dispatches through [generateMixed]; `equation` reuses [generate]
-        // with the chosen sub-op before rolling up at the record level.
+        // dispatches through [generateMixed]; `equation`/`flash` reuse
+        // [generate] with the chosen sub-op before rolling up at the record
+        // level.
         throw ArgumentError('Roll-up GameType cannot generate problems');
     }
   }
@@ -175,8 +177,10 @@ class ProblemGenerator {
           currentTerm = next;
         case GameType.mixed:
         case GameType.equation:
-          // Roll-up labels are guarded against by generateMixed/the equation
-          // entry point; reaching either here is a bug.
+        case GameType.flash:
+          // Roll-up labels are guarded against at their respective entry
+          // points (generateMixed / equation / flash); reaching any of them
+          // inside compound-build is a bug.
           return null;
       }
     }

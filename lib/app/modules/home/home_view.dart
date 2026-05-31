@@ -21,84 +21,62 @@ class HomeView extends GetView<HomeController> {
         centerTitle: true,
         actions: const [_TutorialButton(), _MuteToggle()],
       ),
-      // Pattern: vertically center the game tiles in the space between the
-      // mission card and the bottom action bar, but fall back to scrolling on
-      // short screens so nothing clips. IntrinsicHeight + Spacer needs a
-      // bounded Column height, which `ConstrainedBox(minHeight: viewport - pad)`
-      // supplies via LayoutBuilder.
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          const verticalPad = 16.0;
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, verticalPad, 16, verticalPad),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight - verticalPad * 2,
-              ),
-              child: IntrinsicHeight(
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 120,
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: Lottie.asset(
-                              'assets/lottie/home_banner.json',
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                          if (controller.streakDays >= 1)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: _StreakBadge(days: controller.streakDays),
-                            ),
-                        ],
-                      ),
+      // Single scrollable column with two clearly-separated sections (기본
+      // 연산 2x2 grid + 특별 모드 1x4 row). The earlier IntrinsicHeight +
+      // Spacer layout doesn't accommodate 7 modes cleanly; conventional
+      // section-titled lists scale better as modes are added.
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 96,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Lottie.asset(
+                      'assets/lottie/home_banner.json',
+                      fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 12),
-                    _DailyMissionCard(
-                      missions: controller.missions,
-                      completed: controller.missionsCompleted,
+                  ),
+                  if (controller.streakDays >= 1)
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: _StreakBadge(days: controller.streakDays),
                     ),
-                    if (controller.recommendation != null) ...[
-                      const SizedBox(height: 12),
-                      _RecommendationCard(
-                        bucket: controller.recommendation!,
-                        onTap: () => controller
-                            .startRecommended(controller.recommendation!),
-                      ),
-                    ],
-                    const Spacer(),
-                    SizedBox(
-                      height: 120,
-                      child: _tileRow(
-                        GameType.addition,
-                        GameType.subtraction,
-                        GameType.multiplication,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 120,
-                      child: _tileRow(
-                        GameType.division,
-                        GameType.mixed,
-                        GameType.equation,
-                      ),
-                    ),
-                    const Spacer(),
-                  ],
-                ),
+                ],
               ),
             ),
-          );
-        },
+            const SizedBox(height: 8),
+            _DailyMissionCard(
+              missions: controller.missions,
+              completed: controller.missionsCompleted,
+            ),
+            if (controller.recommendation != null) ...[
+              const SizedBox(height: 8),
+              _RecommendationCard(
+                bucket: controller.recommendation!,
+                onTap: () =>
+                    controller.startRecommended(controller.recommendation!),
+              ),
+            ],
+            const SizedBox(height: 16),
+            const _SectionHeader(icon: Icons.calculate, title: '기본 연산'),
+            const SizedBox(height: 8),
+            _basicOpsGrid(),
+            const SizedBox(height: 16),
+            const _SectionHeader(icon: Icons.star, title: '특별 모드'),
+            const SizedBox(height: 8),
+            _specialModesRow(),
+          ],
+        ),
       ),
       // Quick-action row is pinned to the bottom of the screen so it stays
       // visible regardless of scroll position. SafeArea handles the system
-      // gesture/nav bar inset on Android.
+      // gesture/nav bar inset on Android. 구구단 moved into 특별 모드 above,
+      // so the bottom bar is down to three meta actions.
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
@@ -114,15 +92,7 @@ class HomeView extends GetView<HomeController> {
                     onPressed: controller.openBadges,
                   ),
                 ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: _QuickAction(
-                    icon: Icons.grid_view,
-                    label: '구구',
-                    onPressed: controller.openTimesTable,
-                  ),
-                ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _QuickAction(
                     icon: Icons.menu_book,
@@ -130,7 +100,7 @@ class HomeView extends GetView<HomeController> {
                     onPressed: controller.openWrongNotebook,
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _QuickAction(
                     icon: Icons.bar_chart,
@@ -146,32 +116,164 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _tileRow(GameType a, GameType b, GameType c) {
-    return Row(
+  // 2x2 grid of the four concrete operations — taller tiles so the symbol
+  // dominates and the tap target is generous for younger kids.
+  Widget _basicOpsGrid() {
+    return Column(
       children: [
-        Expanded(child: _GameTile(type: a, onTap: () => _tapHandler(a))),
-        const SizedBox(width: 12),
-        Expanded(child: _GameTile(type: b, onTap: () => _tapHandler(b))),
-        const SizedBox(width: 12),
-        Expanded(child: _GameTile(type: c, onTap: () => _tapHandler(c))),
+        SizedBox(
+          height: 110,
+          child: Row(
+            children: [
+              Expanded(child: _GameTile(type: GameType.addition, onTap: () => _tapHandler(GameType.addition))),
+              const SizedBox(width: 12),
+              Expanded(child: _GameTile(type: GameType.subtraction, onTap: () => _tapHandler(GameType.subtraction))),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 110,
+          child: Row(
+            children: [
+              Expanded(child: _GameTile(type: GameType.multiplication, onTap: () => _tapHandler(GameType.multiplication))),
+              const SizedBox(width: 12),
+              Expanded(child: _GameTile(type: GameType.division, onTap: () => _tapHandler(GameType.division))),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  // Roll-up types (혼합/방정식) have their own selection screens; concrete ops
-  // share the level-select route.
+  // 1x4 row of special modes — smaller tiles, icon + label, since each is a
+  // session-shape variant rather than a "primary" operation.
+  Widget _specialModesRow() {
+    return SizedBox(
+      height: 96,
+      child: Row(
+        children: [
+          Expanded(
+            child: _SpecialTile(
+              icon: Icons.grid_view,
+              label: '구구단',
+              onTap: controller.openTimesTable,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _SpecialTile(
+              icon: Icons.shuffle,
+              label: '혼합',
+              onTap: controller.openMixed,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _SpecialTile(
+              icon: Icons.help_outline,
+              label: '방정식',
+              onTap: controller.openEquation,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _SpecialTile(
+              icon: Icons.flash_on,
+              label: '플래시',
+              onTap: controller.openFlash,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Roll-up types (혼합/방정식/플래시) have their own selection screens;
+  // concrete ops share the level-select route.
   void _tapHandler(GameType t) {
     switch (t) {
       case GameType.mixed:
         controller.openMixed();
       case GameType.equation:
         controller.openEquation();
+      case GameType.flash:
+        controller.openFlash();
       case GameType.addition:
       case GameType.subtraction:
       case GameType.multiplication:
       case GameType.division:
         controller.selectGame(t);
     }
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: scheme.primary),
+        const SizedBox(width: 6),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: scheme.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SpecialTile extends StatelessWidget {
+  const _SpecialTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      color: scheme.secondaryContainer,
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 30, color: scheme.onSecondaryContainer),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: scheme.onSecondaryContainer,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

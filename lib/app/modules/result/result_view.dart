@@ -66,11 +66,14 @@ class _ResultViewState extends State<ResultView> {
               : controller.isEquation
                     ? '방정식(${componentLabel(r)}) 레벨 ${r.level}'
                           '${controller.isPractice ? ' 연습' : ''}'
-                    : controller.isTimeAttack
-                          ? '${r.type.label} 레벨 ${r.level} 타임어택'
-                          : controller.isPractice
-                                ? '${r.type.label} 레벨 ${r.level} 연습'
-                                : '${r.type.label} 레벨 ${r.level}';
+                    : controller.isFlash
+                          ? '플래시(${componentLabel(r)}) 레벨 ${r.level}'
+                                '${controller.isPractice ? ' 연습' : ''}'
+                          : controller.isTimeAttack
+                                ? '${r.type.label} 레벨 ${r.level} 타임어택'
+                                : controller.isPractice
+                                      ? '${r.type.label} 레벨 ${r.level} 연습'
+                                      : '${r.type.label} 레벨 ${r.level}';
     final score = controller.isTimeAttack
         ? '${r.correctCount}문제 정답'
         : '${r.correctCount} / ${r.totalCount} 정답';
@@ -173,6 +176,9 @@ class _ResultViewState extends State<ResultView> {
                                         '${controller.isPractice ? ' (연습)' : ''}'
                                   : controller.isEquation
                                   ? '방정식 (${componentLabel(r)}) 레벨 ${r.level}'
+                                        '${controller.isPractice ? ' (연습)' : ''}'
+                                  : controller.isFlash
+                                  ? '플래시 (${componentLabel(r)}) 레벨 ${r.level}'
                                         '${controller.isPractice ? ' (연습)' : ''}'
                                   : controller.isTimeAttack
                                   ? '${r.type.label} 레벨 ${r.level} (타임어택)'

@@ -44,6 +44,21 @@ class GameController extends GetxController {
   late final bool isEquation;
   // Concrete op used to generate problems in equation mode. Null otherwise.
   late final GameType? equationType;
+  // True when this run is a 플래시 (mental math flash) session — problems are
+  // generated for a single concrete op (held in [flashType]) but shown only
+  // for [flashDisplayMs] milliseconds before being hidden, forcing the player
+  // to answer from memory. `type` rolls up to `GameType.flash` for the record.
+  late final bool isFlash;
+  // Concrete op used to generate problems in flash mode. Null otherwise.
+  late final GameType? flashType;
+  // How long the problem text is visible before being hidden in flash mode.
+  // Always 0 outside flash mode.
+  late final int flashDisplayMs;
+  // True while the current problem is still within its flash display window.
+  // Driven by [_flashTimer]; flips to false when the window expires. Always
+  // true (and irrelevant) outside flash mode.
+  final flashVisible = true.obs;
+  Timer? _flashTimer;
   // True when this run does not impose a time limit and does not persist a
   // record. Auto-true for times-table runs; otherwise comes from level select.
   late final bool isPractice;
@@ -94,6 +109,7 @@ class GameController extends GetxController {
     tableNumber = args['tableNumber'] as int?;
     mixedTypes = (args['mixedTypes'] as List?)?.cast<GameType>();
     isEquation = (args['isEquation'] as bool?) ?? false;
+    isFlash = (args['isFlash'] as bool?) ?? false;
     if (isTimesTable) {
       type = GameType.multiplication;
       level = 0;
@@ -101,6 +117,8 @@ class GameController extends GetxController {
       isPractice = true;
       isTimeAttack = false;
       equationType = null;
+      flashType = null;
+      flashDisplayMs = 0;
     } else if (isMixed) {
       type = GameType.mixed;
       level = args['level'] as int;
@@ -108,6 +126,8 @@ class GameController extends GetxController {
       isPractice = (args['isPractice'] as bool?) ?? false;
       isTimeAttack = false;
       equationType = null;
+      flashType = null;
+      flashDisplayMs = 0;
     } else if (isEquation) {
       // Equation runs always use a single concrete op; time attack is
       // intentionally not offered (the player picked 도전/연습 only).
@@ -117,11 +137,26 @@ class GameController extends GetxController {
       problems = ProblemGenerator.generate(type: equationType!, level: level);
       isPractice = (args['isPractice'] as bool?) ?? false;
       isTimeAttack = false;
+      flashType = null;
+      flashDisplayMs = 0;
+    } else if (isFlash) {
+      // Flash runs use a single concrete op + a display window. Time attack
+      // is not offered (flash already has its own timing element).
+      flashType = args['type'] as GameType;
+      type = GameType.flash;
+      level = args['level'] as int;
+      flashDisplayMs = (args['flashDisplayMs'] as int?) ?? 2000;
+      problems = ProblemGenerator.generate(type: flashType!, level: level);
+      isPractice = (args['isPractice'] as bool?) ?? false;
+      isTimeAttack = false;
+      equationType = null;
     } else {
       type = args['type'] as GameType;
       level = args['level'] as int;
       isTimeAttack = (args['isTimeAttack'] as bool?) ?? false;
       equationType = null;
+      flashType = null;
+      flashDisplayMs = 0;
       // Time attack starts with one problem and lazily appends more on each
       // submission. Challenge/practice get the full fixed-length batch.
       if (isTimeAttack) {
@@ -156,11 +191,23 @@ class GameController extends GetxController {
         _sfx.tick();
       }
     });
+    if (isFlash) _startFlashWindow();
+  }
+
+  // Shows the current problem for [flashDisplayMs], then hides it. Called on
+  // session start and again every time [submit] advances to the next problem.
+  void _startFlashWindow() {
+    _flashTimer?.cancel();
+    flashVisible.value = true;
+    _flashTimer = Timer(Duration(milliseconds: flashDisplayMs), () {
+      flashVisible.value = false;
+    });
   }
 
   @override
   void onClose() {
     _ticker?.cancel();
+    _flashTimer?.cancel();
     super.onClose();
   }
 
@@ -226,9 +273,11 @@ class GameController extends GetxController {
       currentIndex.value += 1;
     } else if (currentIndex.value + 1 >= problems.length) {
       _finish();
+      return;
     } else {
       currentIndex.value += 1;
     }
+    if (isFlash) _startFlashWindow();
   }
 
   void _finish() {
@@ -297,6 +346,8 @@ class GameController extends GetxController {
         'isTimeAttack': isTimeAttack,
         'isEquation': isEquation,
         'equationType': equationType,
+        'isFlash': isFlash,
+        'flashType': flashType,
       },
     );
   }

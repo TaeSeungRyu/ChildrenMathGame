@@ -65,6 +65,7 @@ class Problem {
         return a ~/ b;
       case GameType.mixed:
       case GameType.equation:
+      case GameType.flash:
         // A single Problem only ever has a concrete op as its type — roll-up
         // labels live on the GameRecord, not on individual problems.
         throw StateError('Problem.type must be a concrete operation');

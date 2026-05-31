@@ -143,6 +143,21 @@ class GameView extends GetView<GameController> {
                       } else {
                         base = 32;
                       }
+                      // Flash mode: problem text disappears after the
+                      // display window; show a "기억하기" placeholder instead
+                      // so the answer pad stays focused.
+                      if (controller.isFlash &&
+                          !controller.flashVisible.value) {
+                        return Text(
+                          '🤔  ?',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: base,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).hintColor,
+                          ),
+                        );
+                      }
                       // 방정식: "A op ? = C" with operandB hidden behind ?.
                       // Other modes: forward "A op B = ?" prompt.
                       final text = controller.isEquation

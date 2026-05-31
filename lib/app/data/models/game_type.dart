@@ -10,7 +10,11 @@ enum GameType {
   // Equation session — "A op ? = C" where one operand is hidden. Like `mixed`,
   // this is a record-level roll-up: every Problem keeps its concrete op type;
   // only the GameRecord rolls up to `equation`.
-  equation('?', '방정식');
+  equation('?', '방정식'),
+  // Flash (암산 플래시) session — the problem is shown for a brief window
+  // (e.g., 1.5s) then hidden; the player answers from memory. Roll-up: each
+  // Problem keeps a concrete op type, only the GameRecord rolls up to `flash`.
+  flash('⚡', '플래시');
 
   const GameType(this.symbol, this.label);
   final String symbol;
@@ -18,5 +22,5 @@ enum GameType {
 
   /// True when this value is a roll-up label (record-level only) rather than a
   /// concrete arithmetic operation that can drive problem generation.
-  bool get isRollup => this == mixed || this == equation;
+  bool get isRollup => this == mixed || this == equation || this == flash;
 }

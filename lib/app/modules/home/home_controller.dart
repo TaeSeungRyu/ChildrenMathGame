@@ -43,6 +43,10 @@ class HomeController extends GetxController {
     Get.toNamed(AppRoutes.equationSelect);
   }
 
+  void openFlash() {
+    Get.toNamed(AppRoutes.flashSelect);
+  }
+
   void openWrongNotebook() {
     Get.toNamed(AppRoutes.wrongNotebook);
   }

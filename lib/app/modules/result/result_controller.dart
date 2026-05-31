@@ -14,9 +14,11 @@ class ResultController extends GetxController {
   late final bool isTimeAttack;
   late final bool isEquation;
   late final GameType? equationType;
+  late final bool isFlash;
+  late final GameType? flashType;
   // True when a perfect (no-wrong) challenge run beat the prior best
   // elapsedSeconds at this (type, level). Always false for practice/mixed/
-  // time attack/equation.
+  // time attack/equation/flash.
   late final bool isNewPerfectBest;
   // True when a time-attack run beat the prior best correctCount at this
   // (type, level). Always false outside time attack.
@@ -25,6 +27,7 @@ class ResultController extends GetxController {
   bool get isTimesTable => tableNumber != null;
   bool get isMixed => record.type == GameType.mixed;
   bool get isNewBest => isNewPerfectBest || isNewTimeAttackBest;
+
 
   @override
   void onInit() {
@@ -37,6 +40,8 @@ class ResultController extends GetxController {
     isTimeAttack = (args['isTimeAttack'] as bool?) ?? false;
     isEquation = (args['isEquation'] as bool?) ?? false;
     equationType = args['equationType'] as GameType?;
+    isFlash = (args['isFlash'] as bool?) ?? false;
+    flashType = args['flashType'] as GameType?;
     isNewPerfectBest = _computeNewPerfectBest();
     isNewTimeAttackBest = _computeNewTimeAttackBest();
   }
@@ -62,6 +67,10 @@ class ResultController extends GetxController {
     // underlying ops, so the elapsed-time comparison isn't apples-to-apples
     // until we segment by sub-op. Skip for now.
     if (isEquation) return false;
+    // Flash runs share a (type=flash, level) bucket across multiple display
+    // windows (1.5s/2s/2.5s) and across the four underlying ops; comparing
+    // elapsed time across those isn't a fair "신기록" — skip.
+    if (isFlash) return false;
     if (record.correctCount != record.totalCount) return false;
     final priors = Get.find<RecordService>().all().where(
       (r) =>

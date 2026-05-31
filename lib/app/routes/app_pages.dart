@@ -22,6 +22,8 @@ import '../modules/splash/splash_binding.dart';
 import '../modules/splash/splash_view.dart';
 import '../modules/equation_select/equation_select_binding.dart';
 import '../modules/equation_select/equation_select_view.dart';
+import '../modules/flash_select/flash_select_binding.dart';
+import '../modules/flash_select/flash_select_view.dart';
 import '../modules/mixed_select/mixed_select_binding.dart';
 import '../modules/mixed_select/mixed_select_view.dart';
 import '../modules/times_table_select/times_table_select_binding.dart';
@@ -98,6 +100,11 @@ abstract class AppPages {
       name: AppRoutes.equationSelect,
       page: () => const EquationSelectView(),
       binding: EquationSelectBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.flashSelect,
+      page: () => const FlashSelectView(),
+      binding: FlashSelectBinding(),
     ),
     GetPage(
       name: AppRoutes.tutorial,
