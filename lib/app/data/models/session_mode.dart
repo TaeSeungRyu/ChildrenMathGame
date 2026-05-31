@@ -4,11 +4,15 @@
 /// contributes to "만점" and master-badge unlocks.
 /// `timeAttack` is a 60s open-ended race where problems keep coming until the
 /// timer runs out; correctCount is the score.
+/// `endless` (연속도전) has no timer and no fixed problem count: a new problem
+/// appends after every correct answer, the session ends on the first wrong
+/// answer. correctCount equals the longest streak achieved and is the score.
 /// Practice runs aren't persisted, so they aren't a mode here — they're just
 /// `isPractice == true` on a controller-only session.
 enum SessionMode {
   challenge,
-  timeAttack;
+  timeAttack,
+  endless;
 
   static SessionMode fromName(String? name) {
     if (name == null) return SessionMode.challenge;

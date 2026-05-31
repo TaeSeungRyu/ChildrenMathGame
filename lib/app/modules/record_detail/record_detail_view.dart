@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../data/models/game_type.dart';
 import '../../data/models/problem_attempt.dart';
+import '../../data/models/session_mode.dart';
 import '../../routes/app_routes.dart';
 import '../../shared/attempt_tile.dart';
 import '../../shared/date_format.dart';
@@ -57,6 +58,9 @@ class RecordDetailView extends GetView<RecordDetailController> {
                       if (r.isTimeAttack) ...[
                         const SizedBox(width: 8),
                         const _TimeAttackChip(),
+                      ] else if (r.mode == SessionMode.endless) ...[
+                        const SizedBox(width: 8),
+                        const _EndlessChip(),
                       ],
                     ],
                   ),
@@ -149,6 +153,37 @@ class _TimeAttackChip extends StatelessWidget {
               fontSize: 12,
               fontWeight: FontWeight.bold,
               color: Color(0xFFE65100),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EndlessChip extends StatelessWidget {
+  const _EndlessChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDE7F6),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFF7E57C2), width: 1),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.all_inclusive, size: 14, color: Color(0xFF4527A0)),
+          SizedBox(width: 2),
+          Text(
+            '연속도전',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF4527A0),
             ),
           ),
         ],

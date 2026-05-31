@@ -65,6 +65,10 @@ class GameController extends GetxController {
   // True for the 60-second open-ended race. Mutually exclusive with practice;
   // not available for times-table, mixed, or equation sessions.
   late final bool isTimeAttack;
+  // True for 연속도전: no timer, no problem cap, the session ends on the
+  // first wrong submission. Mutually exclusive with timeAttack/practice; not
+  // available for times-table, mixed, equation, or flash sessions.
+  late final bool isEndless;
 
   final currentIndex = 0.obs;
   // Seconds elapsed since the timer started. Counts up regardless of mode so
@@ -116,6 +120,7 @@ class GameController extends GetxController {
       problems = ProblemGenerator.generateTimesTable(tableNumber!);
       isPractice = true;
       isTimeAttack = false;
+      isEndless = false;
       equationType = null;
       flashType = null;
       flashDisplayMs = 0;
@@ -125,6 +130,7 @@ class GameController extends GetxController {
       problems = ProblemGenerator.generateMixed(mixedTypes!, level);
       isPractice = (args['isPractice'] as bool?) ?? false;
       isTimeAttack = false;
+      isEndless = false;
       equationType = null;
       flashType = null;
       flashDisplayMs = 0;
@@ -137,6 +143,7 @@ class GameController extends GetxController {
       problems = ProblemGenerator.generate(type: equationType!, level: level);
       isPractice = (args['isPractice'] as bool?) ?? false;
       isTimeAttack = false;
+      isEndless = false;
       flashType = null;
       flashDisplayMs = 0;
     } else if (isFlash) {
@@ -149,17 +156,20 @@ class GameController extends GetxController {
       problems = ProblemGenerator.generate(type: flashType!, level: level);
       isPractice = (args['isPractice'] as bool?) ?? false;
       isTimeAttack = false;
+      isEndless = false;
       equationType = null;
     } else {
       type = args['type'] as GameType;
       level = args['level'] as int;
       isTimeAttack = (args['isTimeAttack'] as bool?) ?? false;
+      isEndless = (args['isEndless'] as bool?) ?? false;
       equationType = null;
       flashType = null;
       flashDisplayMs = 0;
-      // Time attack starts with one problem and lazily appends more on each
-      // submission. Challenge/practice get the full fixed-length batch.
-      if (isTimeAttack) {
+      // Time attack and endless both start with one problem and lazily
+      // append more on each submission. Challenge/practice get the full
+      // fixed-length batch.
+      if (isTimeAttack || isEndless) {
         problems = <Problem>[
           ProblemGenerator.generateOne(type: type, level: level),
         ];
@@ -169,11 +179,12 @@ class GameController extends GetxController {
         isPractice = (args['isPractice'] as bool?) ?? false;
       }
     }
-    _answers = List<int?>.filled(problems.length, null, growable: isTimeAttack);
+    final isGrowing = isTimeAttack || isEndless;
+    _answers = List<int?>.filled(problems.length, null, growable: isGrowing);
     _attempted = List<bool>.filled(
       problems.length,
       false,
-      growable: isTimeAttack,
+      growable: isGrowing,
     );
   }
 
@@ -182,8 +193,9 @@ class GameController extends GetxController {
     super.onReady();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       elapsed.value += 1;
-      // Practice has no time pressure — tick up forever, never auto-finish.
-      if (isPractice && !isTimeAttack) return;
+      // Practice / endless have no countdown — tick up forever for the info
+      // display; only timeAttack/challenge enforce the limit.
+      if ((isPractice && !isTimeAttack) || isEndless) return;
       final remain = totalSeconds - elapsed.value;
       if (remain <= 0) {
         _finish();
@@ -263,8 +275,21 @@ class GameController extends GetxController {
       wrongCount.value += 1;
       comboCount.value = 0;
     }
+    final wasCorrect = parsed != null && parsed == expected;
     answer.value = '';
-    if (isTimeAttack) {
+    if (isEndless) {
+      // 연속도전: a wrong answer ends the session immediately; the wrong
+      // attempt is preserved in the record so the player sees it. On correct
+      // answers we keep appending fresh problems indefinitely.
+      if (!wasCorrect) {
+        _finish();
+        return;
+      }
+      problems.add(ProblemGenerator.generateOne(type: type, level: level));
+      _answers.add(null);
+      _attempted.add(false);
+      currentIndex.value += 1;
+    } else if (isTimeAttack) {
       // Open-ended race — append the next problem and advance. The timer is
       // the only thing that can end the session.
       problems.add(ProblemGenerator.generateOne(type: type, level: level));
@@ -329,7 +354,11 @@ class GameController extends GetxController {
       elapsedSeconds: elapsed.value,
       attempts: attempts,
       maxCombo: _maxCombo,
-      mode: isTimeAttack ? SessionMode.timeAttack : SessionMode.challenge,
+      mode: isEndless
+          ? SessionMode.endless
+          : isTimeAttack
+              ? SessionMode.timeAttack
+              : SessionMode.challenge,
     );
     // Practice + 구구단 runs don't write to history — keeps streak/badges/stats
     // free of "casual practice" noise.
@@ -344,6 +373,7 @@ class GameController extends GetxController {
         'mixedTypes': mixedTypes,
         'isPractice': isPractice,
         'isTimeAttack': isTimeAttack,
+        'isEndless': isEndless,
         'isEquation': isEquation,
         'equationType': equationType,
         'isFlash': isFlash,

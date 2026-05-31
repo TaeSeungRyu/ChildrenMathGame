@@ -12,21 +12,26 @@ class ResultController extends GetxController {
   late final List<GameType>? mixedTypes;
   late final bool isPractice;
   late final bool isTimeAttack;
+  late final bool isEndless;
   late final bool isEquation;
   late final GameType? equationType;
   late final bool isFlash;
   late final GameType? flashType;
   // True when a perfect (no-wrong) challenge run beat the prior best
   // elapsedSeconds at this (type, level). Always false for practice/mixed/
-  // time attack/equation/flash.
+  // time attack/endless/equation/flash.
   late final bool isNewPerfectBest;
   // True when a time-attack run beat the prior best correctCount at this
   // (type, level). Always false outside time attack.
   late final bool isNewTimeAttackBest;
+  // True when an endless run beat the prior best correctCount (= longest
+  // streak) at this (type, level). Always false outside endless.
+  late final bool isNewEndlessBest;
 
   bool get isTimesTable => tableNumber != null;
   bool get isMixed => record.type == GameType.mixed;
-  bool get isNewBest => isNewPerfectBest || isNewTimeAttackBest;
+  bool get isNewBest =>
+      isNewPerfectBest || isNewTimeAttackBest || isNewEndlessBest;
 
 
   @override
@@ -38,12 +43,14 @@ class ResultController extends GetxController {
     mixedTypes = (args['mixedTypes'] as List?)?.cast<GameType>();
     isPractice = (args['isPractice'] as bool?) ?? false;
     isTimeAttack = (args['isTimeAttack'] as bool?) ?? false;
+    isEndless = (args['isEndless'] as bool?) ?? false;
     isEquation = (args['isEquation'] as bool?) ?? false;
     equationType = args['equationType'] as GameType?;
     isFlash = (args['isFlash'] as bool?) ?? false;
     flashType = args['flashType'] as GameType?;
     isNewPerfectBest = _computeNewPerfectBest();
     isNewTimeAttackBest = _computeNewTimeAttackBest();
+    isNewEndlessBest = _computeNewEndlessBest();
   }
 
   @override
@@ -57,9 +64,11 @@ class ResultController extends GetxController {
   bool _computeNewPerfectBest() {
     // Practice runs aren't persisted, so there's no history to beat.
     if (isPractice) return false;
-    // Time attack has its own "신기록" notion (highest correctCount); the
-    // elapsedSeconds-based perfect-best comparison doesn't apply.
+    // Time attack / endless have their own "신기록" notion (highest
+    // correctCount); the elapsedSeconds-based perfect-best comparison
+    // doesn't apply.
     if (isTimeAttack) return false;
+    if (isEndless) return false;
     // Mixed runs at the same (type, level) can have different operation sets,
     // so comparing elapsed time across them isn't a fair "신기록" — skip.
     if (isMixed) return false;
@@ -101,6 +110,21 @@ class ResultController extends GetxController {
       // there's something to celebrate (at least one correct answer).
       return record.correctCount > 0;
     }
+    final bestPrior =
+        priors.map((r) => r.correctCount).reduce((a, b) => a > b ? a : b);
+    return record.correctCount > bestPrior;
+  }
+
+  bool _computeNewEndlessBest() {
+    if (!isEndless) return false;
+    final priors = Get.find<RecordService>().all().where(
+      (r) =>
+          r.mode == SessionMode.endless &&
+          r.type == record.type &&
+          r.level == record.level &&
+          r.finishedAt != record.finishedAt,
+    );
+    if (priors.isEmpty) return record.correctCount > 0;
     final bestPrior =
         priors.map((r) => r.correctCount).reduce((a, b) => a > b ? a : b);
     return record.correctCount > bestPrior;

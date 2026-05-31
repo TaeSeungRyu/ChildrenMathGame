@@ -84,42 +84,50 @@ class _ModeToggle extends GetView<LevelSelectController> {
   Widget build(BuildContext context) {
     return Obx(() {
       final mode = controller.mode.value;
+      // 4 tiles in a Row, each stacking icon-above-label vertically. This
+      // avoids the SegmentedButton's horizontal squeeze that wrapped "타임
+      // 어택" on narrow screens; each tile only needs ~50dp width for the
+      // icon and text to coexist.
       return Column(
         children: [
-          SegmentedButton<LevelSelectMode>(
-            segments: const [
-              ButtonSegment<LevelSelectMode>(
-                value: LevelSelectMode.challenge,
-                label: Text(
-                  '도전',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              Expanded(
+                child: _ModeTile(
+                  icon: Icons.timer,
+                  label: '도전',
+                  selected: mode == LevelSelectMode.challenge,
+                  onTap: () => controller.setMode(LevelSelectMode.challenge),
                 ),
-                icon: Icon(Icons.timer),
               ),
-              ButtonSegment<LevelSelectMode>(
-                value: LevelSelectMode.timeAttack,
-                label: Text(
-                  '타임어택',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _ModeTile(
+                  icon: Icons.flash_on,
+                  label: '타임어택',
+                  selected: mode == LevelSelectMode.timeAttack,
+                  onTap: () => controller.setMode(LevelSelectMode.timeAttack),
                 ),
-                icon: Icon(Icons.flash_on),
               ),
-              ButtonSegment<LevelSelectMode>(
-                value: LevelSelectMode.practice,
-                label: Text(
-                  '연습',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _ModeTile(
+                  icon: Icons.all_inclusive,
+                  label: '연속',
+                  selected: mode == LevelSelectMode.endless,
+                  onTap: () => controller.setMode(LevelSelectMode.endless),
                 ),
-                icon: Icon(Icons.spa),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _ModeTile(
+                  icon: Icons.spa,
+                  label: '연습',
+                  selected: mode == LevelSelectMode.practice,
+                  onTap: () => controller.setMode(LevelSelectMode.practice),
+                ),
               ),
             ],
-            selected: {mode},
-            onSelectionChanged: (s) => controller.setMode(s.first),
-            style: ButtonStyle(
-              padding: WidgetStateProperty.all(
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              ),
-            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -140,8 +148,71 @@ class _ModeToggle extends GetView<LevelSelectController> {
         return '180초 안에 10문제!';
       case LevelSelectMode.timeAttack:
         return '60초 동안 최대한 많이!';
+      case LevelSelectMode.endless:
+        return '틀릴 때까지! 몇 문제 연속 맞힐 수 있을까?';
       case LevelSelectMode.practice:
         return '시간 제한 없이 풀어요 (기록 미저장)';
     }
+  }
+}
+
+// Stacked icon+label tile used in the mode picker Row. Selected state uses
+// the primary fill; unselected uses a low-contrast outline so the focused
+// option is unambiguous even on small screens.
+class _ModeTile extends StatelessWidget {
+  const _ModeTile({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final bg = selected ? scheme.primary : scheme.surfaceContainerHighest;
+    final fg = selected ? scheme.onPrimary : scheme.onSurface;
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? scheme.primary : scheme.outlineVariant,
+              width: 1,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 22, color: fg),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: fg,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

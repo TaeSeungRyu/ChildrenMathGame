@@ -3,10 +3,11 @@ import 'package:get/get.dart';
 import '../../data/models/game_type.dart';
 import '../../routes/app_routes.dart';
 
-/// Three-way mode toggle on the level-select screen. Challenge is the default
-/// canonical run; timeAttack swaps the 10-problem cap for a 60s race;
+/// Four-way mode toggle on the level-select screen. Challenge is the default
+/// canonical run; timeAttack swaps the 10-problem cap for a 60s race; endless
+/// removes both the timer and the problem cap (session ends on first wrong);
 /// practice removes the timer entirely and skips record persistence.
-enum LevelSelectMode { challenge, timeAttack, practice }
+enum LevelSelectMode { challenge, timeAttack, endless, practice }
 
 class LevelSelectController extends GetxController {
   late final GameType type;
@@ -33,6 +34,7 @@ class LevelSelectController extends GetxController {
         'level': level,
         'isPractice': mode.value == LevelSelectMode.practice,
         'isTimeAttack': mode.value == LevelSelectMode.timeAttack,
+        'isEndless': mode.value == LevelSelectMode.endless,
       },
     );
   }

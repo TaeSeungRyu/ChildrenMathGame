@@ -71,12 +71,16 @@ class _ResultViewState extends State<ResultView> {
                                 '${controller.isPractice ? ' 연습' : ''}'
                           : controller.isTimeAttack
                                 ? '${r.type.label} 레벨 ${r.level} 타임어택'
-                                : controller.isPractice
-                                      ? '${r.type.label} 레벨 ${r.level} 연습'
-                                      : '${r.type.label} 레벨 ${r.level}';
+                                : controller.isEndless
+                                      ? '${r.type.label} 레벨 ${r.level} 연속도전'
+                                      : controller.isPractice
+                                            ? '${r.type.label} 레벨 ${r.level} 연습'
+                                            : '${r.type.label} 레벨 ${r.level}';
     final score = controller.isTimeAttack
         ? '${r.correctCount}문제 정답'
-        : '${r.correctCount} / ${r.totalCount} 정답';
+        : controller.isEndless
+            ? '${r.correctCount} 연속'
+            : '${r.correctCount} / ${r.totalCount} 정답';
     final time = formatElapsedSeconds(r.elapsedSeconds);
     final newBest = controller.isNewBest ? '\n🏆 신기록 달성!' : '';
     return '🎯 어린이 수학 게임\n$label · $score · $time$newBest';
@@ -87,6 +91,7 @@ class _ResultViewState extends State<ResultView> {
     final r = controller.record;
     final isNewBest = controller.isNewBest;
     final isTimeAttack = controller.isTimeAttack;
+    final isEndless = controller.isEndless;
     final reviewable = r.attempts
         .where((a) => a.status != AttemptStatus.correct)
         .toList();
@@ -141,20 +146,26 @@ class _ResultViewState extends State<ResultView> {
                             if (isNewBest) ...[
                               const SizedBox(height: 8),
                               _NewRecordBadge(
-                                label: isTimeAttack
-                                    ? '최다 정답 신기록!'
-                                    : '최단 시간 신기록!',
+                                label: isEndless
+                                    ? '최다 연속 신기록!'
+                                    : isTimeAttack
+                                        ? '최다 정답 신기록!'
+                                        : '최단 시간 신기록!',
                               ),
                             ],
                             const SizedBox(height: 16),
                             _ScoreText(
-                              text: isTimeAttack
+                              text: isEndless || isTimeAttack
                                   ? '${r.correctCount}'
                                   : '${r.correctCount} / ${r.totalCount}',
                               highlight: isNewBest,
                             ),
                             Text(
-                              isNewBest ? '신기록 달성!' : '맞춘 문제',
+                              isNewBest
+                                  ? '신기록 달성!'
+                                  : isEndless
+                                      ? '연속 정답'
+                                      : '맞춘 문제',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: isNewBest ? FontWeight.bold : null,
@@ -182,6 +193,8 @@ class _ResultViewState extends State<ResultView> {
                                         '${controller.isPractice ? ' (연습)' : ''}'
                                   : controller.isTimeAttack
                                   ? '${r.type.label} 레벨 ${r.level} (타임어택)'
+                                  : controller.isEndless
+                                  ? '${r.type.label} 레벨 ${r.level} (연속도전)'
                                   : controller.isPractice
                                   ? '${r.type.label} 레벨 ${r.level} (연습)'
                                   : '${r.type.label} 레벨 ${r.level}',

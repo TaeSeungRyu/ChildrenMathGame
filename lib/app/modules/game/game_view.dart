@@ -22,6 +22,10 @@ class GameView extends GetView<GameController> {
               text =
                   '맞춤 ${controller.correctCount.value} · '
                   '시도 ${controller.currentIndex.value}';
+            } else if (controller.isEndless) {
+              // 연속도전: surface the current streak prominently — that *is*
+              // the score and it only ever ticks up until the session ends.
+              text = '연속 ${controller.correctCount.value}';
             } else {
               final progress =
                   '${controller.currentIndex.value + 1} / ${controller.totalProblems}';
@@ -45,7 +49,9 @@ class GameView extends GetView<GameController> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Center(
               child: Obx(() {
-                if (controller.isPractice && !controller.isTimeAttack) {
+                // 연속도전 / practice: no countdown — show elapsed as info.
+                if ((controller.isPractice && !controller.isTimeAttack) ||
+                    controller.isEndless) {
                   return Text(
                     '${controller.elapsed.value}초',
                     style: TextStyle(
@@ -81,11 +87,14 @@ class GameView extends GetView<GameController> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Obx(() {
-              // Practice: show problem progression. Challenge / time attack:
-              // show remaining time so the bar drains visually as the
-              // countdown runs out.
+              // Practice: show problem progression. 연속도전: there is no end
+              // to drain toward — fill the bar fully as a "infinite" cue.
+              // Challenge / time attack: show remaining time so the bar
+              // drains visually as the countdown runs out.
               final double value;
-              if (controller.isPractice && !controller.isTimeAttack) {
+              if (controller.isEndless) {
+                value = 1.0;
+              } else if (controller.isPractice && !controller.isTimeAttack) {
                 value = (controller.currentIndex.value + 1) /
                     controller.totalProblems;
               } else {
