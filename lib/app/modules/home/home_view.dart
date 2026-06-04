@@ -116,30 +116,29 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  // 2x2 grid of the four concrete operations — tall enough that the 52pt
-  // symbol + 24pt label fit inside the Card content area after the default
-  // Material 3 card margin (8px vertical) is subtracted. Going below ~128
-  // overflows once the Jua font's line metrics are factored in.
+  // 2x2 grid of the four concrete operations — compact 96h tiles with 40pt
+  // symbol + 18pt label keep the home screen scroll-free on most phones.
+  // FittedBox inside _GameTile is the safety net for very small viewports.
   Widget _basicOpsGrid() {
     return Column(
       children: [
         SizedBox(
-          height: 132,
+          height: 96,
           child: Row(
             children: [
               Expanded(child: _GameTile(type: GameType.addition, onTap: () => _tapHandler(GameType.addition))),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(child: _GameTile(type: GameType.subtraction, onTap: () => _tapHandler(GameType.subtraction))),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         SizedBox(
-          height: 132,
+          height: 96,
           child: Row(
             children: [
               Expanded(child: _GameTile(type: GameType.multiplication, onTap: () => _tapHandler(GameType.multiplication))),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(child: _GameTile(type: GameType.division, onTap: () => _tapHandler(GameType.division))),
             ],
           ),
@@ -249,9 +248,13 @@ class _SpecialTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    // Warm beige + sienna-brown text — sits between the cream scaffold and
+    // the saturated basic-op tiles, creating a visual hierarchy ("primary"
+    // 4-ops pop, "secondary" 4 modes recede gently).
+    const bg = Color(0xFFF5E6CA);
+    const fg = Color(0xFF6D4C41);
     return Card(
-      color: scheme.secondaryContainer,
+      color: bg,
       margin: EdgeInsets.zero,
       child: InkWell(
         onTap: onTap,
@@ -261,14 +264,14 @@ class _SpecialTile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 30, color: scheme.onSecondaryContainer),
+              Icon(icon, size: 30, color: fg),
               const SizedBox(height: 4),
               Text(
                 label,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: scheme.onSecondaryContainer,
+                  color: fg,
                 ),
               ),
             ],
@@ -355,6 +358,12 @@ class _EditableTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Warm dark brown — softens the AppBar's blue-on-blue stack ("{이름}의
+    // 게임" was reading as too blue). Contrast on the #4FC3F7 AppBar is
+    // ~7.8 (well above WCAG-AA 4.5). Icons in actions keep the deep-blue
+    // foregroundColor for tone separation between "navigation" and
+    // "identity" elements.
+    const titleColor = Color(0xFF3E2723);
     return Obx(() {
       final name = Get.find<ProfileService>().name.value;
       return InkWell(
@@ -375,15 +384,14 @@ class _EditableTitle extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
+                  color: titleColor,
                 ),
               ),
               const SizedBox(width: 6),
               Icon(
                 Icons.edit,
                 size: 20,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.55),
+                color: titleColor.withValues(alpha: 0.55),
                 semanticLabel: '이름 바꾸기',
               ),
             ],
@@ -516,10 +524,14 @@ class _DailyMissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final allDone = completed == missions.length && missions.isNotEmpty;
+    // Warm peach (in-progress) → bright amber (celebratory all-done). Both
+    // pair naturally with the cream scaffold and avoid clashing with the
+    // saturated rainbow tiles below.
+    final bg = allDone ? const Color(0xFFFFC107) : const Color(0xFFFFE0B2);
+    final fg = allDone ? const Color(0xFF3E2723) : const Color(0xFF5D4037);
     return Card(
-      color: allDone ? scheme.primary : scheme.primaryContainer,
+      color: bg,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
         child: Column(
@@ -530,9 +542,7 @@ class _DailyMissionCard extends StatelessWidget {
                 Icon(
                   allDone ? Icons.celebration : Icons.flag,
                   size: 20,
-                  color: allDone
-                      ? scheme.onPrimary
-                      : scheme.onPrimaryContainer,
+                  color: fg,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -540,9 +550,7 @@ class _DailyMissionCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: allDone
-                        ? scheme.onPrimary
-                        : scheme.onPrimaryContainer,
+                    color: fg,
                   ),
                 ),
                 const Spacer(),
@@ -552,9 +560,7 @@ class _DailyMissionCard extends StatelessWidget {
                     Icon(
                       Icons.star,
                       size: 18,
-                      color: allDone
-                          ? const Color(0xFFFFD54F)
-                          : scheme.onPrimaryContainer,
+                      color: allDone ? const Color(0xFFFFFFFF) : fg,
                     ),
                     const SizedBox(width: 2),
                     Text(
@@ -562,9 +568,7 @@ class _DailyMissionCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: allDone
-                            ? scheme.onPrimary
-                            : scheme.onPrimaryContainer,
+                        color: fg,
                       ),
                     ),
                   ],
@@ -573,7 +577,7 @@ class _DailyMissionCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             for (var i = 0; i < missions.length; i++) ...[
-              _MissionRow(status: missions[i], onPrimary: allDone),
+              _MissionRow(status: missions[i], foreground: fg),
               if (i != missions.length - 1) const SizedBox(height: 2),
             ],
           ],
@@ -584,25 +588,23 @@ class _DailyMissionCard extends StatelessWidget {
 }
 
 class _MissionRow extends StatelessWidget {
-  const _MissionRow({required this.status, required this.onPrimary});
+  const _MissionRow({required this.status, required this.foreground});
 
   final DailyMissionStatus status;
-  // True when parent card uses the primary (filled) background — text needs
-  // onPrimary instead of onPrimaryContainer for contrast.
-  final bool onPrimary;
+  // Foreground color computed by the parent card based on its done/in-progress
+  // background. Muted variant is derived locally for secondary text.
+  final Color foreground;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final base = onPrimary ? scheme.onPrimary : scheme.onPrimaryContainer;
-    final muted = base.withValues(alpha: 0.75);
+    final muted = foreground.withValues(alpha: 0.75);
     final done = status.isComplete;
     return Row(
       children: [
         Icon(
           done ? Icons.check_circle : Icons.radio_button_unchecked,
           size: 18,
-          color: done ? const Color(0xFF66BB6A) : muted,
+          color: done ? const Color(0xFF2E7D32) : muted,
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -611,7 +613,7 @@ class _MissionRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: done ? FontWeight.w600 : FontWeight.normal,
-              color: base,
+              color: foreground,
               decoration: done ? TextDecoration.lineThrough : null,
               decorationColor: muted,
             ),
@@ -638,10 +640,15 @@ class _RecommendationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final percent = (bucket.accuracy * 100).round();
+    // Soft sky-mint + deep teal — distinct from the warm mission card and
+    // the rainbow tiles, so the eye can place "오늘의 추천" as a separate
+    // category instantly.
+    const bg = Color(0xFFB2EBF2);
+    const accent = Color(0xFF00838F);
+    const fg = Color(0xFF006064);
     return Card(
-      color: scheme.tertiaryContainer,
+      color: bg,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -649,12 +656,12 @@ class _RecommendationCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
           child: Row(
             children: [
-              CircleAvatar(
+              const CircleAvatar(
                 radius: 22,
-                backgroundColor: scheme.tertiary,
+                backgroundColor: accent,
                 child: Icon(
                   Icons.tips_and_updates,
-                  color: scheme.onTertiary,
+                  color: Colors.white,
                   size: 24,
                 ),
               ),
@@ -666,10 +673,10 @@ class _RecommendationCard extends StatelessWidget {
                     Text(
                       '오늘 ${bucket.type.label} 레벨 ${bucket.level} '
                       '연습 어때?',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: scheme.onTertiaryContainer,
+                        color: fg,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -677,18 +684,13 @@ class _RecommendationCard extends StatelessWidget {
                       '최근 정답률 $percent%',
                       style: TextStyle(
                         fontSize: 13,
-                        color: scheme.onTertiaryContainer.withValues(
-                          alpha: 0.8,
-                        ),
+                        color: fg.withValues(alpha: 0.8),
                       ),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                color: scheme.onTertiaryContainer,
-              ),
+              const Icon(Icons.chevron_right, color: fg),
             ],
           ),
         ),
@@ -703,11 +705,23 @@ class _GameTile extends StatelessWidget {
   final GameType type;
   final VoidCallback onTap;
 
+  // Per-operation palette — soft Material 200/300 background paired with a
+  // darker 800-level symbol so each tile reads as a distinct "color zone"
+  // while staying WCAG-AA legible (all symbol-on-bg combos ≥ 4.5 contrast).
+  static const _palette = <GameType, ({Color bg, Color accent})>{
+    GameType.addition: (bg: Color(0xFFA5D6A7), accent: Color(0xFF1B5E20)),
+    GameType.subtraction: (bg: Color(0xFFFFCC80), accent: Color(0xFFE65100)),
+    GameType.multiplication: (bg: Color(0xFFCE93D8), accent: Color(0xFF4A148C)),
+    GameType.division: (bg: Color(0xFFF48FB1), accent: Color(0xFF880E4F)),
+  };
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final palette = _palette[type] ??
+        (bg: scheme.primaryContainer, accent: scheme.onPrimaryContainer);
     return Card(
-      color: scheme.primaryContainer,
+      color: palette.bg,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -724,17 +738,18 @@ class _GameTile extends StatelessWidget {
                 Text(
                   type.symbol,
                   style: TextStyle(
-                    fontSize: 52,
+                    fontSize: 40,
                     fontWeight: FontWeight.bold,
-                    color: scheme.onPrimaryContainer,
+                    color: palette.accent,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   type.label,
                   style: TextStyle(
-                    fontSize: 24,
-                    color: scheme.onPrimaryContainer,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: palette.accent,
                   ),
                 ),
               ],

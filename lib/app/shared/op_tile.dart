@@ -23,9 +23,20 @@ class OpTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final bg = selected ? scheme.primary : scheme.surfaceContainerHighest;
-    final fg = selected ? scheme.onPrimary : scheme.onSurface;
+    // Selected: deep sky-blue fill (`#1976D2`) with white text — pops against
+    // the cream scaffold. Unselected: very soft warm peach (`#FFF3E0`) with
+    // dark brown — sits gently within the warm palette rather than feeling
+    // like a generic "disabled" gray.
+    final selectedBg = const Color(0xFF1976D2);
+    final unselectedBg = const Color(0xFFFFF3E0);
+    final selectedFg = Colors.white;
+    final unselectedFg = const Color(0xFF5D4037);
+    final selectedBorder = const Color(0xFF1976D2);
+    final unselectedBorder = const Color(0xFFD7CCC8);
+
+    final bg = selected ? selectedBg : unselectedBg;
+    final fg = selected ? selectedFg : unselectedFg;
+    final border = selected ? selectedBorder : unselectedBorder;
     return Opacity(
       opacity: enabled ? 1.0 : 0.55,
       child: Material(
@@ -37,10 +48,7 @@ class OpTile extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: selected ? scheme.primary : scheme.outlineVariant,
-                width: 1,
-              ),
+              border: Border.all(color: border, width: 1),
             ),
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
             child: Column(
