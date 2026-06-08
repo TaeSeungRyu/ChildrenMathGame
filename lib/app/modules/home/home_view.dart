@@ -21,57 +21,79 @@ class HomeView extends GetView<HomeController> {
         centerTitle: true,
         actions: const [_TutorialButton(), _MuteToggle()],
       ),
-      // Single scrollable column with two clearly-separated sections (기본
-      // 연산 2x2 grid + 특별 모드 1x4 row). The earlier IntrinsicHeight +
-      // Spacer layout doesn't accommodate 7 modes cleanly; conventional
-      // section-titled lists scale better as modes are added.
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              height: 76,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Lottie.asset(
-                      'assets/lottie/home_banner.json',
-                      fit: BoxFit.contain,
-                    ),
+      // LayoutBuilder + IntrinsicHeight + minHeight=viewport pattern. On small
+      // viewports (Galaxy S25-class) intrinsic content exceeds the viewport
+      // and SingleChildScrollView scrolls. On tall viewports (Pixel 8 Pro,
+      // tablets, unfolded foldables) the extra height flows into the basic
+      // ops grid via the Expanded below, so tiles grow rather than leaving an
+      // empty band at the bottom.
+      body: LayoutBuilder(
+        builder: (context, viewport) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: viewport.maxHeight),
+              child: IntrinsicHeight(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        height: 76,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Lottie.asset(
+                                'assets/lottie/home_banner.json',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            if (controller.streakDays >= 1)
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: _StreakBadge(
+                                  days: controller.streakDays,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      _DailyMissionCard(
+                        missions: controller.missions,
+                        completed: controller.missionsCompleted,
+                      ),
+                      if (controller.recommendation != null) ...[
+                        const SizedBox(height: 6),
+                        _RecommendationCard(
+                          bucket: controller.recommendation!,
+                          onTap: () => controller.startRecommended(
+                            controller.recommendation!,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      const _SectionHeader(
+                        icon: Icons.calculate,
+                        title: '기본 연산',
+                      ),
+                      const SizedBox(height: 6),
+                      Expanded(child: _basicOpsGrid()),
+                      const SizedBox(height: 12),
+                      const _SectionHeader(
+                        icon: Icons.star,
+                        title: '특별 모드',
+                      ),
+                      const SizedBox(height: 6),
+                      _specialModesRow(),
+                    ],
                   ),
-                  if (controller.streakDays >= 1)
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: _StreakBadge(days: controller.streakDays),
-                    ),
-                ],
+                ),
               ),
             ),
-            const SizedBox(height: 6),
-            _DailyMissionCard(
-              missions: controller.missions,
-              completed: controller.missionsCompleted,
-            ),
-            if (controller.recommendation != null) ...[
-              const SizedBox(height: 6),
-              _RecommendationCard(
-                bucket: controller.recommendation!,
-                onTap: () =>
-                    controller.startRecommended(controller.recommendation!),
-              ),
-            ],
-            const SizedBox(height: 12),
-            const _SectionHeader(icon: Icons.calculate, title: '기본 연산'),
-            const SizedBox(height: 6),
-            _basicOpsGrid(),
-            const SizedBox(height: 12),
-            const _SectionHeader(icon: Icons.star, title: '특별 모드'),
-            const SizedBox(height: 6),
-            _specialModesRow(),
-          ],
-        ),
+          );
+        },
       ),
       // Quick-action row is pinned to the bottom of the screen so it stays
       // visible regardless of scroll position. SafeArea handles the system
@@ -116,15 +138,17 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  // 2x2 grid of the four concrete operations — compact 80h tiles with 40pt
-  // symbol + 18pt label keep the home screen scroll-free on Galaxy S25-sized
-  // viewports. FittedBox inside _GameTile is the safety net for narrower or
-  // shorter screens.
+  // 2x2 grid of the four concrete operations. Wrapped in Expanded by the
+  // caller, so the two rows split whatever vertical space is leftover after
+  // the fixed-height sections (banner, mission card, special modes row). On
+  // small phones each row collapses to ~80h (intrinsic content); on tall
+  // phones each row grows beyond 120h and BoxFit.contain in _GameTile scales
+  // the symbol + label up to match — the primary CTAs read bigger on bigger
+  // screens instead of leaving an empty band at the bottom.
   Widget _basicOpsGrid() {
     return Column(
       children: [
-        SizedBox(
-          height: 80,
+        Expanded(
           child: Row(
             children: [
               Expanded(child: _GameTile(type: GameType.addition, onTap: () => _tapHandler(GameType.addition))),
@@ -134,8 +158,7 @@ class HomeView extends GetView<HomeController> {
           ),
         ),
         const SizedBox(height: 8),
-        SizedBox(
-          height: 80,
+        Expanded(
           child: Row(
             children: [
               Expanded(child: _GameTile(type: GameType.multiplication, onTap: () => _tapHandler(GameType.multiplication))),
@@ -724,34 +747,40 @@ class _GameTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        // FittedBox scaleDown guarantees the symbol+label combo never
-        // overflows even on narrow phones / large system text sizes; on
-        // normal screens it renders at the natural 52/24pt sizes.
+        // BoxFit.contain (instead of scaleDown) lets the symbol+label combo
+        // scale both ways: shrunk on narrow phones / large system text sizes
+        // so it never overflows, and enlarged on tall viewports where the
+        // parent row gets extra height from the basic-ops Expanded — so the
+        // primary CTAs actually look bigger on bigger screens rather than
+        // leaving padding inside the tile.
         child: Center(
           child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  type.symbol,
-                  style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    color: palette.accent,
+            fit: BoxFit.contain,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    type.symbol,
+                    style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: palette.accent,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  type.label,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: palette.accent,
+                  const SizedBox(height: 2),
+                  Text(
+                    type.label,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: palette.accent,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
