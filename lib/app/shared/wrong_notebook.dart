@@ -7,12 +7,22 @@ import '../data/models/wrong_notebook_entry.dart';
 /// problem identity (operands + operations + correctAnswer). Sorted by
 /// frequency desc, then most recent first — frequently missed problems
 /// surface to the top.
-List<WrongNotebookEntry> aggregateWrongNotebook(List<GameRecord> records) {
+///
+/// `dismissedAt` maps a [wrongNotebookSignature] to the moment the user
+/// dismissed that problem from the notebook. Attempts in records finished at
+/// or before that moment are filtered out, so newer misses of the same
+/// problem still resurface the entry.
+List<WrongNotebookEntry> aggregateWrongNotebook(
+  List<GameRecord> records, {
+  Map<String, DateTime> dismissedAt = const {},
+}) {
   final byKey = <String, _Acc>{};
   for (final r in records) {
     for (final a in r.attempts) {
       if (a.status == AttemptStatus.correct) continue;
-      final key = _signatureOf(a);
+      final key = wrongNotebookSignature(a);
+      final dismissed = dismissedAt[key];
+      if (dismissed != null && !r.finishedAt.isAfter(dismissed)) continue;
       final existing = byKey[key];
       if (existing == null) {
         byKey[key] = _Acc(
@@ -48,7 +58,10 @@ List<WrongNotebookEntry> aggregateWrongNotebook(List<GameRecord> records) {
   return list;
 }
 
-String _signatureOf(ProblemAttempt a) {
+/// Stable key identifying a problem across attempts — same operands chain,
+/// same operations, same expected answer. Used both for aggregation and for
+/// the dismissal map persisted by `RecordService`.
+String wrongNotebookSignature(ProblemAttempt a) {
   final ops = a.operations.map((o) => o.name).join(',');
   final operands = a.operands.join(',');
   return '$operands|$ops|${a.correctAnswer}';

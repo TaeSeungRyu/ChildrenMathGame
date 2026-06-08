@@ -8,6 +8,7 @@ import '../models/game_record.dart';
 
 class RecordService extends GetxService {
   static const _storageKey = 'game_records_v4';
+  static const _dismissedWrongKey = 'wrong_notebook_dismissed_v1';
 
   late final SharedPreferences _prefs;
 
@@ -49,6 +50,30 @@ class RecordService extends GetxService {
     await _prefs.setString(
       _storageKey,
       jsonEncode(records.map((r) => r.toJson()).toList()),
+    );
+  }
+
+  // Wrong-notebook dismissals: signature -> moment the user dismissed it.
+  // Attempts in records older than that moment are hidden; newer misses of
+  // the same problem still resurface the entry.
+  Map<String, DateTime> dismissedWrongSignatures() {
+    final raw = _prefs.getString(_dismissedWrongKey);
+    if (raw == null || raw.isEmpty) return {};
+    final map = jsonDecode(raw) as Map<String, dynamic>;
+    return {
+      for (final e in map.entries)
+        e.key: DateTime.fromMillisecondsSinceEpoch(e.value as int),
+    };
+  }
+
+  Future<void> dismissWrongSignature(String signature, {DateTime? at}) async {
+    final map = dismissedWrongSignatures()
+      ..[signature] = at ?? DateTime.now();
+    await _prefs.setString(
+      _dismissedWrongKey,
+      jsonEncode({
+        for (final e in map.entries) e.key: e.value.millisecondsSinceEpoch,
+      }),
     );
   }
 }

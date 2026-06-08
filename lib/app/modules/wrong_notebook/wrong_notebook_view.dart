@@ -18,9 +18,11 @@ class WrongNotebookView extends GetView<WrongNotebookController> {
         ),
         centerTitle: true,
       ),
-      body: controller.totalWrongCount == 0
-          ? const _EmptyState()
-          : _NotebookBody(),
+      body: Obx(
+        () => controller.totalWrongCount == 0
+            ? const _EmptyState()
+            : _NotebookBody(),
+      ),
     );
   }
 }
@@ -92,6 +94,7 @@ class _NotebookBody extends StatelessWidget {
                 entry: list[i],
                 now: now,
                 onTap: () => controller.retrySingle(list[i].sample),
+                onDelete: () => controller.confirmDelete(list[i]),
               ),
             );
           }),
@@ -183,11 +186,13 @@ class _EntryTile extends StatelessWidget {
     required this.entry,
     required this.now,
     required this.onTap,
+    required this.onDelete,
   });
 
   final WrongNotebookEntry entry;
   final DateTime now;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +202,7 @@ class _EntryTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
           child: Row(
             children: [
               Expanded(
@@ -230,11 +235,17 @@ class _EntryTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               IconButton(
                 tooltip: '다시 풀기',
                 onPressed: onTap,
                 icon: const Icon(Icons.refresh),
+              ),
+              IconButton(
+                tooltip: '삭제',
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete_outline),
+                color: Colors.red,
               ),
             ],
           ),

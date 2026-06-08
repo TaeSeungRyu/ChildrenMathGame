@@ -31,7 +31,7 @@ class HomeView extends GetView<HomeController> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SizedBox(
-              height: 96,
+              height: 76,
               child: Stack(
                 children: [
                   Positioned.fill(
@@ -49,26 +49,26 @@ class HomeView extends GetView<HomeController> {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _DailyMissionCard(
               missions: controller.missions,
               completed: controller.missionsCompleted,
             ),
             if (controller.recommendation != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               _RecommendationCard(
                 bucket: controller.recommendation!,
                 onTap: () =>
                     controller.startRecommended(controller.recommendation!),
               ),
             ],
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             const _SectionHeader(icon: Icons.calculate, title: '기본 연산'),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _basicOpsGrid(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             const _SectionHeader(icon: Icons.star, title: '특별 모드'),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _specialModesRow(),
           ],
         ),
@@ -116,14 +116,15 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  // 2x2 grid of the four concrete operations — compact 96h tiles with 40pt
-  // symbol + 18pt label keep the home screen scroll-free on most phones.
-  // FittedBox inside _GameTile is the safety net for very small viewports.
+  // 2x2 grid of the four concrete operations — compact 80h tiles with 40pt
+  // symbol + 18pt label keep the home screen scroll-free on Galaxy S25-sized
+  // viewports. FittedBox inside _GameTile is the safety net for narrower or
+  // shorter screens.
   Widget _basicOpsGrid() {
     return Column(
       children: [
         SizedBox(
-          height: 96,
+          height: 80,
           child: Row(
             children: [
               Expanded(child: _GameTile(type: GameType.addition, onTap: () => _tapHandler(GameType.addition))),
@@ -132,9 +133,9 @@ class HomeView extends GetView<HomeController> {
             ],
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         SizedBox(
-          height: 96,
+          height: 80,
           child: Row(
             children: [
               Expanded(child: _GameTile(type: GameType.multiplication, onTap: () => _tapHandler(GameType.multiplication))),
@@ -151,7 +152,7 @@ class HomeView extends GetView<HomeController> {
   // session-shape variant rather than a "primary" operation.
   Widget _specialModesRow() {
     return SizedBox(
-      height: 96,
+      height: 80,
       child: Row(
         children: [
           Expanded(
@@ -533,7 +534,7 @@ class _DailyMissionCard extends StatelessWidget {
     return Card(
       color: bg,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -575,11 +576,9 @@ class _DailyMissionCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            for (var i = 0; i < missions.length; i++) ...[
+            const SizedBox(height: 4),
+            for (var i = 0; i < missions.length; i++)
               _MissionRow(status: missions[i], foreground: fg),
-              if (i != missions.length - 1) const SizedBox(height: 2),
-            ],
           ],
         ),
       ),
@@ -653,7 +652,7 @@ class _RecommendationCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+          padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
           child: Row(
             children: [
               const CircleAvatar(
