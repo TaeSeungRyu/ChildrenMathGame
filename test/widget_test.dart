@@ -23,7 +23,7 @@ void main() {
     await tester.pumpWidget(const MyApp());
     await tester.pump();
     expect(
-      find.text('${ProfileService.defaultName}의 수학 게임'),
+      find.text('연산 히어로\n${ProfileService.defaultName}!'),
       findsOneWidget,
     );
   });

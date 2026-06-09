@@ -404,7 +404,7 @@ class _EditableTitle extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '$name의 게임',
+                '$name 히어로!',
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,

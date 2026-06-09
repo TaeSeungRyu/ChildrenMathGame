@@ -83,7 +83,7 @@ class _ResultViewState extends State<ResultView> {
             : '${r.correctCount} / ${r.totalCount} 정답';
     final time = formatElapsedSeconds(r.elapsedSeconds);
     final newBest = controller.isNewBest ? '\n🏆 신기록 달성!' : '';
-    return '🎯 어린이 수학 게임\n$label · $score · $time$newBest';
+    return '🎯 연산 히어로\n$label · $score · $time$newBest';
   }
 
   @override
@@ -214,7 +214,7 @@ class _ResultViewState extends State<ResultView> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              '🎯 어린이 수학 게임',
+                              '🎯 연산 히어로',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey.shade500,

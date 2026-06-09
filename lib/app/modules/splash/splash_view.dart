@@ -181,9 +181,9 @@ class _SplashCenter extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     child: Obx(
                       () => Text(
-                        '${profile.name.value}의 수학 게임',
-                        maxLines: 1,
-                        softWrap: false,
+                        '연산 히어로\n${profile.name.value}!',
+                        maxLines: 2,
+                        textAlign: TextAlign.center,
                         overflow: TextOverflow.visible,
                         style: TextStyle(
                           fontFamily: Theme.of(
