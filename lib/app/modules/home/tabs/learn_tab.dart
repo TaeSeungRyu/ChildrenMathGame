@@ -21,12 +21,12 @@ class LearnTab extends GetView<HomeController> {
             constraints: BoxConstraints(minHeight: viewport.maxHeight),
             child: IntrinsicHeight(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SizedBox(
-                      height: 72,
+                      height: 68,
                       child: Stack(
                         children: [
                           Positioned.fill(
@@ -46,13 +46,13 @@ class LearnTab extends GetView<HomeController> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     _DailyMissionCard(
                       missions: controller.missions,
                       completed: controller.missionsCompleted,
                     ),
                     if (controller.recommendation != null) ...[
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       _RecommendationCard(
                         bucket: controller.recommendation!,
                         onTap: () => controller.startRecommended(
@@ -60,19 +60,19 @@ class LearnTab extends GetView<HomeController> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     const _SectionHeader(
                       icon: Icons.calculate,
                       title: '기본 연산',
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Expanded(child: _BasicOpsGrid()),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     const _SectionHeader(
                       icon: Icons.star,
                       title: '특별 모드',
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     const _SpecialModesRow(),
                   ],
                 ),
@@ -140,7 +140,7 @@ class _SpecialModesRow extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 80,
+      height: 72,
       child: Row(
         children: [
           Expanded(
@@ -228,16 +228,16 @@ class _SpecialTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 30, color: fg),
-              const SizedBox(height: 4),
+              Icon(icon, size: 28, color: fg),
+              const SizedBox(height: 2),
               Text(
                 label,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: fg,
                 ),
@@ -311,7 +311,7 @@ class _DailyMissionCard extends StatelessWidget {
     return Card(
       color: bg,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+        padding: const EdgeInsets.fromLTRB(14, 6, 14, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -353,7 +353,7 @@ class _DailyMissionCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             for (var i = 0; i < missions.length; i++)
               _MissionRow(status: missions[i], foreground: fg),
           ],
@@ -424,16 +424,16 @@ class _RecommendationCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
+          padding: const EdgeInsets.fromLTRB(14, 8, 12, 8),
           child: Row(
             children: [
               const CircleAvatar(
-                radius: 22,
+                radius: 20,
                 backgroundColor: accent,
                 child: Icon(
                   Icons.tips_and_updates,
                   color: Colors.white,
-                  size: 24,
+                  size: 22,
                 ),
               ),
               const SizedBox(width: 12),
@@ -497,7 +497,7 @@ class _GameTile extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.contain,
             child: Padding(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -505,7 +505,7 @@ class _GameTile extends StatelessWidget {
                   Text(
                     type.symbol,
                     style: TextStyle(
-                      fontSize: 40,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: palette.accent,
                     ),
@@ -514,7 +514,7 @@ class _GameTile extends StatelessWidget {
                   Text(
                     type.label,
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: palette.accent,
                     ),

@@ -88,8 +88,10 @@ class _HomeNavBar extends GetView<HomeController> {
           child: NavigationBar(
             selectedIndex: controller.tabIndex.value,
             onDestinationSelected: controller.setTab,
-            // Slightly shorter than the 80dp default so 학습 탭 본문이
-            // Galaxy S25 클래스(852dp 세로)에서 스크롤 없이 들어맞는다.
+            // Shorter than the 80dp default. Combined with the trimmed
+            // banner/card/section sizes in learn_tab.dart, this keeps the 학습
+            // 탭 본문이 Galaxy S25 클래스(세로 ~780dp logical, body ~600dp)에서
+            // 스크롤 없이 들어맞도록 한다.
             height: 68,
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             destinations: const [
