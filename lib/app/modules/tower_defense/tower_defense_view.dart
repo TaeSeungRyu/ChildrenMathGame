@@ -249,11 +249,13 @@ class _Battlefield extends StatelessWidget {
   final TowerDefenseController controller;
   final int elapsedMs;
 
-  // 몬스터 본체 sprite 크기와 문제 카드를 합친 전체 한 셀의 폭. 문제 카드가
-  // 양옆으로 살짝 넘쳐도 잘리지 않도록 sprite 보다 넓게 잡는다.
-  static const double _spriteSize = 50;
+  // 몬스터 한 셀의 시각 크기. 위쪽에 문제 카드, 아래쪽에 몬스터 sprite 가 들어가는
+  // 세로 스택 구조라 sprite 보다 넉넉하게 잡아 둔다. 이전 78 은 Column 의 자연 높이
+  // (문제 카드 ~28 + 갭 + 이모지 영역 ~56)보다 작아 overflow 경고가 떴다.
+  static const double _spriteHeight = 52;
+  static const double _problemCardHeight = 28;
   static const double _cellWidth = 96;
-  static const double _cellHeight = 78;
+  static const double _cellHeight = _problemCardHeight + 4 + _spriteHeight; // 84
 
   // 성 가로 너비. 전체 3 차로를 한 번에 방어하는 큰 성 한 채를 가로 왼쪽 가장자리에.
   static const double _castleWidth = 64;
@@ -369,15 +371,17 @@ class _Battlefield extends StatelessWidget {
       child: IgnorePointer(
         child: _MonsterCell(
           monster: m,
-          spriteSize: _spriteSize,
+          problemCardHeight: _problemCardHeight,
+          spriteHeight: _spriteHeight,
           defeatProgress: defeatProgress,
         ),
       ),
     );
   }
 
-  // 처치된 몬스터 위로 성에서 작은 마법 트레일을 그려준다. 0..0.5 구간 동안
-  // 점차 길어지며 도달, 0.5 이후엔 폭발이 우위라 사라진다.
+  // 처치된 몬스터 위로 성에서 마법 트레일을 그려준다. 0..0.4 구간 동안 끝점이
+  // 성에서 몬스터까지 이동(=마법 비행), 그 이후 0.4..1.0 동안 점차 페이드 아웃
+  // (이 사이엔 폭발 💥 이펙트가 우위). 0.5 에서 한 번에 사라지지 않게 해 깜빡임 방지.
   Widget _buildSpellTrail(
     TowerMonster m, {
     required double laneHeight,
@@ -389,10 +393,6 @@ class _Battlefield extends StatelessWidget {
         : ((elapsedMs - m.hitAtMs!) /
                 TowerDefenseController.defeatDurationMs)
             .clamp(0.0, 1.0);
-    if (defeatProgress >= 0.5) {
-      return SizedBox.shrink(key: ValueKey('td-trail-${m.id}'));
-    }
-    // 트레일이 표시되는 동안 몬스터는 freeze 돼 있어 좌표 계산이 동일하다.
     final refMs = m.hitAtMs ?? elapsedMs;
     final p = (refMs - m.spawnMs) / m.travelMs;
     final clamped = p < 0 ? 0.0 : (p > 1.0 ? 1.0 : p);
@@ -406,10 +406,17 @@ class _Battlefield extends StatelessWidget {
     final castleFireX = castleRight - 8;
     final castleCenterY = laneHeight * TowerDefenseController.laneCount / 2;
 
-    // defeatProgress 를 0..0.5 → 0..1 로 스트레치해 트레일이 점점 길어지게.
-    final t = defeatProgress / 0.5;
-    final tipX = castleFireX + (monsterCenterX - castleFireX) * t;
-    final tipY = castleCenterY + (monsterCenterY - castleCenterY) * t;
+    // 끝점 이동(0..0.4) — 그 이후는 몬스터 위치에 고정.
+    final tipT = (defeatProgress / 0.4).clamp(0.0, 1.0);
+    final tipX = castleFireX + (monsterCenterX - castleFireX) * tipT;
+    final tipY = castleCenterY + (monsterCenterY - castleCenterY) * tipT;
+
+    // 0..0.4 까지 full opacity, 그 후 0.4..1.0 동안 부드럽게 페이드 아웃.
+    final fadeT = ((defeatProgress - 0.4) / 0.6).clamp(0.0, 1.0);
+    final opacity = (1 - fadeT).clamp(0.0, 1.0);
+    if (opacity <= 0.01) {
+      return SizedBox.shrink(key: ValueKey('td-trail-${m.id}'));
+    }
 
     return Positioned.fill(
       key: ValueKey('td-trail-${m.id}'),
@@ -418,7 +425,7 @@ class _Battlefield extends StatelessWidget {
           painter: _SpellTrailPainter(
             from: Offset(castleFireX, castleCenterY),
             to: Offset(tipX, tipY),
-            opacity: (1 - t).clamp(0.0, 1.0),
+            opacity: opacity,
           ),
         ),
       ),
@@ -445,79 +452,104 @@ class _CastleWidget extends StatelessWidget {
   }
 }
 
-/// 한 몬스터의 머리 위 문제 카드 + 본체 sprite + (처치 시) 폭발 이펙트.
+/// 한 몬스터의 셀 — 문제 카드(상단) + 본체 sprite(하단) + (처치 시) 폭발 이펙트.
+///
+/// Column 대신 Stack 으로 그린다: Column 은 자식들의 자연 높이가 부모
+/// 제약(Positioned 의 [_Battlefield._cellHeight])을 넘으면 overflow 경고가 뜨는데,
+/// 이모지의 line-height 같은 미세 변동까지 다 맞추기 어렵다. Stack 으로 위치를
+/// 절대 좌표(top/bottom)로 명시하면 자식 자연 높이가 약간 커도 외부에 영향 X.
+///
+/// 처치 애니메이션은 전체 [defeatProgress] (0..1) 위에서 연속적으로 동작 — 중간에
+/// 자식을 빼고 넣는 분기를 두면 깜빡임이 발생하므로, 같은 자식을 opacity/scale 만
+/// 보간한다.
 class _MonsterCell extends StatelessWidget {
   const _MonsterCell({
     required this.monster,
-    required this.spriteSize,
+    required this.problemCardHeight,
+    required this.spriteHeight,
     required this.defeatProgress,
   });
 
   final TowerMonster monster;
-  final double spriteSize;
+  final double problemCardHeight;
+  final double spriteHeight;
   final double defeatProgress;
 
   @override
   Widget build(BuildContext context) {
     final isDefeating = monster.hitAtMs != null;
+    // 본체/문제 카드는 처치가 시작되면 부드럽게 페이드 아웃.
+    final fade = (1 - defeatProgress).clamp(0.0, 1.0);
+    // 폭발은 0..1 전 구간 동안 살짝 커지며 페이드 아웃. 처치 시작과 동시에 등장.
+    final explosionScale = 0.6 + defeatProgress * 0.9;
+    final explosionOpacity = isDefeating
+        ? (1 - defeatProgress).clamp(0.0, 1.0)
+        : 0.0;
 
-    // 살아 있을 때: 일반 sprite + 문제 카드.
-    // 처치 중: 문제 카드는 빠르게 페이드 아웃, sprite 자리에는 💥 가 스케일 업 + 페이드 아웃.
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Stack(
       children: [
-        Opacity(
-          opacity: isDefeating ? (1 - defeatProgress * 2).clamp(0.0, 1.0) : 1,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: const Color(0xFF00838F),
-                width: 1.2,
+        // 문제 카드 — 상단에 고정.
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          height: problemCardHeight,
+          child: Opacity(
+            opacity: fade,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFF00838F),
+                  width: 1.2,
+                ),
               ),
-            ),
-            child: FittedBox(
-              child: Text(
-                monster.problem.questionText,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF004D40),
+              alignment: Alignment.center,
+              child: FittedBox(
+                child: Text(
+                  monster.problem.questionText,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF004D40),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 2),
-        SizedBox(
-          width: spriteSize + 8,
-          height: spriteSize + 6,
+        // 몬스터 sprite — 하단 영역에 고정. 폭발 이펙트도 같은 영역 중앙에 겹친다.
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: spriteHeight,
           child: Stack(
             alignment: Alignment.center,
             children: [
-              if (!isDefeating || defeatProgress < 0.5)
-                Transform.scale(
-                  scale: isDefeating ? 1 + defeatProgress * 0.3 : 1,
-                  child: Opacity(
-                    opacity: isDefeating
-                        ? (1 - defeatProgress * 2).clamp(0.0, 1.0)
-                        : 1,
-                    child: Text(
-                      monster.emoji,
-                      style: TextStyle(fontSize: spriteSize * 0.85),
-                    ),
+              Opacity(
+                opacity: fade,
+                child: Text(
+                  monster.emoji,
+                  style: TextStyle(
+                    fontSize: spriteHeight * 0.78,
+                    height: 1.0,
                   ),
                 ),
+              ),
               if (isDefeating)
                 Transform.scale(
-                  scale: 0.6 + defeatProgress * 1.4,
+                  scale: explosionScale,
                   child: Opacity(
-                    opacity: (1 - defeatProgress).clamp(0.0, 1.0),
+                    opacity: explosionOpacity,
                     child: Text(
                       '💥',
-                      style: TextStyle(fontSize: spriteSize * 0.95),
+                      style: TextStyle(
+                        fontSize: spriteHeight * 0.85,
+                        height: 1.0,
+                      ),
                     ),
                   ),
                 ),
