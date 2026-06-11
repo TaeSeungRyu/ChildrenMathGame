@@ -26,7 +26,14 @@ class ReviewController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    problems = (Get.arguments as List).cast<ProblemAttempt>();
+    // 정상 호출자는 항상 List<ProblemAttempt>를 넘기지만, 인자가 누락/오타입인
+    // 경우(딥링크·핸들러 누수 등)에도 크래시 없이 빈 리뷰 세션으로 진입해
+    // 곧장 "복습 끝!" 상태를 보여주도록 방어한다.
+    final raw = Get.arguments;
+    problems = raw is List ? raw.whereType<ProblemAttempt>().toList() : const [];
+    if (problems.isEmpty) {
+      phase.value = ReviewPhase.done;
+    }
   }
 
   void appendDigit(String digit) {

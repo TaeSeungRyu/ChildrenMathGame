@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/action_concept.dart';
@@ -7,6 +8,7 @@ import '../../data/services/record_service.dart';
 import '../../routes/app_routes.dart';
 import '../../shared/daily_missions.dart';
 import '../../shared/weakness.dart';
+import '../../shared/wrong_notebook.dart';
 
 class HomeController extends GetxController {
   final RecordService _records = Get.find<RecordService>();
@@ -63,8 +65,34 @@ class HomeController extends GetxController {
     Get.toNamed(AppRoutes.stats);
   }
 
+  /// 기록 탭의 "복습하기" 진입점. 저장된 모든 기록에서 오답을 자동 집계해
+  /// 가장 자주/최근에 틀린 상위 [_reviewMaxProblems]개를 골라 review 화면으로
+  /// 넘긴다. 오답이 하나도 없으면 안내 스낵바를 띄우고 라우팅하지 않는다.
+  ///
+  /// 이전에는 인자 없이 `/review`로만 라우팅해서 ReviewController가 null을
+  /// List로 캐스팅하다 죽었다. 복습 대상은 호출자가 항상 채워서 넘기는 것이
+  /// 본 화면의 계약이므로, 여기서 직접 채워 준다.
+  static const int _reviewMaxProblems = 10;
   void openReview() {
-    Get.toNamed(AppRoutes.review);
+    final wrongs = aggregateWrongNotebook(
+      _records.all(),
+      dismissedAt: _records.dismissedWrongSignatures(),
+    );
+    if (wrongs.isEmpty) {
+      Get.snackbar(
+        '복습 거리 없음',
+        '아직 틀린 문제가 없어요. 게임 한 판 어때요?',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
+    final problems = wrongs
+        .take(_reviewMaxProblems)
+        .map((e) => e.sample)
+        .toList();
+    Get.toNamed(AppRoutes.review, arguments: problems);
   }
 
   /// 게임 탭의 4개 타일이 공유하는 진입점. 컨셉을 인자로 들고 공통 진입
