@@ -2,8 +2,16 @@ import 'package:get/get.dart';
 
 import '../modules/badges/badges_binding.dart';
 import '../modules/badges/badges_view.dart';
+import '../modules/balloon_game/balloon_game_binding.dart';
+import '../modules/balloon_game/balloon_game_view.dart';
 import '../modules/game/game_binding.dart';
 import '../modules/game/game_view.dart';
+import '../modules/mole_game/mole_game_binding.dart';
+import '../modules/mole_game/mole_game_view.dart';
+import '../modules/monster_game/monster_game_binding.dart';
+import '../modules/monster_game/monster_game_view.dart';
+import '../modules/tower_defense/tower_defense_binding.dart';
+import '../modules/tower_defense/tower_defense_view.dart';
 import '../modules/home/home_binding.dart';
 import '../modules/home/home_view.dart';
 import '../modules/level_select/level_select_binding.dart';
@@ -115,6 +123,26 @@ abstract class AppPages {
       name: AppRoutes.wrongNotebook,
       page: () => const WrongNotebookView(),
       binding: WrongNotebookBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.monsterGame,
+      page: () => const MonsterGameView(),
+      binding: MonsterGameBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.balloonGame,
+      page: () => const BalloonGameView(),
+      binding: BalloonGameBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.towerDefense,
+      page: () => const TowerDefenseView(),
+      binding: TowerDefenseBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.moleGame,
+      page: () => const MoleGameView(),
+      binding: MoleGameBinding(),
     ),
   ];
 }

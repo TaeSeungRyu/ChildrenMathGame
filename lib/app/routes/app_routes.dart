@@ -15,4 +15,10 @@ abstract class AppRoutes {
   static const flashSelect = '/flash-select';
   static const tutorial = '/tutorial';
   static const wrongNotebook = '/wrong-notebook';
+
+  // Action game modes — intro/select shells in 1st pass; play logic added later.
+  static const monsterGame = '/monster-game';
+  static const balloonGame = '/balloon-game';
+  static const towerDefense = '/tower-defense';
+  static const moleGame = '/mole-game';
 }
