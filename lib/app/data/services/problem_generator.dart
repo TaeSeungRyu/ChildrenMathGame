@@ -36,6 +36,97 @@ class ProblemGenerator {
     return _oneForDigits(concrete, digitsA, digitsB);
   }
 
+  /// Construct a single problem with the given (type, digitsA, digitsB)
+  /// whose answer equals [target]. Used by balloon mode to spawn multiple
+  /// "matching" balloons that share the same answer.
+  ///
+  /// Returns null when no operand combination in the digit ranges can hit
+  /// [target] (e.g., target outside the natural answer range of the op).
+  /// When [type] is null, tries one random concrete op — caller may retry.
+  static Problem? synthesizeForAnswer({
+    required GameType? type,
+    required int digitsA,
+    required int digitsB,
+    required int target,
+  }) {
+    final concrete = type ?? _randomConcreteType();
+    return _synthesize(concrete, digitsA, digitsB, target);
+  }
+
+  static Problem? _synthesize(
+    GameType type,
+    int digitsA,
+    int digitsB,
+    int target,
+  ) {
+    final lowA = digitsA == 1 ? 1 : _pow10(digitsA - 1);
+    final highA = _pow10(digitsA) - 1;
+    final lowB = digitsB == 1 ? 1 : _pow10(digitsB - 1);
+    final highB = _pow10(digitsB) - 1;
+
+    switch (type) {
+      case GameType.addition:
+        // a + b == target. a ∈ [lowA, highA], b = target - a ∈ [lowB, highB].
+        final aMin = (target - highB).clamp(lowA, highA);
+        final aMax = (target - lowB).clamp(lowA, highA);
+        if (aMin > aMax) return null;
+        final a = aMin + _random.nextInt(aMax - aMin + 1);
+        final b = target - a;
+        return Problem(operandA: a, operandB: b, type: type);
+
+      case GameType.subtraction:
+        // a - b == target (a >= b). a ∈ [lowA, highA], b ∈ [lowB, highB], b = a - target.
+        final aMin = (target + lowB).clamp(lowA, highA);
+        final aMax = (target + highB).clamp(lowA, highA);
+        if (aMin > aMax || target < 0) return null;
+        final a = aMin + _random.nextInt(aMax - aMin + 1);
+        final b = a - target;
+        if (b < lowB || b > highB) return null;
+        return Problem(operandA: a, operandB: b, type: type);
+
+      case GameType.multiplication:
+        // a * b == target. Find divisor a of target in [lowA, highA] with
+        // b = target/a in [lowB, highB].
+        if (target < 0) return null;
+        if (target == 0) {
+          // Either operand may be 0 — but _nDigit never produces 0, so reject.
+          return null;
+        }
+        final candidates = <int>[
+          for (var a = lowA; a <= highA; a++)
+            if (target % a == 0 &&
+                target ~/ a >= lowB &&
+                target ~/ a <= highB)
+              a,
+        ];
+        if (candidates.isEmpty) return null;
+        final a = candidates[_random.nextInt(candidates.length)];
+        return Problem(operandA: a, operandB: target ~/ a, type: type);
+
+      case GameType.division:
+        // a / b == target (a == target * b). Same constraints as _oneForDigits:
+        // - if digitsB == 1, divisor b ∈ [2, 9]
+        // - quotient (== target) must be >= 2 (skip trivial n÷n=1)
+        // - a == target * b must be in [lowA, highA]
+        if (target < 2) return null;
+        final bLo = digitsB == 1 ? 2 : lowB;
+        final bHi = digitsB == 1 ? 9 : highB;
+        final candidates = <int>[
+          for (var b = bLo; b <= bHi; b++)
+            if (target * b >= lowA && target * b <= highA) b,
+        ];
+        if (candidates.isEmpty) return null;
+        final b = candidates[_random.nextInt(candidates.length)];
+        return Problem(operandA: target * b, operandB: b, type: type);
+
+      case GameType.mixed:
+      case GameType.equation:
+      case GameType.flash:
+        // Roll-up labels never carry a problem of their own.
+        return null;
+    }
+  }
+
   static GameType _randomConcreteType() {
     const concrete = [
       GameType.addition,
