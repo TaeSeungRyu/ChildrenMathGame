@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../data/models/action_concept.dart';
 import '../../data/models/daily_mission.dart';
 import '../../data/models/game_type.dart';
 import '../../data/services/record_service.dart';
@@ -66,20 +67,11 @@ class HomeController extends GetxController {
     Get.toNamed(AppRoutes.review);
   }
 
-  void openMonsterGame() {
-    Get.toNamed(AppRoutes.monsterGame);
-  }
-
-  void openBalloonGame() {
-    Get.toNamed(AppRoutes.balloonGame);
-  }
-
-  void openTowerDefense() {
-    Get.toNamed(AppRoutes.towerDefense);
-  }
-
-  void openMoleGame() {
-    Get.toNamed(AppRoutes.moleGame);
+  /// 게임 탭의 4개 타일이 공유하는 진입점. 컨셉을 인자로 들고 공통 진입
+  /// 선택 화면(`/action-select`)으로 이동한다. 거기서 연산·자릿수를 고른 뒤
+  /// 컨셉별 본편 라우트로 넘어간다.
+  void openActionSelect(ActionConcept concept) {
+    Get.toNamed(AppRoutes.actionSelect, arguments: {'concept': concept});
   }
 
   void startRecommended(WeaknessBucket bucket) {

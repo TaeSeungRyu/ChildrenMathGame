@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../data/models/action_concept.dart';
 import '../home_controller.dart';
 
 /// 게임 탭 — "연산 히어로"의 액션 게임 4종. 각 타일은 인트로 화면으로 라우팅.
@@ -35,19 +36,21 @@ class GamesTab extends GetView<HomeController> {
               children: [
                 _GameModeTile(
                   spec: _GameSpec.monster,
-                  onTap: controller.openMonsterGame,
+                  onTap: () =>
+                      controller.openActionSelect(ActionConcept.monster),
                 ),
                 _GameModeTile(
                   spec: _GameSpec.balloon,
-                  onTap: controller.openBalloonGame,
+                  onTap: () =>
+                      controller.openActionSelect(ActionConcept.balloon),
                 ),
                 _GameModeTile(
                   spec: _GameSpec.tower,
-                  onTap: controller.openTowerDefense,
+                  onTap: () => controller.openActionSelect(ActionConcept.tower),
                 ),
                 _GameModeTile(
                   spec: _GameSpec.mole,
-                  onTap: controller.openMoleGame,
+                  onTap: () => controller.openActionSelect(ActionConcept.mole),
                 ),
               ],
             ),

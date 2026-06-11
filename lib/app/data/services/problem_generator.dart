@@ -19,6 +19,33 @@ class ProblemGenerator {
     return _one(type, level);
   }
 
+  /// Single problem with the operand digit counts ([digitsA], [digitsB])
+  /// given directly. Bypasses the level→digits table so the action-mode
+  /// entry-select screen can present digit pairs to the player as a first-
+  /// class choice rather than as a level number.
+  ///
+  /// - [type] == null → 매 호출마다 4개 연산(+,-,×,÷) 중 하나를 무작위로 골라
+  ///   같은 자릿수 조합으로 출제. action 모드의 "🎲 랜덤" 옵션이 이 경로를 탄다.
+  /// - 그 외에는 [generate]/[generateOne]과 동일한 규칙으로 한 문제 생성.
+  static Problem generateOneForDigits({
+    required GameType? type,
+    required int digitsA,
+    required int digitsB,
+  }) {
+    final concrete = type ?? _randomConcreteType();
+    return _oneForDigits(concrete, digitsA, digitsB);
+  }
+
+  static GameType _randomConcreteType() {
+    const concrete = [
+      GameType.addition,
+      GameType.subtraction,
+      GameType.multiplication,
+      GameType.division,
+    ];
+    return concrete[_random.nextInt(concrete.length)];
+  }
+
   /// 1×N .. 9×N for the given [table] (2..9), shuffled. The table number is
   /// always the left operand so the question reads as "N × k = ?".
   static List<Problem> generateTimesTable(int table) {
@@ -35,6 +62,10 @@ class ProblemGenerator {
 
   static Problem _one(GameType type, int level) {
     final (aDigits, bDigits) = _digitsForLevel(level);
+    return _oneForDigits(type, aDigits, bDigits);
+  }
+
+  static Problem _oneForDigits(GameType type, int aDigits, int bDigits) {
     switch (type) {
       case GameType.addition:
         return Problem(

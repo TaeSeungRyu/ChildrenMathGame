@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
 
+import '../modules/action_select/action_select_binding.dart';
+import '../modules/action_select/action_select_view.dart';
 import '../modules/badges/badges_binding.dart';
 import '../modules/badges/badges_view.dart';
 import '../modules/balloon_game/balloon_game_binding.dart';
@@ -123,6 +125,11 @@ abstract class AppPages {
       name: AppRoutes.wrongNotebook,
       page: () => const WrongNotebookView(),
       binding: WrongNotebookBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.actionSelect,
+      page: () => const ActionSelectView(),
+      binding: ActionSelectBinding(),
     ),
     GetPage(
       name: AppRoutes.monsterGame,
