@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:get/get.dart';
 
 import '../../data/models/game_type.dart';
@@ -28,6 +31,20 @@ class MonsterGameController extends GetxController {
   static const int minFallMs = 4000;
   static const int fallStepMs = 200;
 
+  // 매 몬스터마다 ±[fallJitterPct]% 범위에서 랜덤 보정. 같은 kills 단계에서도
+  // 한 마리는 약간 빠르고 한 마리는 약간 느리게 떨어져 단조로움을 줄이고
+  // 6~9세 사용자가 "다음 몬스터는 얼마나 빠를까?"라는 작은 긴장감을 갖게 한다.
+  // jitter는 한 번 굴려서 캐시(_fallMs)하므로, 뷰가 같은 라운드에서 currentFallMs를
+  // 여러 번 읽어도 항상 동일 값을 본다.
+  static const int fallJitterPct = 20;
+  // jitter가 너무 큰 음수로 작용할 때(예: minFallMs 부근 -20%)에도 사용자가
+  // 풀 시간이 보장되도록 절대 하한선.
+  static const int fallFloorMs = 2500;
+
+  // 세션 전체 제한 시간(초). 60초가 지나면 HP가 남아 있어도 게임오버.
+  // HP 소진과 별도의 종료 조건이라, 빠른 처치를 유도하는 추가 압박감 역할.
+  static const int totalSeconds = 60;
+
   final SfxService _sfx = Get.find();
 
   // 셀렉트 화면 인자 — null 이면 무작위 연산.
@@ -41,6 +58,19 @@ class MonsterGameController extends GetxController {
   final RxString answer = ''.obs;
   final RxBool isGameOver = false.obs;
   late final Rx<Problem> current;
+
+  // 경과 초. 매 초 +1 되며 [totalSeconds] 도달 시 자동 게임오버.
+  final RxInt elapsed = 0.obs;
+  Timer? _timer;
+
+  // 현재 라운드 낙하 시간(ms). [_rollFallMs]로 매 spawn마다 갱신.
+  int _fallMs = initialFallMs;
+  final Random _rng = Random();
+
+  int get remainingSeconds {
+    final r = totalSeconds - elapsed.value;
+    return r < 0 ? 0 : r;
+  }
 
   // 매 새 몬스터마다 1씩 증가. View가 ever()로 듣고 낙하 트윈을 재시작한다.
   // Problem.value 비교만으로는 동일 문제 연속 생성 시 변화를 못 잡으므로
@@ -62,11 +92,39 @@ class MonsterGameController extends GetxController {
       digitsB = 1;
     }
     current = _generate().obs;
+    _fallMs = _rollFallMs();
+    _startTimer();
   }
 
-  int get currentFallMs {
-    final ms = initialFallMs - kills.value * fallStepMs;
-    return ms < minFallMs ? minFallMs : ms;
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (isGameOver.value) return;
+      elapsed.value += 1;
+      if (elapsed.value >= totalSeconds) _gameOver();
+    });
+  }
+
+  void _stopTimer() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  int get currentFallMs => _fallMs;
+
+  /// 결정론적 base(`initialFallMs - kills*fallStepMs`, `minFallMs`로 클램프)에
+  /// ±[fallJitterPct]% 랜덤 지터를 더한 1회용 낙하 시간을 굴린다. 마지막에
+  /// [fallFloorMs]로 안전 하한 적용. 매 [_spawnNext] / [onInit] / [restart]에서
+  /// 한 번씩 호출돼 _fallMs에 캐시된다.
+  int _rollFallMs() {
+    final base = initialFallMs - kills.value * fallStepMs;
+    final clamped = base < minFallMs ? minFallMs : base;
+    final jitterRange = (clamped * fallJitterPct / 100).round();
+    final jitter = jitterRange == 0
+        ? 0
+        : _rng.nextInt(jitterRange * 2 + 1) - jitterRange;
+    final rolled = clamped + jitter;
+    return rolled < fallFloorMs ? fallFloorMs : rolled;
   }
 
   Problem _generate() {
@@ -80,6 +138,7 @@ class MonsterGameController extends GetxController {
   void _spawnNext() {
     answer.value = '';
     current.value = _generate();
+    _fallMs = _rollFallMs();
     spawnTrigger.value += 1;
   }
 
@@ -146,6 +205,7 @@ class MonsterGameController extends GetxController {
 
   void _gameOver() {
     isGameOver.value = true;
+    _stopTimer();
     _sfx.finish();
   }
 
@@ -154,11 +214,19 @@ class MonsterGameController extends GetxController {
     hp.value = maxHp;
     kills.value = 0;
     combo.value = 0;
+    elapsed.value = 0;
     isGameOver.value = false;
     _spawnNext();
+    _startTimer();
   }
 
   void exitToHome() {
     Get.back();
+  }
+
+  @override
+  void onClose() {
+    _stopTimer();
+    super.onClose();
   }
 }

@@ -77,7 +77,18 @@ class _MonsterGameViewState extends State<MonsterGameView>
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Center(child: Obx(() => _HpHearts(hp: _c.hp.value))),
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Obx(() => _HpHearts(hp: _c.hp.value)),
+                  const SizedBox(width: 10),
+                  Obx(
+                    () => _RemainingTime(seconds: _c.remainingSeconds),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -147,6 +158,28 @@ class _HpHearts extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+}
+
+/// 남은 세션 시간(초). 10초 이하로 떨어지면 빨간색으로 강조해 어린이 사용자가
+/// 마지막 카운트다운임을 즉시 알아차리게 한다. 기존 game_view의 동일 패턴을
+/// 따라 일관성을 유지.
+class _RemainingTime extends StatelessWidget {
+  const _RemainingTime({required this.seconds});
+
+  final int seconds;
+
+  @override
+  Widget build(BuildContext context) {
+    final urgent = seconds <= 10;
+    return Text(
+      '$seconds초',
+      style: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+        color: urgent ? const Color(0xFFE53935) : null,
+      ),
     );
   }
 }
