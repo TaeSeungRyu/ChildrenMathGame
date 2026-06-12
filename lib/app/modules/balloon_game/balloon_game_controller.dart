@@ -135,15 +135,17 @@ class BalloonGameController extends GetxController {
     final all = [...primary, ...decoys];
     all.shuffle(_rng);
 
-    // 진입 딜레이를 분산해 풍선들이 한꺼번에 같은 높이로 떠오르지 않도록 한다.
-    // 첫 풍선 0, 마지막 풍선 floatMs/2 까지 균등 분포. 동시에 너무 많은 풍선이
-    // 화면 중앙에 몰리는 시각적 부담을 줄이려는 의도.
-    final spreadMs = (_floatMs * 0.5).round();
+    // 진입 딜레이를 짧게 분산해 풍선들이 같은 y에서 동시에 솟지 않게 한다.
+    // 이전에는 floatMs/2 (≈5초) 에 걸쳐 마지막 풍선이 등장 — 사용자에게 "게임이
+    // 5초 뒤에 시작" 처럼 보이는 체감 문제. 총 600ms 안에 모든 풍선이 등장하도록
+    // 단축. 5 마리 기준 풍선 사이 간격 150ms — 짧은 시각적 stagger 만 남기고
+    // 사실상 즉시 시작감.
+    const totalSpreadMs = 600;
     final list = <Balloon>[];
     for (var i = 0; i < all.length; i++) {
       final delayMs = all.length <= 1
           ? 0
-          : (i * spreadMs ~/ (all.length - 1));
+          : (i * totalSpreadMs ~/ (all.length - 1));
       list.add(
         Balloon(
           id: _nextBalloonId++,
