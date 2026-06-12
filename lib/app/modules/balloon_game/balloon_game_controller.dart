@@ -42,6 +42,11 @@ class BalloonGameController extends GetxController {
   // 정답이 1개 미만이면 라운드가 즉시 끝나버려 게임감이 깨진다. 최소 1개 보장.
   static const int minMatching = 1;
 
+  // 탭 시 정답/오답 이펙트가 보여지는 시간(ms). 풍선이 리스트에 잠시 남아 있다
+  // 이펙트가 끝나면 제거된다 — 너무 길면 다음 풍선 탭이 답답하고 너무 짧으면
+  // 이펙트가 눈에 안 들어온다.
+  static const int popDurationMs = 380;
+
   final SfxService _sfx = Get.find();
   final Random _rng = Random();
 
@@ -73,6 +78,12 @@ class BalloonGameController extends GetxController {
   int _floatMs = initialFloatMs;
 
   int get currentFloatMs => _floatMs;
+
+  // View 의 Ticker 가 매 프레임 [onFrame] 으로 갱신하는 세션 경과 ms. 풍선을
+  // 탭/만료할 때 poppedAtMs 에 이 값을 박아 두면 View 는 그 시점의 위치를
+  // freeze 한 채 이펙트 애니메이션을 그릴 수 있다.
+  int _sessionElapsedMs = 0;
+  int get sessionElapsedMs => _sessionElapsedMs;
 
   int get remainingSeconds {
     final r = totalSeconds - elapsed.value;
@@ -242,6 +253,14 @@ class BalloonGameController extends GetxController {
 
   Color _pickColor(int index) => _colors[index % _colors.length];
 
+  // ───── View → Controller 프레임 콜백 ───────────────────────────────────────
+
+  /// View 의 Ticker 가 매 프레임 호출. 세션 시작 기준 ms 를 캐시 — 풍선이 탭되거나
+  /// 빠져나갈 때 이펙트 freeze 시점으로 사용한다.
+  void onFrame(int ms) {
+    _sessionElapsedMs = ms;
+  }
+
   // ───── 입력 처리 ────────────────────────────────────────────────────────────
 
   void onBalloonTap(int id) {
@@ -249,41 +268,63 @@ class BalloonGameController extends GetxController {
     final idx = balloons.indexWhere((b) => b.id == id);
     if (idx < 0) return;
     final b = balloons[idx];
-    if (b.problem.answer == targetAnswer.value) {
+    if (b.poppedAtMs != null) return; // 이미 터지는 중 — 중복 처리 방지.
+    final isCorrect = b.problem.answer == targetAnswer.value;
+    _markPopped(b, isCorrect: isCorrect);
+    if (isCorrect) {
       _sfx.correct();
       pops.value += 1;
       combo.value += 1;
-      balloons.removeAt(idx);
-      _checkRoundEnd();
     } else {
       _sfx.wrong();
       combo.value = 0;
-      // 오답을 터뜨려도 풍선은 사라지는 게 시각적으로 자연스럽다 — 같은 풍선을
-      // 또 잘못 누르는 누적 페널티를 막는다.
-      balloons.removeAt(idx);
       _loseHp();
-      _checkRoundEnd();
     }
   }
 
-  /// View가 풍선이 화면 상단을 빠져나갔다고 알려줄 때 호출.
+  /// View가 풍선이 화면 상단을 빠져나갔다고 알려줄 때 호출. 정답을 못 본 채
+  /// 빠져나간 풍선은 오답 이펙트와 같은 시각 흐름으로 처리(빨간 X) — 사용자가
+  /// "놓쳤다" 는 사실을 학습 피드백으로 받게 한다.
   void onBalloonEscape(int id) {
     if (isGameOver.value) return;
     final idx = balloons.indexWhere((b) => b.id == id);
     if (idx < 0) return;
     final b = balloons[idx];
-    balloons.removeAt(idx);
-    if (b.problem.answer == targetAnswer.value) {
-      // 정답 풍선을 놓쳤다 — HP 차감, 콤보 끊김.
+    if (b.poppedAtMs != null) return;
+    final wasCorrect = b.problem.answer == targetAnswer.value;
+    if (wasCorrect) {
+      // 놓친 정답 — HP 차감, 콤보 끊김, 그리고 escape 시점부터 잠시 X 이펙트를
+      // 보이며 사라지도록 mark.
+      _markPopped(b, isCorrect: false);
       _sfx.wrong();
       combo.value = 0;
       _loseHp();
+    } else {
+      // 오답 풍선의 자연 escape — 페널티 없이 그냥 제거.
+      balloons.removeAt(idx);
+      _checkRoundEnd();
     }
-    _checkRoundEnd();
+  }
+
+  /// 풍선에 [poppedAtMs] / [isCorrectPop] 을 박아 둔 뒤 [popDurationMs] 후 리스트에서
+  /// 제거하도록 Timer 예약. 라운드가 그 사이 게임오버되면 제거를 스킵한다.
+  void _markPopped(Balloon b, {required bool isCorrect}) {
+    b.poppedAtMs = _sessionElapsedMs;
+    b.isCorrectPop = isCorrect;
+    balloons.refresh();
+    Timer(const Duration(milliseconds: popDurationMs), () {
+      if (isGameOver.value) return;
+      final i = balloons.indexWhere((x) => x.id == b.id);
+      if (i < 0) return;
+      balloons.removeAt(i);
+      _checkRoundEnd();
+    });
   }
 
   void _checkRoundEnd() {
     if (isGameOver.value) return;
+    // 이펙트 재생 중인 풍선까지 모두 정리된 시점에서만 다음 라운드로 — 이펙트
+    // 도중에 새 라운드 풍선이 위에서 등장하면 시각적으로 겹쳐 어수선해진다.
     if (balloons.isEmpty) {
       round.value += 1;
       _startRound();
@@ -357,6 +398,8 @@ class Balloon {
     required this.delayMs,
     required this.floatMs,
     required this.color,
+    this.poppedAtMs,
+    this.isCorrectPop,
   });
 
   /// 고유 식별자. 컨트롤러가 풍선 식별/제거에 쓴다.
@@ -374,4 +417,13 @@ class Balloon {
   final int floatMs;
 
   final Color color;
+
+  /// 탭/escape 으로 "터지는 중" 마크. null 이면 정상 비행. non-null 이면
+  /// 그 시점 좌표가 freeze 되고 [BalloonGameController.popDurationMs] 동안 이펙트가
+  /// 재생된 뒤 리스트에서 제거된다. 의도적으로 mutable — TowerMonster.hitAtMs 와
+  /// 동일한 in-place 갱신 패턴.
+  int? poppedAtMs;
+
+  /// 터질 때의 정답 여부. null 이면 아직 안 터짐. [poppedAtMs] 와 짝.
+  bool? isCorrectPop;
 }

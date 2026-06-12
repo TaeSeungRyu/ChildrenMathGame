@@ -31,9 +31,10 @@ class TowerDefenseController extends GetxController {
   // 행진한다. 6~9세에게 4 차로 이상은 시각적 부담이 큰 것으로 판단해 3으로 고정.
   static const int laneCount = 3;
 
-  // 한 차로에 동시에 떠 있을 수 있는 최대 몬스터 수. 이걸 넘으면 그 차로 스폰은
-  // 스킵해 화면이 한 줄로 몰리는 걸 방지한다.
-  static const int maxMonstersPerLane = 3;
+  // 한 차로에 동시에 떠 있을 수 있는 최대 몬스터 수. 1 로 두면 같은 차로 안에서
+  // 문제 카드들이 시각적으로 겹쳐 어느 문제를 풀고 있는지 헷갈리는 일이 없다 —
+  // 동시 화면에는 최대 (laneCount × maxMonstersPerLane) = 3 마리만 떠 있다.
+  static const int maxMonstersPerLane = 1;
 
   // 행진 시간 — 처치 수가 늘수록 짧아져 압박감 증가. 한 화면에 여러 마리가
   // 동시에 진행되므로 A(단일 낙하) 보다 약간 길게 잡아 사용자가 다중 문제를

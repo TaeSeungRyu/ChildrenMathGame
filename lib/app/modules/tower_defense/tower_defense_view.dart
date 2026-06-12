@@ -250,20 +250,34 @@ class _Battlefield extends StatelessWidget {
   final int elapsedMs;
 
   // 몬스터 한 셀의 시각 크기. 위쪽에 문제 카드, 아래쪽에 몬스터 sprite 가 들어가는
-  // 세로 스택 구조라 sprite 보다 넉넉하게 잡아 둔다. 이전 78 은 Column 의 자연 높이
-  // (문제 카드 ~28 + 갭 + 이모지 영역 ~56)보다 작아 overflow 경고가 떴다.
-  static const double _spriteHeight = 52;
-  static const double _problemCardHeight = 28;
-  static const double _cellWidth = 96;
-  static const double _cellHeight = _problemCardHeight + 4 + _spriteHeight; // 84
+  // 세로 스택 구조라 sprite 보다 넉넉하게 잡아 둔다. 84 였을 때 Galaxy S25 처럼
+  // 키패드/시스템 인셋이 큰 단말에서 전장 가용 높이가 ~280 으로 줄어 lane 0 셀이
+  // 둥근 모서리 carve 영역과 겹쳐 잘리는 현상이 있었다 — 74 로 줄이고 lane 에 안전
+  // 패딩까지 덧대 해소.
+  static const double _spriteHeight = 46;
+  static const double _problemCardHeight = 24;
+  static const double _cellWidth = 92;
+  static const double _cellHeight = _problemCardHeight + 4 + _spriteHeight; // 74
 
   // 성 가로 너비. 전체 3 차로를 한 번에 방어하는 큰 성 한 채를 가로 왼쪽 가장자리에.
-  static const double _castleWidth = 64;
+  static const double _castleWidth = 60;
+
+  // 전장 둥근 모서리 반지름. 16 일 때 lane 0 셀의 top-right 코너가 carve 영역과
+  // 겹쳐 잘렸다 — 10 으로 줄여 carve 영역을 축소.
+  static const double _arenaRadius = 10;
+
+  // lane 들이 전장 상하 가장자리에 닿아 둥근 모서리에 잘리지 않도록 안쪽으로
+  // 패딩을 둔다. 이 값만큼 위/아래에서 사용 가능 높이가 줄고, 그 안에서 3 등분.
+  static const double _laneVPadding = 8;
+
+  // 몬스터가 등장하는 오른쪽 시작점이 둥근 모서리에 너무 가까워 잘리지 않도록
+  // 가로 안전 마진.
+  static const double _spawnRightInset = 14;
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(_arenaRadius),
       child: DecoratedBox(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -276,20 +290,22 @@ class _Battlefield extends StatelessWidget {
           builder: (context, c) {
             final w = c.maxWidth;
             final h = c.maxHeight;
-            // 각 차로의 세로 중심 y.
-            final laneHeight = h / TowerDefenseController.laneCount;
+            // 차로는 전장의 위/아래 패딩 안쪽 영역만 사용 — 둥근 모서리에 셀이
+            // 닿지 않도록.
+            final usableH = h - 2 * _laneVPadding;
+            final laneHeight = usableH / TowerDefenseController.laneCount;
             // 성의 오른쪽 경계 — 몬스터가 여기까지 오면 성 도달.
             final castleRight = 12.0 + _castleWidth;
             return Obx(() {
               final list = controller.monsters.toList();
               return Stack(
                 children: [
-                  // 차로 구분선 — 옅은 가로 점선 느낌의 띠 2 개.
+                  // 차로 구분선 — 옅은 가로 점선 느낌의 띠 2 개. 패딩 안쪽 위치.
                   for (var i = 1; i < TowerDefenseController.laneCount; i++)
                     Positioned(
                       left: 8,
                       right: 8,
-                      top: i * laneHeight - 1,
+                      top: _laneVPadding + i * laneHeight - 1,
                       height: 2,
                       child: Container(
                         color:
@@ -313,8 +329,6 @@ class _Battlefield extends StatelessWidget {
                       arenaWidth: w,
                     ),
                   // 마법 발사 이펙트 — 성에서 처치된 몬스터까지 짧게 직선 트레일.
-                  // 처치 이펙트(0..1) 의 앞 절반(0..0.5) 구간 동안만 표시해
-                  // "발사 → 도달 → 폭발" 순서감을 만든다.
                   for (final m in list)
                     if (m.hitAtMs != null)
                       _buildSpellTrail(
@@ -347,12 +361,13 @@ class _Battlefield extends StatelessWidget {
     }
     final clamped = p < 0 ? 0.0 : (p > 1.0 ? 1.0 : p);
 
-    // 오른쪽 끝(arenaWidth - _cellWidth - 8) 에서 성 오른쪽(castleRight) 까지 보간.
-    final startX = arenaWidth - _cellWidth - 8;
+    // 오른쪽 끝(arenaWidth - _cellWidth - _spawnRightInset) 에서 성 오른쪽 까지 보간.
+    final startX = arenaWidth - _cellWidth - _spawnRightInset;
     final endX = castleRight;
     final left = startX - clamped * (startX - endX);
 
-    final laneCenterY = laneHeight * m.laneIndex + laneHeight / 2;
+    final laneCenterY =
+        _laneVPadding + laneHeight * m.laneIndex + laneHeight / 2;
     final top = laneCenterY - _cellHeight / 2;
 
     // 처치 이펙트 진행도(0..1). null 이면 살아 있음.
@@ -396,15 +411,17 @@ class _Battlefield extends StatelessWidget {
     final refMs = m.hitAtMs ?? elapsedMs;
     final p = (refMs - m.spawnMs) / m.travelMs;
     final clamped = p < 0 ? 0.0 : (p > 1.0 ? 1.0 : p);
-    final startX = arenaWidth - _cellWidth - 8;
+    final startX = arenaWidth - _cellWidth - _spawnRightInset;
     final endX = castleRight;
     final monsterLeft = startX - clamped * (startX - endX);
     final monsterCenterX = monsterLeft + _cellWidth / 2;
-    final monsterCenterY = laneHeight * m.laneIndex + laneHeight / 2;
+    final monsterCenterY =
+        _laneVPadding + laneHeight * m.laneIndex + laneHeight / 2;
 
     // 성의 마법 발사 지점(전면 중앙).
     final castleFireX = castleRight - 8;
-    final castleCenterY = laneHeight * TowerDefenseController.laneCount / 2;
+    final castleCenterY =
+        _laneVPadding + laneHeight * TowerDefenseController.laneCount / 2;
 
     // 끝점 이동(0..0.4) — 그 이후는 몬스터 위치에 고정.
     final tipT = (defeatProgress / 0.4).clamp(0.0, 1.0);

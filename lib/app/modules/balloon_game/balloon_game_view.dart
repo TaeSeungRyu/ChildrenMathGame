@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
@@ -50,9 +52,10 @@ class _BalloonGameViewState extends State<BalloonGameView>
 
   void _onTick(Duration elapsed) {
     _epoch ??= elapsed;
-    setState(() {
-      _ms = (elapsed - _epoch!).inMilliseconds;
-    });
+    final ms = (elapsed - _epoch!).inMilliseconds;
+    setState(() => _ms = ms);
+    // 컨트롤러에 세션 ms 캐시 — 풍선 탭 시 poppedAtMs 박을 때 쓰임.
+    _c.onFrame(ms);
     _checkEscapes();
   }
 
@@ -62,6 +65,8 @@ class _BalloonGameViewState extends State<BalloonGameView>
     final snapshot = _c.balloons.toList();
     for (final b in snapshot) {
       if (_escaped.contains(b.id)) continue;
+      // 이미 터지는 중인 풍선은 좌표가 freeze 돼 있어 escape 통보 대상에서 제외.
+      if (b.poppedAtMs != null) continue;
       final p = (_ms - b.delayMs) / b.floatMs;
       if (p >= 1.0) {
         _escaped.add(b.id);
@@ -360,17 +365,28 @@ class _BalloonArena extends StatelessWidget {
   }
 
   Widget _buildPositionedBalloon(Balloon b, double arenaW, double arenaH) {
-    final p = (elapsedMs - b.delayMs) / b.floatMs;
-    if (p < 0 || p >= 1) {
-      // 화면 밖. 동일 키로 SizedBox.shrink만 남겨 Stack 자식 수를 일정하게
-      // 유지 — Stack은 자식 키가 안정적일 때 가장 효율적으로 렌더된다.
+    // 위치 계산용 기준 ms — 살아 있으면 현재, 터지는 중이면 freeze.
+    final refMs = b.poppedAtMs ?? elapsedMs;
+    final p = (refMs - b.delayMs) / b.floatMs;
+    // 정상 비행 중인데 p ≥ 1 인 풍선(=빠져나감)은 화면에서 숨김 — 컨트롤러가
+    // 곧 escape 처리로 popped 마킹하거나 제거한다.
+    if (p < 0 || (b.poppedAtMs == null && p >= 1)) {
       return SizedBox.shrink(key: ValueKey('balloon-${b.id}'));
     }
-    // y: 1.0 (바닥) → 0.0 (상단). p=0이면 바닥에 살짝 잘려 있다가 p=1이면
-    // 상단 위로 완전히 빠져나가도록 _balloonHeight를 위 여백에 포함.
-    final travelRange = arenaH + _balloonHeight;
-    final top = arenaH - (p * travelRange);
+    // 떠오르는 좌표: p=0 일 때 풍선 바닥이 무대 바닥에 닿아 **완전히 보이고**,
+    // p=1 일 때 풍선이 상단 위로 완전히 빠져나간다.
+    // 이전 공식은 풍선이 무대 아래에서부터 솟아오르도록 돼 있어 첫 풍선이 약 1초간
+    // 보이지 않는 "게임이 시작 안 됨" 같은 체감을 만들었다 — 그 버그 수정.
+    final top = (arenaH - _balloonHeight) - p * arenaH;
     final left = b.xFraction * arenaW - _balloonWidth / 2;
+
+    // 터지는 진행도(0..1). non-null 이면 풍선 이펙트(스케일/페이드/흔들림)에 사용.
+    final popProgress = b.poppedAtMs == null
+        ? 0.0
+        : ((elapsedMs - b.poppedAtMs!) /
+                BalloonGameController.popDurationMs)
+            .clamp(0.0, 1.0);
+
     return Positioned(
       key: ValueKey('balloon-${b.id}'),
       left: left.clamp(4.0, arenaW - _balloonWidth - 4),
@@ -379,8 +395,11 @@ class _BalloonArena extends StatelessWidget {
       height: _balloonHeight,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => controller.onBalloonTap(b.id),
-        child: _BalloonCard(balloon: b),
+        // 터지는 중인 풍선은 더 이상 탭 받지 않음.
+        onTap: b.poppedAtMs != null
+            ? null
+            : () => controller.onBalloonTap(b.id),
+        child: _BalloonCard(balloon: b, popProgress: popProgress),
       ),
     );
   }
@@ -388,14 +407,35 @@ class _BalloonArena extends StatelessWidget {
 
 /// 풍선 한 개의 시각 표현. 원형 컨테이너 + 짧은 끈으로 풍선 정체성을 살린다.
 /// 6~9세에게 거부감 없는 파스텔톤 + 진한 외곽선으로 가독성을 동시에 확보.
+///
+/// [popProgress] 가 0 보다 크면 "터지는 중" — 정답이면 풍선이 살짝 커지며
+/// ✨ 가 솟아 오르고, 오답이면 좌우로 흔들리며 ❌ 가 떠오른다. 어느 경우든
+/// 풍선 자체는 popProgress 에 비례해 페이드 아웃.
 class _BalloonCard extends StatelessWidget {
-  const _BalloonCard({required this.balloon});
+  const _BalloonCard({required this.balloon, required this.popProgress});
 
   final Balloon balloon;
+  final double popProgress;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    final isPopping = balloon.poppedAtMs != null;
+    final isCorrect = balloon.isCorrectPop ?? false;
+
+    // 풍선 본체의 변형: 정답이면 살짝 커지고, 오답이면 좌우 흔들림 + 약간 축소.
+    final scale = isPopping
+        ? (isCorrect
+            ? 1.0 + popProgress * 0.35
+            : 1.0 - popProgress * 0.2)
+        : 1.0;
+    final shakeX = (isPopping && !isCorrect)
+        ? math.sin(popProgress * math.pi * 6) * 4
+        : 0.0;
+    final bodyOpacity = isPopping
+        ? (1 - popProgress).clamp(0.0, 1.0)
+        : 1.0;
+
+    final balloonBody = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
@@ -442,6 +482,69 @@ class _BalloonCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        Transform.translate(
+          offset: Offset(shakeX, 0),
+          child: Transform.scale(
+            scale: scale,
+            child: Opacity(opacity: bodyOpacity, child: balloonBody),
+          ),
+        ),
+        if (isPopping)
+          _PopEffect(
+            isCorrect: isCorrect,
+            progress: popProgress,
+          ),
+      ],
+    );
+  }
+}
+
+/// 정답/오답 이펙트 오버레이. 정답 = ✨ 가 위로 솟아 오르며 확장, 오답 = ❌ 가
+/// 풍선 중앙에 등장해 살짝 커지며 페이드 — 6~9세 사용자에게 즉각 학습 피드백.
+class _PopEffect extends StatelessWidget {
+  const _PopEffect({required this.isCorrect, required this.progress});
+
+  final bool isCorrect;
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isCorrect) {
+      // ✨ 가 풍선 위로 부드럽게 솟아 오르며 점차 커지다 페이드. 풍선이
+      // 부풀어 터지는 환호 느낌.
+      final scale = 0.7 + progress * 1.0;
+      final dy = -progress * 24; // 살짝 위로 뜸
+      return Transform.translate(
+        offset: Offset(0, dy),
+        child: Transform.scale(
+          scale: scale,
+          child: Opacity(
+            opacity: (1 - progress).clamp(0.0, 1.0),
+            child: const Text(
+              '✨',
+              style: TextStyle(fontSize: 56, height: 1.0),
+            ),
+          ),
+        ),
+      );
+    }
+    // 오답: ❌ 가 풍선 중앙에 등장해 살짝 커지며 페이드.
+    final scale = 0.6 + progress * 0.7;
+    return Transform.scale(
+      scale: scale,
+      child: Opacity(
+        opacity: (1 - progress * 0.5).clamp(0.0, 1.0),
+        child: const Text(
+          '❌',
+          style: TextStyle(fontSize: 48, height: 1.0),
+        ),
+      ),
     );
   }
 }
