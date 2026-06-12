@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
@@ -290,17 +292,23 @@ class _Battlefield extends StatelessWidget {
           builder: (context, c) {
             final w = c.maxWidth;
             final h = c.maxHeight;
-            // 차로는 전장의 위/아래 패딩 안쪽 영역만 사용 — 둥근 모서리에 셀이
-            // 닿지 않도록.
             final usableH = h - 2 * _laneVPadding;
             final laneHeight = usableH / TowerDefenseController.laneCount;
-            // 성의 오른쪽 경계 — 몬스터가 여기까지 오면 성 도달.
+            // 셀이 차로보다 크면 위/아래로 삐져나와 둥근 모서리에 잘린다 —
+            // 360×640 같은 작은 화면에서는 키패드(312dp)+답표시 영역이 본문을
+            // 잠식해 전장이 ~80dp 까지 줄어들 수 있으니 셀을 차로 크기에 맞춰
+            // 비례 축소. 가독성 하한은 50dp.
+            final effCellH = math
+                .min(_cellHeight, laneHeight - 4)
+                .clamp(50.0, _cellHeight);
+            final effProblemH =
+                effCellH * (_problemCardHeight / _cellHeight);
+            final effSpriteH = effCellH * (_spriteHeight / _cellHeight);
             final castleRight = 12.0 + _castleWidth;
             return Obx(() {
               final list = controller.monsters.toList();
               return Stack(
                 children: [
-                  // 차로 구분선 — 옅은 가로 점선 느낌의 띠 2 개. 패딩 안쪽 위치.
                   for (var i = 1; i < TowerDefenseController.laneCount; i++)
                     Positioned(
                       left: 8,
@@ -312,7 +320,6 @@ class _Battlefield extends StatelessWidget {
                             const Color(0xFF00ACC1).withValues(alpha: 0.18),
                       ),
                     ),
-                  // 성 — 차로 3 개 전부를 세로로 덮는다.
                   Positioned(
                     left: 12,
                     top: 8,
@@ -320,15 +327,16 @@ class _Battlefield extends StatelessWidget {
                     width: _castleWidth,
                     child: const _CastleWidget(),
                   ),
-                  // 몬스터 + 처치 이펙트.
                   for (final m in list)
                     _buildMonster(
                       m,
                       laneHeight: laneHeight,
                       castleRight: castleRight,
                       arenaWidth: w,
+                      effCellHeight: effCellH,
+                      effProblemHeight: effProblemH,
+                      effSpriteHeight: effSpriteH,
                     ),
-                  // 마법 발사 이펙트 — 성에서 처치된 몬스터까지 짧게 직선 트레일.
                   for (final m in list)
                     if (m.hitAtMs != null)
                       _buildSpellTrail(
@@ -346,14 +354,17 @@ class _Battlefield extends StatelessWidget {
     );
   }
 
-  // 몬스터 한 마리의 위치/이펙트.
+  // 몬스터 한 마리의 위치/이펙트. effCellHeight 등은 [build] 의 LayoutBuilder 에서
+  // 차로 높이에 맞춰 축소된 값 — 작은 화면 호환을 위해 동적으로 흘려보낸다.
   Widget _buildMonster(
     TowerMonster m, {
     required double laneHeight,
     required double castleRight,
     required double arenaWidth,
+    required double effCellHeight,
+    required double effProblemHeight,
+    required double effSpriteHeight,
   }) {
-    // 위치 계산용 기준 ms — 살아 있으면 현재, 처치 중이면 freeze.
     final refMs = m.hitAtMs ?? elapsedMs;
     final p = (refMs - m.spawnMs) / m.travelMs;
     if (p < 0 || (m.hitAtMs == null && p >= 1.0)) {
@@ -361,16 +372,14 @@ class _Battlefield extends StatelessWidget {
     }
     final clamped = p < 0 ? 0.0 : (p > 1.0 ? 1.0 : p);
 
-    // 오른쪽 끝(arenaWidth - _cellWidth - _spawnRightInset) 에서 성 오른쪽 까지 보간.
     final startX = arenaWidth - _cellWidth - _spawnRightInset;
     final endX = castleRight;
     final left = startX - clamped * (startX - endX);
 
     final laneCenterY =
         _laneVPadding + laneHeight * m.laneIndex + laneHeight / 2;
-    final top = laneCenterY - _cellHeight / 2;
+    final top = laneCenterY - effCellHeight / 2;
 
-    // 처치 이펙트 진행도(0..1). null 이면 살아 있음.
     final defeatProgress = m.hitAtMs == null
         ? 0.0
         : ((elapsedMs - m.hitAtMs!) /
@@ -382,12 +391,12 @@ class _Battlefield extends StatelessWidget {
       left: left,
       top: top,
       width: _cellWidth,
-      height: _cellHeight,
+      height: effCellHeight,
       child: IgnorePointer(
         child: _MonsterCell(
           monster: m,
-          problemCardHeight: _problemCardHeight,
-          spriteHeight: _spriteHeight,
+          problemCardHeight: effProblemHeight,
+          spriteHeight: effSpriteHeight,
           defeatProgress: defeatProgress,
         ),
       ),

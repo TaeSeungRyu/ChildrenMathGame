@@ -110,15 +110,27 @@ class BalloonGameController extends GetxController {
   // ───── 라운드 ─────────────────────────────────────────────────────────────
 
   /// 라운드별 (총 풍선 수, 정답 풍선 수, 떠오르는 시간 ms).
+  ///
+  /// 풍선 수는 최대 6개로 캡 — 풍선 폭(92dp) 기준으로 3개가 화면 가로에 나란히
+  /// 떠 있을 수 있는 한계라, 6개면 2개의 행(row) 으로 분리해 표시 가능.
+  /// 9개까지 늘렸을 때는 화면 가득 차서 6~9세 사용자가 어느 풍선이 어느 문제인지
+  /// 시각적으로 구분하기 어려웠다.
   ({int total, int matching, int floatMs}) _roundConfig(int r) {
-    final total = (4 + r).clamp(5, 9); // 5,6,7,8,9 …→ 9에서 캡
-    // 정답 풍선은 라운드 1=2개, 2=2개, 3=3개, 4=3개, 5+=4개. 총 풍선 수보다는
-    // 항상 적게.
-    final matching = (1 + (r + 1) ~/ 2).clamp(minMatching, total - 1);
+    final total = (2 + r).clamp(3, 6); // 3,4,5,6,6,6,... → 6에서 캡
+    final matching = ((total + 1) ~/ 3).clamp(minMatching, total - 1);
     final floatBase = initialFloatMs - (r - 1) * floatStepMs;
     final floatMs = floatBase < minFloatMs ? minFloatMs : floatBase;
     return (total: total, matching: matching, floatMs: floatMs);
   }
+
+  // 풍선이 위치할 3개의 가로 컬럼. 풍선 폭 92dp 기준으로 양옆 여백을 두고도
+  // 서로 안 겹치는 안전한 x 비율. 인덱스 = 컬럼.
+  static const List<double> _columnFractions = [0.18, 0.5, 0.82];
+
+  // 같은 컬럼에서 다음 풍선이 등장할 때까지의 지연(ms). 한 컬럼당 풍선 두 마리가
+  // 세로로 겹치지 않도록 충분한 간격. 너무 길면 사용자가 "게임이 늦게 시작"한다고
+  // 느끼므로, 첫 줄(컬럼 0~2)은 즉시 등장하고 두 번째 줄만 이만큼 지연된다.
+  static const int rowDelayMs = 2800;
 
   void _startRound() {
     final cfg = _roundConfig(round.value);
@@ -129,28 +141,22 @@ class BalloonGameController extends GetxController {
 
     final decoys = _buildDecoys(cfg.total - primary.length, primary.first.answer);
 
-    // 진짜 풍선 수가 줄어든 경우에도 콤보·점수 흐름은 그대로 유지. _buildMatchingSet이
-    // matchCount 보다 적게 반환할 수 있으므로(자릿수 조합 때문에 추가 합성에 실패한 경우)
-    // 별도 안내 없이 자연스럽게 진행.
+    // 정답+디코이 합쳐서 섞은 뒤 컬럼 round-robin 으로 배치. 첫 줄(인덱스 0~2)은
+    // delay 0 으로 즉시 등장, 두 번째 줄(인덱스 3~5)은 [rowDelayMs] 뒤에 등장 —
+    // 그 시점이면 첫 줄은 이미 위쪽으로 충분히 올라가 있어 새 풍선과 겹치지 않는다.
     final all = [...primary, ...decoys];
     all.shuffle(_rng);
 
-    // 진입 딜레이를 짧게 분산해 풍선들이 같은 y에서 동시에 솟지 않게 한다.
-    // 이전에는 floatMs/2 (≈5초) 에 걸쳐 마지막 풍선이 등장 — 사용자에게 "게임이
-    // 5초 뒤에 시작" 처럼 보이는 체감 문제. 총 600ms 안에 모든 풍선이 등장하도록
-    // 단축. 5 마리 기준 풍선 사이 간격 150ms — 짧은 시각적 stagger 만 남기고
-    // 사실상 즉시 시작감.
-    const totalSpreadMs = 600;
     final list = <Balloon>[];
     for (var i = 0; i < all.length; i++) {
-      final delayMs = all.length <= 1
-          ? 0
-          : (i * totalSpreadMs ~/ (all.length - 1));
+      final row = i ~/ _columnFractions.length;
+      final col = i % _columnFractions.length;
+      final delayMs = row * rowDelayMs;
       list.add(
         Balloon(
           id: _nextBalloonId++,
           problem: all[i],
-          xFraction: _spreadX(i, all.length),
+          xFraction: _columnFractions[col],
           delayMs: delayMs,
           floatMs: _floatMs,
           color: _pickColor(i),
@@ -228,18 +234,6 @@ class BalloonGameController extends GetxController {
       out.add(p);
     }
     return out;
-  }
-
-  // 풍선 수에 따라 가로 위치를 균등 분포 + 약간의 jitter로 흩뿌린다.
-  // 가장자리에 너무 붙으면 잘려 보이므로 0.1~0.9 사이 안쪽에서 분포.
-  double _spreadX(int index, int total) {
-    if (total <= 1) return 0.5;
-    final lane = 0.1 + (0.8 * index / (total - 1));
-    final jitter = (_rng.nextDouble() - 0.5) * 0.08;
-    final v = lane + jitter;
-    if (v < 0.05) return 0.05;
-    if (v > 0.95) return 0.95;
-    return v;
   }
 
   // 부드럽고 따뜻한 파스텔 팔레트. 풍선 정체성에 어울리고 6~9세에게 거부감이

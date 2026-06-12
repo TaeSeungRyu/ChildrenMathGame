@@ -229,85 +229,49 @@ class _GameModeTile extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Center(
-                      child: Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.45),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          spec.icon,
-                          size: 40,
-                          color: spec.accent,
-                        ),
-                      ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 14, 12, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Center(
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      shape: BoxShape.circle,
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    spec.title,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: spec.fg,
+                    child: Icon(
+                      spec.icon,
+                      size: 40,
+                      color: spec.accent,
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    spec.tagline,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: spec.fg.withValues(alpha: 0.78),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // 우상단 NEW 배지 — 모든 게임이 신규 단계이므로 일괄 부착.
-            // 구현 완료 후 spec.released 같은 필드로 켜고 끌 수 있게 확장.
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE53935),
-                  borderRadius: BorderRadius.circular(999),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: const Text(
-                  'NEW',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
                   ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                spec.title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: spec.fg,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                spec.tagline,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: spec.fg.withValues(alpha: 0.78),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -10,7 +10,9 @@ class ProfileService extends GetxService {
   static const defaultName = '어린이';
   // Max characters allowed for a name — UI also enforces via maxLength but
   // we trim and clamp here to stay defensive against any other entry path.
-  static const maxNameLength = 10;
+  // 한국어 이름은 통상 2~3자(예: 민준, 서연) 이므로 3자로 캡 — 4자 이상은
+  // 입력 자체가 차단된다.
+  static const maxNameLength = 3;
 
   late final SharedPreferences _prefs;
   final name = defaultName.obs;
