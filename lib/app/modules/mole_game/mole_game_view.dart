@@ -496,8 +496,11 @@ class _MoleSprite extends StatelessWidget {
       child: Center(
         child: SizedBox(
           width: cellSize,
-          // 두더지 + 배지 + 망치/💥 가 잘리지 않을 충분한 높이.
-          height: cellSize * 0.7,
+          // 두더지 + 배지 + 망치/💥 가 잘리지 않을 충분한 높이. 0.7 은 이모지 라인
+          // 메트릭 여유분까지 고려하면 약 0.6px 마다 overflow 가 떴다 — 0.85 로 잡고
+          // 흙더미와는 dirtHeight*0.5 만큼만 겹치게 둔다 (셀 총 높이 안에 들어옴:
+          // 0.85 + 0.13 = 0.98 < 1.0).
+          height: cellSize * 0.85,
           child: Stack(
             alignment: Alignment.bottomCenter,
             clipBehavior: Clip.none,
