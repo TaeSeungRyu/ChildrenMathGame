@@ -12,6 +12,12 @@ import 'app/routes/app_routes.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  // 세로 고정 — 모든 화면(키패드/아레나/오버레이)이 세로 비율 기준으로 레이아웃
+  // 되어 있어 가로로 돌리면 의도와 다르게 잘리거나 늘어진다.
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   await Get.putAsync<ProfileService>(() => ProfileService().init());
   await Get.putAsync<RecordService>(() => RecordService().init());
   await Get.putAsync<SfxService>(() => SfxService().init());
