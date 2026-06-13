@@ -61,11 +61,11 @@ class NumberKeypad extends StatelessWidget {
     return Column(
       children: [
         _row([_digit('1'), _digit('2'), _digit('3')]),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         _row([_digit('4'), _digit('5'), _digit('6')]),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         _row([_digit('7'), _digit('8'), _digit('9')]),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         _row(
           [
             _action(
@@ -81,7 +81,7 @@ class NumberKeypad extends StatelessWidget {
             ),
           ],
           flexes: const [1, 1, 2],
-          height: 96,
+          height: 72,
         ),
       ],
     );
@@ -90,11 +90,11 @@ class NumberKeypad extends StatelessWidget {
   Widget _row(
     List<Widget> children, {
     List<int>? flexes,
-    double height = 64,
+    double height = 54,
   }) {
     final items = <Widget>[];
     for (var i = 0; i < children.length; i++) {
-      if (i > 0) items.add(const SizedBox(width: 8));
+      if (i > 0) items.add(const SizedBox(width: 4));
       items.add(Expanded(flex: flexes?[i] ?? 1, child: children[i]));
     }
     return SizedBox(height: height, child: Row(children: items));

@@ -111,9 +111,9 @@ class _MonsterGameViewState extends State<MonsterGameView>
                 ),
                 const SizedBox(height: 8),
                 Expanded(child: _FallArena(controller: _fall)),
-                const SizedBox(height: 12),
-                Obx(() => AnswerDisplay(value: _c.answer.value)),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
+                Obx(() => AnswerDisplay(value: _c.answer.value, height: 54)),
+                const SizedBox(height: 6),
                 NumberKeypad(
                   onAppendDigit: _c.appendDigit,
                   onDelete: _c.deleteLast,

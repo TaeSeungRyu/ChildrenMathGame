@@ -27,6 +27,10 @@ class TowerDefenseController extends GetxController {
   static const int maxInputLength = 6;
   static const int totalSeconds = 60;
 
+  // 몬스터 처치 1마리당 추가되는 보너스 시간(초). [bonusSeconds]에 누적돼
+  // [remainingSeconds]를 늘린다.
+  static const int correctBonusSeconds = 10;
+
   // 차로(lane) 수. 화면이 3개 가로 띠로 나뉘고 몬스터는 자기 차로 안에서만
   // 행진한다. 6~9세에게 4 차로 이상은 시각적 부담이 큰 것으로 판단해 3으로 고정.
   static const int laneCount = 3;
@@ -66,6 +70,8 @@ class TowerDefenseController extends GetxController {
   final RxString answer = ''.obs;
   final RxBool isGameOver = false.obs;
   final RxInt elapsed = 0.obs;
+  // 처치 보너스로 누적된 시간(초). 매 정답 처치마다 [correctBonusSeconds]씩 증가.
+  final RxInt bonusSeconds = 0.obs;
 
   // 화면 위 모든 몬스터(살아 있는 것 + 처치 이펙트 재생 중인 것). 후자는
   // [TowerMonster.hitAtMs]가 non-null. View 는 살아 있는 몬스터는 정상 sprite,
@@ -80,7 +86,7 @@ class TowerDefenseController extends GetxController {
   int _nextMonsterId = 1;
 
   int get remainingSeconds {
-    final r = totalSeconds - elapsed.value;
+    final r = totalSeconds + bonusSeconds.value - elapsed.value;
     return r < 0 ? 0 : r;
   }
 
@@ -177,6 +183,7 @@ class TowerDefenseController extends GetxController {
     _sfx.correct();
     kills.value += 1;
     combo.value += 1;
+    bonusSeconds.value += correctBonusSeconds;
     answer.value = '';
     // 처치 이펙트가 재생되는 동안 좌표를 freeze 하기 위해 hitAtMs 를 박는다.
     // View 는 hitAtMs 가 있으면 (sessionElapsedMs - spawnMs) 대신 (hitAtMs -
@@ -258,7 +265,7 @@ class TowerDefenseController extends GetxController {
     _secondTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (isGameOver.value) return;
       elapsed.value += 1;
-      if (elapsed.value >= totalSeconds) _gameOver();
+      if (remainingSeconds <= 0) _gameOver();
     });
   }
 
@@ -283,6 +290,7 @@ class TowerDefenseController extends GetxController {
     combo.value = 0;
     answer.value = '';
     elapsed.value = 0;
+    bonusSeconds.value = 0;
     isGameOver.value = false;
     monsters.clear();
     _sessionElapsedMs = 0;

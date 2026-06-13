@@ -132,9 +132,9 @@ class _TowerDefenseViewState extends State<TowerDefenseView>
                 ),
                 const SizedBox(height: 8),
                 Expanded(child: _Battlefield(controller: _c, elapsedMs: _ms)),
-                const SizedBox(height: 12),
-                Obx(() => AnswerDisplay(value: _c.answer.value)),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
+                Obx(() => AnswerDisplay(value: _c.answer.value, height: 54)),
+                const SizedBox(height: 6),
                 NumberKeypad(
                   onAppendDigit: _c.appendDigit,
                   onDelete: _c.deleteLast,

@@ -45,6 +45,10 @@ class MonsterGameController extends GetxController {
   // HP 소진과 별도의 종료 조건이라, 빠른 처치를 유도하는 추가 압박감 역할.
   static const int totalSeconds = 60;
 
+  // 정답 1개당 추가되는 보너스 시간(초). 누적으로 [bonusSeconds]에 합산돼
+  // [remainingSeconds]를 늘린다.
+  static const int correctBonusSeconds = 10;
+
   final SfxService _sfx = Get.find();
 
   // 셀렉트 화면 인자 — null 이면 무작위 연산.
@@ -59,8 +63,10 @@ class MonsterGameController extends GetxController {
   final RxBool isGameOver = false.obs;
   late final Rx<Problem> current;
 
-  // 경과 초. 매 초 +1 되며 [totalSeconds] 도달 시 자동 게임오버.
+  // 경과 초. 매 초 +1 되며 [totalSeconds] + [bonusSeconds] 도달 시 자동 게임오버.
   final RxInt elapsed = 0.obs;
+  // 정답으로 누적된 보너스 시간(초). 매 정답마다 [correctBonusSeconds]씩 증가.
+  final RxInt bonusSeconds = 0.obs;
   Timer? _timer;
 
   // 현재 라운드 낙하 시간(ms). [_rollFallMs]로 매 spawn마다 갱신.
@@ -68,7 +74,7 @@ class MonsterGameController extends GetxController {
   final Random _rng = Random();
 
   int get remainingSeconds {
-    final r = totalSeconds - elapsed.value;
+    final r = totalSeconds + bonusSeconds.value - elapsed.value;
     return r < 0 ? 0 : r;
   }
 
@@ -101,7 +107,7 @@ class MonsterGameController extends GetxController {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (isGameOver.value) return;
       elapsed.value += 1;
-      if (elapsed.value >= totalSeconds) _gameOver();
+      if (remainingSeconds <= 0) _gameOver();
     });
   }
 
@@ -173,6 +179,7 @@ class MonsterGameController extends GetxController {
     _sfx.correct();
     kills.value += 1;
     combo.value += 1;
+    bonusSeconds.value += correctBonusSeconds;
     _spawnNext();
   }
 
@@ -215,6 +222,7 @@ class MonsterGameController extends GetxController {
     kills.value = 0;
     combo.value = 0;
     elapsed.value = 0;
+    bonusSeconds.value = 0;
     isGameOver.value = false;
     _spawnNext();
     _startTimer();

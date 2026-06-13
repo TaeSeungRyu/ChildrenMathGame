@@ -32,6 +32,10 @@ class BalloonGameController extends GetxController {
   // 너무 길면 어린이 사용자의 집중이 흐트러진다.
   static const int totalSeconds = 60;
 
+  // 정답 풍선 1개당 추가되는 보너스 시간(초). [bonusSeconds]에 누적돼
+  // [remainingSeconds]를 늘린다.
+  static const int correctBonusSeconds = 10;
+
   // 라운드별 풍선 수 / 정답 풍선 수 / 떠오르는 시간(ms). 라운드가 올라갈수록
   // 풍선 수와 정답 비중이 같이 늘고 속도도 빨라진다. minFloatMs로 5초 미만은
   // 차단해 어린이가 풀 수 없을 정도로 가혹해지지 않도록 한다.
@@ -62,6 +66,8 @@ class BalloonGameController extends GetxController {
   final RxInt targetAnswer = 0.obs;
   final RxBool isGameOver = false.obs;
   final RxInt elapsed = 0.obs;
+  // 정답 풍선으로 누적된 보너스 시간(초). 매 정답마다 [correctBonusSeconds]씩 증가.
+  final RxInt bonusSeconds = 0.obs;
 
   // 현재 라운드의 풍선들. 풍선이 처리되면(터지거나 빠져나가면) 리스트에서 제거.
   final RxList<Balloon> balloons = <Balloon>[].obs;
@@ -86,7 +92,7 @@ class BalloonGameController extends GetxController {
   int get sessionElapsedMs => _sessionElapsedMs;
 
   int get remainingSeconds {
-    final r = totalSeconds - elapsed.value;
+    final r = totalSeconds + bonusSeconds.value - elapsed.value;
     return r < 0 ? 0 : r;
   }
 
@@ -271,6 +277,7 @@ class BalloonGameController extends GetxController {
       _sfx.correct();
       pops.value += 1;
       combo.value += 1;
+      bonusSeconds.value += correctBonusSeconds;
     } else {
       _sfx.wrong();
       combo.value = 0;
@@ -342,7 +349,7 @@ class BalloonGameController extends GetxController {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (isGameOver.value) return;
       elapsed.value += 1;
-      if (elapsed.value >= totalSeconds) _gameOver();
+      if (remainingSeconds <= 0) _gameOver();
     });
   }
 
@@ -365,6 +372,7 @@ class BalloonGameController extends GetxController {
     combo.value = 0;
     round.value = 1;
     elapsed.value = 0;
+    bonusSeconds.value = 0;
     isGameOver.value = false;
     _startRound();
     _startTimer();
