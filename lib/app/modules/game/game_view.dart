@@ -168,10 +168,17 @@ class GameView extends GetView<GameController> {
                         );
                       }
                       // 방정식: "A op ? = C" with operandB hidden behind ?.
-                      // Other modes: forward "A op B = ?" prompt.
-                      final text = controller.isEquation
-                          ? p.equationQuestionText
-                          : '${p.questionText} = ?';
+                      // 어림셈: "A op B ≈ ?" — strong "approximately" cue so
+                      // 아이가 정확 계산이 아니라 어림 감각을 쓰도록 유도.
+                      // 그 외 모드: forward "A op B = ?" prompt.
+                      final String text;
+                      if (controller.isEquation) {
+                        text = p.equationQuestionText;
+                      } else if (controller.isEstimation) {
+                        text = '${p.questionText} ≈ ?';
+                      } else {
+                        text = '${p.questionText} = ?';
+                      }
                       return Text(
                         text,
                         textAlign: TextAlign.center,
@@ -186,10 +193,73 @@ class GameView extends GetView<GameController> {
               ),
             ),
             const SizedBox(height: 16),
-            _AnswerDisplay(),
-            const SizedBox(height: 12),
-            _Keypad(),
+            // 어림셈은 키패드 대신 3지선다 보기. _AnswerDisplay/_Keypad는 입력값
+            // 누적이 필요한 다른 모드 전용이므로 통째로 갈아끼운다.
+            if (controller.isEstimation)
+              const Expanded(child: _EstimationChoiceGrid())
+            else ...[
+              _AnswerDisplay(),
+              const SizedBox(height: 12),
+              _Keypad(),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EstimationChoiceGrid extends GetView<GameController> {
+  const _EstimationChoiceGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final idx = controller.currentIndex.value;
+      final choices = controller.estimationChoices![idx].choices;
+      return Column(
+        children: [
+          for (var i = 0; i < choices.length; i++) ...[
+            if (i > 0) const SizedBox(height: 12),
+            Expanded(
+              child: SizedBox(
+                width: double.infinity,
+                child: _EstimationChoiceButton(value: choices[i]),
+              ),
+            ),
+          ],
+        ],
+      );
+    });
+  }
+}
+
+class _EstimationChoiceButton extends GetView<GameController> {
+  const _EstimationChoiceButton({required this.value});
+
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton(
+      onPressed: () => controller.submitChoice(value),
+      style: FilledButton.styleFrom(
+        padding: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            '약 $value',
+            style: const TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );

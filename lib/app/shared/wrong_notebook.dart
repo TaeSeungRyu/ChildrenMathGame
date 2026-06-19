@@ -20,6 +20,9 @@ List<WrongNotebookEntry> aggregateWrongNotebook(
   for (final r in records) {
     for (final a in r.attempts) {
       if (a.status == AttemptStatus.correct) continue;
+      // 어림셈 오답은 오답노트에서 제외. 정답이 "정확한 계산 결과"가 아니라
+      // "반올림 어림값"이라 복습 화면이 정확값 입력을 받는 흐름과 맞지 않는다.
+      if (a.isEstimation) continue;
       final key = wrongNotebookSignature(a);
       final dismissed = dismissedAt[key];
       if (dismissed != null && !r.finishedAt.isAfter(dismissed)) continue;

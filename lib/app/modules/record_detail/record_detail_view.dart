@@ -47,6 +47,8 @@ class RecordDetailView extends GetView<RecordDetailController> {
                               ? '방정식 (${componentLabel(r)}) 레벨 ${r.level}'
                               : r.type == GameType.flash
                               ? '플래시 (${componentLabel(r)}) 레벨 ${r.level}'
+                              : r.type == GameType.estimation
+                              ? '어림셈 (${componentLabel(r)}) 레벨 ${r.level}'
                               : '${r.type.label} 레벨 ${r.level}',
                           style: const TextStyle(
                             fontSize: 22,

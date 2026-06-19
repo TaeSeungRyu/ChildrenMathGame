@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../models/estimation_choices.dart';
 import '../models/game_type.dart';
 import '../models/problem.dart';
 
@@ -122,6 +123,7 @@ class ProblemGenerator {
       case GameType.mixed:
       case GameType.equation:
       case GameType.flash:
+      case GameType.estimation:
         // Roll-up labels never carry a problem of their own.
         return null;
     }
@@ -204,10 +206,11 @@ class ProblemGenerator {
       case GameType.mixed:
       case GameType.equation:
       case GameType.flash:
+      case GameType.estimation:
         // Roll-up labels never drive problem generation directly. `mixed`
-        // dispatches through [generateMixed]; `equation`/`flash` reuse
-        // [generate] with the chosen sub-op before rolling up at the record
-        // level.
+        // dispatches through [generateMixed]; `equation`/`flash`/`estimation`
+        // reuse [generate] with the chosen sub-op before rolling up at the
+        // record level.
         throw ArgumentError('Roll-up GameType cannot generate problems');
     }
   }
@@ -300,9 +303,10 @@ class ProblemGenerator {
         case GameType.mixed:
         case GameType.equation:
         case GameType.flash:
+        case GameType.estimation:
           // Roll-up labels are guarded against at their respective entry
-          // points (generateMixed / equation / flash); reaching any of them
-          // inside compound-build is a bug.
+          // points (generateMixed / equation / flash / estimation); reaching
+          // any of them inside compound-build is a bug.
           return null;
       }
     }
@@ -352,6 +356,90 @@ class ProblemGenerator {
       operations: ops,
       answer: operands.length,
     );
+  }
+
+  /// 어림셈 모드용 보기 3개를 만든다.
+  ///
+  /// 한국 초등 교과의 "어림하기" 접근을 따른다 — 피연산자를 레벨에 맞는 자리에서
+  /// 반올림한 뒤 그 둘로 계산한 값이 정답. 예: `47 + 28` (L3, 10단위 반올림)
+  /// → `50 + 30 = 80`. 정답은 항상 반올림 단위의 배수가 되도록 만들어, 보기
+  /// 버튼에 깔끔하게 보이는 숫자만 등장하게 한다.
+  ///
+  /// 헷갈리는 오답(distractors)은 정답 ± 단위, ± 2단위 후보 중에서 양수만 골라
+  /// 2개 뽑는다. 정답에 너무 붙은 ±단위 1개 + 멀찍이 ±2단위 1개를 섞어
+  /// "딱 옆에 붙은 함정 + 명백히 틀린 후보" 구도를 만든다 — 단순히 ±1만 두면
+  /// 정확히 계산한 아이가 항상 가운데 값을 고르게 되어 어림 감각이 측정되지
+  /// 않는다.
+  ///
+  /// 입력 [p]는 일반 [generate]/[generateOne]으로 만든 단일 연산 Problem이어야
+  /// 한다(나눗셈 제외). compound는 어림셈 모드의 출제 범위에 포함되지 않는다.
+  static EstimationChoices estimationChoicesFor(Problem p, int level) {
+    final unit = _estimationUnit(level);
+    final aR = _roundTo(p.operandA, unit);
+    final bR = _roundTo(p.operandB, unit);
+    int correct;
+    switch (p.type) {
+      case GameType.addition:
+        correct = aR + bR;
+      case GameType.subtraction:
+        correct = aR - bR;
+        if (correct < 0) correct = 0;
+      case GameType.multiplication:
+        correct = aR * bR;
+      case GameType.division:
+      case GameType.mixed:
+      case GameType.equation:
+      case GameType.flash:
+      case GameType.estimation:
+        // 어림셈은 +/−/× 셋에만 의미가 있다(÷는 출제기가 정수 몫만 만들어
+        // 반올림할 거리가 없음). 호출자가 셀렉트 화면에서 이미 막아두지만,
+        // 안전망으로 정답값은 반올림 단위에 맞춘 exact answer를 쓴다.
+        correct = _roundTo(p.answer, unit);
+    }
+    final distractors = _estimationDistractors(correct, unit);
+    final choices = <int>[correct, ...distractors]..shuffle(_random);
+    return EstimationChoices(choices: choices, correct: correct);
+  }
+
+  /// 레벨별 반올림 단위. 한 자리 연산은 5의 배수로 가깝게, 백 단위가 의미
+  /// 있어지는 L5(3+3자리)에서만 100으로 키운다.
+  static int _estimationUnit(int level) {
+    switch (level) {
+      case 1:
+        return 5;
+      case 2:
+      case 3:
+      case 4:
+        return 10;
+      case 5:
+        return 100;
+      default:
+        return 10;
+    }
+  }
+
+  static int _roundTo(int n, int unit) {
+    if (unit <= 1) return n;
+    final sign = n < 0 ? -1 : 1;
+    final abs = n.abs();
+    return sign * ((abs + unit ~/ 2) ~/ unit) * unit;
+  }
+
+  /// correct 주변의 ±unit, ±2*unit 중 양수이고 correct와 겹치지 않는 후보들에서
+  /// 2개를 골라 셔플한다. 후보가 부족하면(예: 정답이 작아 음수가 다수) 더 먼
+  /// 양의 거리(±3*unit)로 확장.
+  static List<int> _estimationDistractors(int correct, int unit) {
+    final pool = <int>{};
+    for (final k in const [1, -1, 2, -2, 3]) {
+      final v = correct + k * unit;
+      if (v >= 0 && v != correct) pool.add(v);
+    }
+    final list = pool.toList()..shuffle(_random);
+    if (list.length < 2) {
+      // 거의 발생하지 않는 경계 케이스(correct=0, unit=5): 5, 10을 보내자.
+      return [correct + unit, correct + unit * 2];
+    }
+    return list.sublist(0, 2);
   }
 
   static (int, int) _digitsForLevel(int level) {

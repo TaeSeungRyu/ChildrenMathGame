@@ -69,6 +69,9 @@ class _ResultViewState extends State<ResultView> {
                     : controller.isFlash
                           ? '플래시(${componentLabel(r)}) 레벨 ${r.level}'
                                 '${controller.isPractice ? ' 연습' : ''}'
+                          : controller.isEstimation
+                              ? '어림셈(${componentLabel(r)}) 레벨 ${r.level}'
+                                    '${controller.isPractice ? ' 연습' : ''}'
                           : controller.isTimeAttack
                                 ? '${r.type.label} 레벨 ${r.level} 타임어택'
                                 : controller.isEndless
@@ -93,7 +96,7 @@ class _ResultViewState extends State<ResultView> {
     final isTimeAttack = controller.isTimeAttack;
     final isEndless = controller.isEndless;
     final reviewable = r.attempts
-        .where((a) => a.status != AttemptStatus.correct)
+        .where((a) => a.status != AttemptStatus.correct && !a.isEstimation)
         .toList();
     return Scaffold(
       appBar: AppBar(
@@ -190,6 +193,9 @@ class _ResultViewState extends State<ResultView> {
                                         '${controller.isPractice ? ' (연습)' : ''}'
                                   : controller.isFlash
                                   ? '플래시 (${componentLabel(r)}) 레벨 ${r.level}'
+                                        '${controller.isPractice ? ' (연습)' : ''}'
+                                  : controller.isEstimation
+                                  ? '어림셈 (${componentLabel(r)}) 레벨 ${r.level}'
                                         '${controller.isPractice ? ' (연습)' : ''}'
                                   : controller.isTimeAttack
                                   ? '${r.type.label} 레벨 ${r.level} (타임어택)'

@@ -17,6 +17,8 @@ class ResultController extends GetxController {
   late final GameType? equationType;
   late final bool isFlash;
   late final GameType? flashType;
+  late final bool isEstimation;
+  late final GameType? estimationType;
   // True when a perfect (no-wrong) challenge run beat the prior best
   // elapsedSeconds at this (type, level). Always false for practice/mixed/
   // time attack/endless/equation/flash.
@@ -48,6 +50,8 @@ class ResultController extends GetxController {
     equationType = args['equationType'] as GameType?;
     isFlash = (args['isFlash'] as bool?) ?? false;
     flashType = args['flashType'] as GameType?;
+    isEstimation = (args['isEstimation'] as bool?) ?? false;
+    estimationType = args['estimationType'] as GameType?;
     isNewPerfectBest = _computeNewPerfectBest();
     isNewTimeAttackBest = _computeNewTimeAttackBest();
     isNewEndlessBest = _computeNewEndlessBest();
@@ -80,6 +84,9 @@ class ResultController extends GetxController {
     // windows (1.5s/2s/2.5s) and across the four underlying ops; comparing
     // elapsed time across those isn't a fair "신기록" — skip.
     if (isFlash) return false;
+    // 어림셈 runs share a (type=estimation, level) bucket across three sub-ops
+    // (+/−/×); elapsed-time comparison across different ops isn't fair — skip.
+    if (isEstimation) return false;
     if (record.correctCount != record.totalCount) return false;
     final priors = Get.find<RecordService>().all().where(
       (r) =>

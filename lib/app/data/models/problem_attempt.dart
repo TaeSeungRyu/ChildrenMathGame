@@ -13,6 +13,7 @@ class ProblemAttempt {
     List<int>? operands,
     List<GameType>? operations,
     this.isEquation = false,
+    this.isEstimation = false,
   }) : operands = operands ?? [operandA, operandB],
        operations = operations ?? [type];
 
@@ -34,6 +35,7 @@ class ProblemAttempt {
       operands: operands,
       operations: operations,
       isEquation: (json['isEquation'] as bool?) ?? false,
+      isEstimation: (json['isEstimation'] as bool?) ?? false,
     );
   }
 
@@ -54,6 +56,10 @@ class ProblemAttempt {
   // "A op ? = C" and the player solves for operandB. Always false for
   // compound (mixed) attempts.
   final bool isEquation;
+  // True when this attempt came from 어림셈 mode: the question is shown as
+  // "A op B ≈ ?" and the player picked one of three rounded choices.
+  // `correctAnswer` here is the rounded estimate, not the exact result.
+  final bool isEstimation;
 
   bool get isCompound => operations.length > 1;
 
@@ -62,6 +68,9 @@ class ProblemAttempt {
       // operandB is hidden; the visible result is A op B (the original answer
       // the generator would have produced for a forward problem).
       return '$operandA ${type.symbol} ? = ${_forwardResult()}';
+    }
+    if (isEstimation) {
+      return '$operandA ${type.symbol} $operandB ≈ ?';
     }
     if (!isCompound) return '$operandA ${type.symbol} $operandB';
     final buf = StringBuffer('${operands[0]}');
@@ -84,6 +93,7 @@ class ProblemAttempt {
       case GameType.mixed:
       case GameType.equation:
       case GameType.flash:
+      case GameType.estimation:
         return 0;
     }
   }
@@ -98,5 +108,6 @@ class ProblemAttempt {
     if (isCompound) 'operands': operands,
     if (isCompound) 'operations': [for (final o in operations) o.name],
     if (isEquation) 'isEquation': true,
+    if (isEstimation) 'isEstimation': true,
   };
 }

@@ -32,6 +32,8 @@ import '../modules/splash/splash_binding.dart';
 import '../modules/splash/splash_view.dart';
 import '../modules/equation_select/equation_select_binding.dart';
 import '../modules/equation_select/equation_select_view.dart';
+import '../modules/estimation_select/estimation_select_binding.dart';
+import '../modules/estimation_select/estimation_select_view.dart';
 import '../modules/flash_select/flash_select_binding.dart';
 import '../modules/flash_select/flash_select_view.dart';
 import '../modules/mixed_select/mixed_select_binding.dart';
@@ -115,6 +117,11 @@ abstract class AppPages {
       name: AppRoutes.flashSelect,
       page: () => const FlashSelectView(),
       binding: FlashSelectBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.estimationSelect,
+      page: () => const EstimationSelectView(),
+      binding: EstimationSelectBinding(),
     ),
     GetPage(
       name: AppRoutes.tutorial,

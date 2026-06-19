@@ -33,12 +33,18 @@ class AttemptTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 방정식: questionText already includes "= C"; show
-                  // "? = correctAnswer" beneath so the hidden value is
-                  // revealed. Other modes: append "= correctAnswer".
+                  // "? = correctAnswer" beneath so the hidden value은
+                  // 드러난다.
+                  // 어림셈: questionText는 "A op B ≈ ?"이므로 정답값을
+                  // ≈ 뒤에 채워 "A op B ≈ 80" 형태로 보여 준다.
+                  // 그 외: questionText 뒤에 "= correctAnswer" 붙임.
                   Text(
                     attempt.isEquation
                         ? attempt.questionText
-                        : '${attempt.questionText} = ${attempt.correctAnswer}',
+                        : attempt.isEstimation
+                            ? '${attempt.operandA} ${attempt.type.symbol} '
+                                '${attempt.operandB} ≈ ${attempt.correctAnswer}'
+                            : '${attempt.questionText} = ${attempt.correctAnswer}',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../data/models/estimation_choices.dart';
 import '../../data/models/game_record.dart';
 import '../../data/models/game_type.dart';
 import '../../data/models/problem.dart';
@@ -51,6 +52,16 @@ class GameController extends GetxController {
   late final bool isFlash;
   // Concrete op used to generate problems in flash mode. Null otherwise.
   late final GameType? flashType;
+  // True when this run is an 어림셈 (estimation) session — problems are
+  // generated for a single concrete op (held in [estimationType]) and presented
+  // alongside a 3-choice picker derived from rounding the operands. `type`
+  // rolls up to [GameType.estimation] for the record.
+  late final bool isEstimation;
+  late final GameType? estimationType;
+  // Pre-computed 3-choice sets keyed by problem index. Growable only when the
+  // session is open-ended; estimation runs are fixed-length, so this is built
+  // once in onInit alongside `problems`. Null in non-estimation runs.
+  late final List<EstimationChoices>? estimationChoices;
   // How long the problem text is visible before being hidden in flash mode.
   // Always 0 outside flash mode.
   late final int flashDisplayMs;
@@ -114,6 +125,7 @@ class GameController extends GetxController {
     mixedTypes = (args['mixedTypes'] as List?)?.cast<GameType>();
     isEquation = (args['isEquation'] as bool?) ?? false;
     isFlash = (args['isFlash'] as bool?) ?? false;
+    isEstimation = (args['isEstimation'] as bool?) ?? false;
     if (isTimesTable) {
       type = GameType.multiplication;
       level = 0;
@@ -124,6 +136,8 @@ class GameController extends GetxController {
       equationType = null;
       flashType = null;
       flashDisplayMs = 0;
+      estimationType = null;
+      estimationChoices = null;
     } else if (isMixed) {
       type = GameType.mixed;
       level = args['level'] as int;
@@ -134,6 +148,8 @@ class GameController extends GetxController {
       equationType = null;
       flashType = null;
       flashDisplayMs = 0;
+      estimationType = null;
+      estimationChoices = null;
     } else if (isEquation) {
       // Equation runs always use a single concrete op; time attack is
       // intentionally not offered (the player picked 도전/연습 only).
@@ -146,6 +162,8 @@ class GameController extends GetxController {
       isEndless = false;
       flashType = null;
       flashDisplayMs = 0;
+      estimationType = null;
+      estimationChoices = null;
     } else if (isFlash) {
       // Flash runs use a single concrete op + a display window. Time attack
       // is not offered (flash already has its own timing element).
@@ -158,6 +176,30 @@ class GameController extends GetxController {
       isTimeAttack = false;
       isEndless = false;
       equationType = null;
+      estimationType = null;
+      estimationChoices = null;
+    } else if (isEstimation) {
+      // 어림셈 — 단일 연산(+/−/×), 고정 10문제, 3지선다. 보기는 onInit에서
+      // 한 번에 미리 만들어 두므로 화면 전환 중 새로 셔플되어 답이 바뀌는 일이
+      // 없다. 시간 어택/엔드리스는 어림셈에 적용하지 않는다(보기 사전 생성과
+      // 가변 길이 problems 가 충돌하므로).
+      estimationType = args['type'] as GameType;
+      type = GameType.estimation;
+      level = args['level'] as int;
+      problems = ProblemGenerator.generate(
+        type: estimationType!,
+        level: level,
+      );
+      estimationChoices = [
+        for (final p in problems)
+          ProblemGenerator.estimationChoicesFor(p, level),
+      ];
+      isPractice = (args['isPractice'] as bool?) ?? false;
+      isTimeAttack = false;
+      isEndless = false;
+      flashType = null;
+      flashDisplayMs = 0;
+      equationType = null;
     } else {
       type = args['type'] as GameType;
       level = args['level'] as int;
@@ -166,6 +208,8 @@ class GameController extends GetxController {
       equationType = null;
       flashType = null;
       flashDisplayMs = 0;
+      estimationType = null;
+      estimationChoices = null;
       // Time attack and endless both start with one problem and lazily
       // append more on each submission. Challenge/practice get the full
       // fixed-length batch.
@@ -237,8 +281,42 @@ class GameController extends GetxController {
     answer.value = answer.value.substring(0, answer.value.length - 1);
   }
 
+  /// 어림셈 모드 전용 — 키패드 대신 보기 버튼에서 한 번의 탭으로 제출.
+  /// 답을 키패드 input(answer.value)이 아니라 [picked] 인자로 직접 받기 때문에
+  /// 빈값 검증이 필요 없고, [submit]의 후처리(콤보·인덱스 진행·완주)만 그대로
+  /// 재사용한다.
+  void submitChoice(int picked) {
+    if (_finished) return;
+    if (!isEstimation) return;
+    final expected = estimationChoices![currentIndex.value].correct;
+    _answers[currentIndex.value] = picked;
+    _attempted[currentIndex.value] = true;
+    final wasCorrect = picked == expected;
+    if (wasCorrect) {
+      _sfx.correct();
+      correctCount.value += 1;
+      comboCount.value += 1;
+      if (comboCount.value > _maxCombo) _maxCombo = comboCount.value;
+      if (comboMilestones.contains(comboCount.value)) {
+        _sfx.combo();
+      }
+    } else {
+      _sfx.wrong();
+      wrongCount.value += 1;
+      comboCount.value = 0;
+    }
+    if (currentIndex.value + 1 >= problems.length) {
+      _finish();
+      return;
+    }
+    currentIndex.value += 1;
+  }
+
   void submit() {
     if (_finished) return;
+    // 어림셈은 키패드를 쓰지 않으므로 submit()이 호출될 일이 없지만, GameView
+    // 분기 누락에 대비한 안전망.
+    if (isEstimation) return;
     final text = answer.value;
     if (text.isEmpty) {
       Get.snackbar(
@@ -318,7 +396,14 @@ class GameController extends GetxController {
     final attempts = <ProblemAttempt>[];
     for (var i = 0; i < problems.length; i++) {
       final p = problems[i];
-      final expected = isEquation ? p.operandB : p.answer;
+      final int expected;
+      if (isEquation) {
+        expected = p.operandB;
+      } else if (isEstimation) {
+        expected = estimationChoices![i].correct;
+      } else {
+        expected = p.answer;
+      }
       final AttemptStatus status;
       if (!_attempted[i]) {
         unsolved++;
@@ -341,6 +426,7 @@ class GameController extends GetxController {
           operands: p.isCompound ? p.operands : null,
           operations: p.isCompound ? p.operations : null,
           isEquation: isEquation,
+          isEstimation: isEstimation,
         ),
       );
     }
@@ -378,6 +464,8 @@ class GameController extends GetxController {
         'equationType': equationType,
         'isFlash': isFlash,
         'flashType': flashType,
+        'isEstimation': isEstimation,
+        'estimationType': estimationType,
       },
     );
   }

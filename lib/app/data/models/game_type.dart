@@ -14,7 +14,13 @@ enum GameType {
   // Flash (암산 플래시) session — the problem is shown for a brief window
   // (e.g., 1.5s) then hidden; the player answers from memory. Roll-up: each
   // Problem keeps a concrete op type, only the GameRecord rolls up to `flash`.
-  flash('⚡', '플래시');
+  flash('⚡', '플래시'),
+  // Estimation (어림셈) session — problem operands are rounded to a level-
+  // appropriate place; the player picks the rounded answer from three choices
+  // instead of typing it. Roll-up: each Problem keeps a concrete op type (+,
+  // −, ×; ÷ is excluded since clean-integer division leaves nothing to round);
+  // only the GameRecord rolls up to `estimation`.
+  estimation('≈', '어림셈');
 
   const GameType(this.symbol, this.label);
   final String symbol;
@@ -22,5 +28,9 @@ enum GameType {
 
   /// True when this value is a roll-up label (record-level only) rather than a
   /// concrete arithmetic operation that can drive problem generation.
-  bool get isRollup => this == mixed || this == equation || this == flash;
+  bool get isRollup =>
+      this == mixed ||
+      this == equation ||
+      this == flash ||
+      this == estimation;
 }
