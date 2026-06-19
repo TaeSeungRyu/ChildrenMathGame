@@ -18,6 +18,10 @@ class HomeController extends GetxController {
   // start since the binding lazy-instantiates fresh.
   final RxInt tabIndex = 0.obs;
 
+  // 시스템 백 버튼 두 번 눌러 종료 패턴용. 직전 백 시각을 기록만 하고
+  // UI 리빌드를 트리거할 일이 없으므로 Rx가 아니라 평범한 필드.
+  DateTime? lastBackPressedAt;
+
   late final int streakDays = _records.currentStreak();
   late final WeaknessAnalysis weakness = analyzeWeakness(_records.all());
   late final List<DailyMissionStatus> missions = evaluateDailyMissions(

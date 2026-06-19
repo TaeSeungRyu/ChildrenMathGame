@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../data/services/profile_service.dart';
@@ -18,19 +19,50 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const _EditableTitle(),
-        centerTitle: true,
-        actions: const [_TutorialButton(), _MuteToggle()],
-      ),
-      body: Obx(
-        () => IndexedStack(
-          index: controller.tabIndex.value,
-          children: const [LearnTab(), GamesTab(), RecordsTab()],
+    // 홈은 앱의 최상위 화면이라 시스템 백을 그냥 통과시키면 액티비티가 곧장
+    // finish 된다. 사용자가 "잘못 눌렀어요"를 한 번은 회수할 수 있게,
+    // 첫 백은 스낵바 안내만, 2초 안에 다시 누르면 그때 실제 종료시킨다.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        final now = DateTime.now();
+        final last = controller.lastBackPressedAt;
+        if (last != null &&
+            now.difference(last) < const Duration(seconds: 2)) {
+          SystemNavigator.pop();
+          return;
+        }
+        controller.lastBackPressedAt = now;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text(
+                '한 번 더 누르면 종료돼요',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.all(16),
+            ),
+          );
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const _EditableTitle(),
+          centerTitle: true,
+          actions: const [_TutorialButton(), _MuteToggle()],
         ),
+        body: Obx(
+          () => IndexedStack(
+            index: controller.tabIndex.value,
+            children: const [LearnTab(), GamesTab(), RecordsTab()],
+          ),
+        ),
+        bottomNavigationBar: const _HomeNavBar(),
       ),
-      bottomNavigationBar: const _HomeNavBar(),
     );
   }
 }

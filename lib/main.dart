@@ -25,8 +25,52 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  // 백그라운드 진입 시각. 다시 포그라운드로 돌아왔을 때 얼마나 자리비웠는지
+  // 계산해 임계치를 넘으면 스플래시로 강제 복귀시킨다.
+  DateTime? _pausedAt;
+
+  // 백그라운드 5분 이상이면 "긴 자리비움"으로 간주. 너무 짧으면 알림 하나
+  // 확인하고 돌아온 사용자도 끊겨 짜증나고, 너무 길면 다른 앱 한참 쓰다
+  // 돌아왔는데도 게임 중간이 그대로 떠 있어 "어디까지 했지?" 흐름이 깨진다.
+  // 5분이면 짧은 끼어들기는 통과시키되, 한참 다른 일 하다 돌아온 경우는
+  // 새로 시작하는 느낌을 주는 합리적 절충.
+  static const _resetAfter = Duration(minutes: 5);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _pausedAt = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      final pausedAt = _pausedAt;
+      _pausedAt = null;
+      if (pausedAt == null) return;
+      if (DateTime.now().difference(pausedAt) < _resetAfter) return;
+      // 이미 스플래시면 또 보낼 필요 없음. 그 외 어디에 있었든(게임 중,
+      // 결과 화면 등) 스택을 비우고 처음부터 다시 흐르게 한다.
+      if (Get.currentRoute == AppRoutes.splash) return;
+      Get.offAllNamed(AppRoutes.splash);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

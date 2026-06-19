@@ -30,7 +30,12 @@
       "PowerShell(flutter analyze *)",
       "PowerShell(flutter test *)",
       "PowerShell(Get-Process *)",
-      "PowerShell(adb *)"
+      "PowerShell(adb *)",
+      "Bash(adb devices *)",
+      "Bash(adb -s R3CR50HX29X install -r build/app/outputs/flutter-apk/app-release.apk)",
+      "Bash(adb *)",
+      "Bash(adb -s R3CR50HX29X exec-out screencap -p)",
+      "Read(//tmp/**)"
     ]
   }
 }
