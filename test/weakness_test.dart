@@ -170,20 +170,36 @@ void main() {
       expect(result.recommendation!.type, GameType.addition);
     });
 
-    test('mixed-type records are excluded from analysis', () {
-      // Recommendation card sends users to a single (type, level) drill, so
-      // mixed runs (which bundle several ops) shouldn't influence the pick.
+    test('roll-up records populate buckets but are skipped for recommendation',
+        () {
+      // Roll-up runs (mixed/equation/flash/estimation) bundle multiple ops or
+      // a non-forward flow, so the recommendation card can't route to them.
+      // They still produce buckets so the 약점 분석 그리드 can render their
+      // per-level accuracy.
       final records = [
-        _record(
-          type: GameType.mixed,
-          level: 3,
-          correct: 0,
-          wrong: 10,
-        ),
+        _record(type: GameType.mixed, level: 3, correct: 0, wrong: 10),
+        _record(type: GameType.equation, level: 2, correct: 1, wrong: 9),
+        _record(type: GameType.flash, level: 4, correct: 2, wrong: 8),
+        _record(type: GameType.estimation, level: 1, correct: 3, wrong: 7),
       ];
       final result = analyzeWeakness(records);
-      expect(result.buckets, isEmpty);
+      expect(result.bucketFor(GameType.mixed, 3)!.accuracy, 0.0);
+      expect(result.bucketFor(GameType.equation, 2)!.accuracy, 0.1);
+      expect(result.bucketFor(GameType.flash, 4)!.accuracy, 0.2);
+      expect(result.bucketFor(GameType.estimation, 1)!.accuracy, 0.3);
+      // No basic-op buckets → nothing to recommend.
       expect(result.recommendation, isNull);
+    });
+
+    test('basic-op recommendation still wins over a weaker roll-up bucket', () {
+      // Without the type filter in the picker, the 0% mixed bucket would win.
+      final records = [
+        _record(type: GameType.mixed, level: 3, correct: 0, wrong: 10),
+        _record(type: GameType.addition, level: 2, correct: 4, wrong: 6),
+      ];
+      final result = analyzeWeakness(records);
+      expect(result.recommendation!.type, GameType.addition);
+      expect(result.recommendation!.level, 2);
     });
 
     test('level 0 records (times-table practice) are excluded', () {

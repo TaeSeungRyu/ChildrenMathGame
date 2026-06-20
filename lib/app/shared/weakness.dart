@@ -53,14 +53,10 @@ WeaknessAnalysis analyzeWeakness(
     // Times-table practice runs use level 0 as a placeholder and aren't part
     // of the leveled difficulty progression — skip them for weakness analysis.
     if (r.level < 1) continue;
-    // Mixed runs bundle multiple operations under the same `level` but at the
-    // record level the `type` is `mixed`. The per-op accuracy could be
-    // reconstructed from `attempts`, but the recommendation card sends the
-    // user to a single (type, level) drill which doesn't match — skip until
-    // the recommendation pipeline supports mixed bundles. Equation runs are
-    // skipped for the same reason: the recommendation would land in normal
-    // forward-style drills, not the equation flow.
-    if (r.type.isRollup) continue;
+    // Roll-up types (mixed / equation / flash / estimation) ARE bucketed so
+    // the 약점 분석 그리드 shows their per-level accuracy. They're filtered
+    // out below when picking `best` because the recommendation card sends the
+    // user to a single (type, level) drill that doesn't match a roll-up flow.
     final key = '${r.type.name}|${r.level}';
     for (final a in r.attempts) {
       totalByKey[key] = (totalByKey[key] ?? 0) + 1;
@@ -87,6 +83,9 @@ WeaknessAnalysis analyzeWeakness(
 
   WeaknessBucket? best;
   for (final b in buckets) {
+    // Recommendation card routes to a single (type, level) drill, so roll-up
+    // buckets (mixed/equation/flash/estimation) are display-only.
+    if (b.type.isRollup) continue;
     if (b.attemptsCount < minAttempts) continue;
     if (b.accuracy >= threshold) continue;
     if (best == null) {
