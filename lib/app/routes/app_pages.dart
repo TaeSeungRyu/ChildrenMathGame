@@ -26,6 +26,8 @@ import '../modules/result/result_binding.dart';
 import '../modules/result/result_view.dart';
 import '../modules/review/review_binding.dart';
 import '../modules/review/review_view.dart';
+import '../modules/review_select/review_select_binding.dart';
+import '../modules/review_select/review_select_view.dart';
 import '../modules/stats/stats_binding.dart';
 import '../modules/stats/stats_view.dart';
 import '../modules/splash/splash_binding.dart';
@@ -92,6 +94,11 @@ abstract class AppPages {
       name: AppRoutes.review,
       page: () => const ReviewView(),
       binding: ReviewBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.reviewSelect,
+      page: () => const ReviewSelectView(),
+      binding: ReviewSelectBinding(),
     ),
     GetPage(
       name: AppRoutes.stats,

@@ -8,6 +8,7 @@ abstract class AppRoutes {
   static const recordDetail = '/record-detail';
   static const badges = '/badges';
   static const review = '/review';
+  static const reviewSelect = '/review-select';
   static const stats = '/stats';
   static const timesTableSelect = '/times-table-select';
   static const mixedSelect = '/mixed-select';

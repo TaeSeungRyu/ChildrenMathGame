@@ -87,3 +87,81 @@ class _Acc {
   final int wrongCount;
   final DateTime lastWrongAt;
 }
+
+/// Day-keyed bundle of wrong/unsolved attempts. `attempts` is deduped by
+/// problem signature within the day (newest attempt per signature kept) and
+/// sorted newest-first, so the review screen replays the day's misses in
+/// reverse-chronological order without repeating the same problem twice.
+class DayWrongs {
+  const DayWrongs({required this.date, required this.attempts});
+
+  /// Local-date midnight (year/month/day only) — safe to compare/sort.
+  final DateTime date;
+  final List<ProblemAttempt> attempts;
+
+  int get count => attempts.length;
+}
+
+/// Groups [aggregateWrongNotebook]'s filters per local calendar day. Same
+/// exclusions apply (correct attempts, estimation answers, dismissed-and-stale
+/// signatures); the difference is that each `DayWrongs` is self-contained —
+/// the same problem solved wrong on Mon and Tue appears once per day instead
+/// of being merged across the whole history. Days are sorted newest-first.
+List<DayWrongs> aggregateWrongsByDay(
+  List<GameRecord> records, {
+  Map<String, DateTime> dismissedAt = const {},
+}) {
+  final byDay = <String, _DayAcc>{};
+  for (final r in records) {
+    final day = _dateOnly(r.finishedAt);
+    final dayKey = '${day.year}-${day.month}-${day.day}';
+    for (final a in r.attempts) {
+      if (a.status == AttemptStatus.correct) continue;
+      // Mirror the wrong-notebook filter: 어림셈 answers aren't replayable
+      // through the exact-value review keypad, so they're skipped here too.
+      if (a.isEstimation) continue;
+      final sig = wrongNotebookSignature(a);
+      final dismissed = dismissedAt[sig];
+      if (dismissed != null && !r.finishedAt.isAfter(dismissed)) continue;
+      final acc = byDay.putIfAbsent(dayKey, () => _DayAcc(day));
+      acc.add(sig, a, r.finishedAt);
+    }
+  }
+  final list = byDay.values.map((acc) => acc.toDay()).toList();
+  list.sort((a, b) => b.date.compareTo(a.date));
+  return list;
+}
+
+DateTime _dateOnly(DateTime d) {
+  final local = d.toLocal();
+  return DateTime(local.year, local.month, local.day);
+}
+
+class _DayAcc {
+  _DayAcc(this.date);
+
+  final DateTime date;
+  final _bySignature = <String, _DayEntry>{};
+
+  void add(String sig, ProblemAttempt a, DateTime when) {
+    final existing = _bySignature[sig];
+    if (existing == null || when.isAfter(existing.when)) {
+      _bySignature[sig] = _DayEntry(a, when);
+    }
+  }
+
+  DayWrongs toDay() {
+    final entries = _bySignature.values.toList()
+      ..sort((a, b) => b.when.compareTo(a.when));
+    return DayWrongs(
+      date: date,
+      attempts: entries.map((e) => e.attempt).toList(),
+    );
+  }
+}
+
+class _DayEntry {
+  _DayEntry(this.attempt, this.when);
+  final ProblemAttempt attempt;
+  final DateTime when;
+}

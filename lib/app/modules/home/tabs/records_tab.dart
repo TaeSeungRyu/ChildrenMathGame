@@ -67,7 +67,7 @@ class RecordsTab extends GetView<HomeController> {
                   iconBg: const Color(0xFF8E24AA),
                   iconFg: Colors.white,
                   title: '복습하기',
-                  subtitle: '추천 받은 문제로 다시 도전',
+                  subtitle: '날짜를 골라 그날 오답으로 도전',
                   onTap: controller.openReview,
                 ),
               ],
