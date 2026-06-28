@@ -4,9 +4,9 @@ import 'package:get/get.dart';
 import '../../../data/models/action_concept.dart';
 import '../home_controller.dart';
 
-/// 게임 탭 — "연산 히어로"의 액션 게임 4종. 각 타일은 인트로 화면으로 라우팅.
-/// 본 단계에서는 실제 플레이 로직 없이 셸만 작성된 상태이며, NEW 배지로
-/// "곧 열려요" 상태를 표시한다.
+/// 게임 탭 — "연산 히어로"의 액션 게임 6종. 각 타일은 공통 진입 선택 화면으로
+/// 라우팅한 뒤 컨셉별 본편으로 넘어간다. 숫자 사다리 / 물고기 잡기는 아직
+/// 인트로 셸(준비 중) 상태다.
 class GamesTab extends GetView<HomeController> {
   const GamesTab({super.key});
 
@@ -29,10 +29,10 @@ class GamesTab extends GetView<HomeController> {
               crossAxisCount: 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              // childAspectRatio < 1.0 → 세로가 더 길게. 2x2 그리드가 본문
-              // 잔여 높이를 꽉 채우면서 6~9세 손가락에 충분히 큰 탭 영역.
+              // childAspectRatio < 1.0 → 세로가 더 길게. 6~9세 손가락에 충분히
+              // 큰 탭 영역. 타일이 6종(3행)이라 작은 화면에선 본문 높이를 넘길 수
+              // 있으므로 그리드는 스크롤을 허용한다.
               childAspectRatio: 0.85,
-              physics: const NeverScrollableScrollPhysics(),
               children: [
                 _GameModeTile(
                   spec: _GameSpec.monster,
@@ -51,6 +51,16 @@ class GamesTab extends GetView<HomeController> {
                 _GameModeTile(
                   spec: _GameSpec.mole,
                   onTap: () => controller.openActionSelect(ActionConcept.mole),
+                ),
+                _GameModeTile(
+                  spec: _GameSpec.ladder,
+                  onTap: () =>
+                      controller.openActionSelect(ActionConcept.ladder),
+                ),
+                _GameModeTile(
+                  spec: _GameSpec.fishing,
+                  onTap: () =>
+                      controller.openActionSelect(ActionConcept.fishing),
                 ),
               ],
             ),
@@ -212,6 +222,24 @@ class _GameSpec {
     bg: Color(0xFFC5E1A5),
     accent: Color(0xFF33691E),
     fg: Color(0xFF1B5E20),
+  );
+
+  static const ladder = _GameSpec(
+    title: '숫자 사다리',
+    tagline: '정답 칸을 밟아요',
+    icon: Icons.stairs,
+    bg: Color(0xFFFFCC80),
+    accent: Color(0xFFE65100),
+    fg: Color(0xFF5D4037),
+  );
+
+  static const fishing = _GameSpec(
+    title: '물고기 잡기',
+    tagline: '정답을 낚아요',
+    icon: Icons.set_meal,
+    bg: Color(0xFFB3E5FC),
+    accent: Color(0xFF00838F),
+    fg: Color(0xFF01579B),
   );
 }
 

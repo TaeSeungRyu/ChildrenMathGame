@@ -19,11 +19,13 @@ abstract class AppRoutes {
   static const wrongNotebook = '/wrong-notebook';
 
   // Action game modes — intro/select shells in 1st pass; play logic added later.
-  // `actionSelect` is the common entry-select screen shared by all 4 concepts;
+  // `actionSelect` is the common entry-select screen shared by all concepts;
   // it routes onward to the per-concept route below with chosen op/digit args.
   static const actionSelect = '/action-select';
   static const monsterGame = '/monster-game';
   static const balloonGame = '/balloon-game';
   static const towerDefense = '/tower-defense';
   static const moleGame = '/mole-game';
+  static const ladderGame = '/ladder-game';
+  static const fishingGame = '/fishing-game';
 }

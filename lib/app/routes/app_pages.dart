@@ -6,8 +6,12 @@ import '../modules/badges/badges_binding.dart';
 import '../modules/badges/badges_view.dart';
 import '../modules/balloon_game/balloon_game_binding.dart';
 import '../modules/balloon_game/balloon_game_view.dart';
+import '../modules/fishing_game/fishing_game_binding.dart';
+import '../modules/fishing_game/fishing_game_view.dart';
 import '../modules/game/game_binding.dart';
 import '../modules/game/game_view.dart';
+import '../modules/ladder_game/ladder_game_binding.dart';
+import '../modules/ladder_game/ladder_game_view.dart';
 import '../modules/mole_game/mole_game_binding.dart';
 import '../modules/mole_game/mole_game_view.dart';
 import '../modules/monster_game/monster_game_binding.dart';
@@ -164,6 +168,16 @@ abstract class AppPages {
       name: AppRoutes.moleGame,
       page: () => const MoleGameView(),
       binding: MoleGameBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.ladderGame,
+      page: () => const LadderGameView(),
+      binding: LadderGameBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.fishingGame,
+      page: () => const FishingGameView(),
+      binding: FishingGameBinding(),
     ),
   ];
 }
