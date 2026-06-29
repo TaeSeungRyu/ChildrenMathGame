@@ -5,8 +5,8 @@ import '../../../data/models/action_concept.dart';
 import '../home_controller.dart';
 
 /// 게임 탭 — "연산 히어로"의 액션 게임 6종. 각 타일은 공통 진입 선택 화면으로
-/// 라우팅한 뒤 컨셉별 본편으로 넘어간다. 숫자 사다리 / 물고기 잡기는 아직
-/// 인트로 셸(준비 중) 상태다.
+/// 라우팅한 뒤 컨셉별 본편으로 넘어간다. 물고기 잡기는 아직 인트로 셸(준비 중)
+/// 상태다.
 class GamesTab extends GetView<HomeController> {
   const GamesTab({super.key});
 
