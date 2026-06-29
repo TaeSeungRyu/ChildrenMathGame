@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../data/models/action_concept.dart';
+import '../../../shared/action_intro_scaffold.dart';
 import '../home_controller.dart';
 
 /// 게임 탭 — "연산 히어로"의 액션 게임 6종. 각 타일은 공통 진입 선택 화면으로
@@ -57,10 +58,12 @@ class GamesTab extends GetView<HomeController> {
                   onTap: () =>
                       controller.openActionSelect(ActionConcept.ladder),
                 ),
+                // TODO(물고기 잡기): 본편 플레이 로직 구현 후 onTap 을
+                // controller.openActionSelect(ActionConcept.fishing) 로 교체.
+                // 셸/라우트/컨셉은 이미 존재. 상세는 DOC/NEXT_STEPS.md 참고.
                 _GameModeTile(
                   spec: _GameSpec.fishing,
-                  onTap: () =>
-                      controller.openActionSelect(ActionConcept.fishing),
+                  onTap: () => showComingSoonSnackbar('물고기 잡기'),
                 ),
               ],
             ),
