@@ -1,17 +1,20 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'ladder_game_controller.dart';
 
-/// 숫자 사다리 화면 — 객관식 등반.
+/// 숫자 사다리 화면 — 발판 위 객관식 등반.
 ///
 /// 화면 구조:
 /// 1. AppBar — 제목 + HP + 남은 시간.
 /// 2. 점수 바 — 오른 칸 수(높이) + 콤보.
-/// 3. **사다리 등반 영역** — 클라이머가 화면 고정 위치에 있고, 정답을 맞히면
-///    사다리(발판)가 아래로 흘러내려 "올라가는" 연출. [_LadderClimb] 참고.
+/// 3. **사다리 등반 영역** — 클라이머 바로 위 발판마다 답 후보가 적혀 있다.
+///    정답 발판을 누르면 클라이머가 그 칸으로 점프해 올라가고, 카메라가 그
+///    칸까지 따라 올라가 다음 후보 발판이 위에서 내려온다. 오답 발판을 누르면
+///    클라이머가 흔들리고 발판이 빨갛게 깜빡인다. [_ClimbArea] 참고.
 /// 4. **문제 배너** — 현재 풀 문제.
-/// 5. **답 발판 3개** — 정답 발판을 밟으면 한 칸 등반.
 class LadderGameView extends GetView<LadderGameController> {
   const LadderGameView({super.key});
 
@@ -62,15 +65,15 @@ class LadderGameView extends GetView<LadderGameController> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                Expanded(child: _LadderClimb(controller: controller)),
+                Expanded(child: _ClimbArea(controller: controller)),
                 const SizedBox(height: 12),
                 Obx(
                   () => _ProblemBanner(
                     text: controller.currentProblem.value.questionText,
                   ),
                 ),
-                const SizedBox(height: 12),
-                _ChoiceRow(controller: controller),
+                const SizedBox(height: 8),
+                const _Hint(),
               ],
             ),
           ),
@@ -172,18 +175,122 @@ class _ScoreBar extends StatelessWidget {
   }
 }
 
-/// 사다리 등반 비주얼. 클라이머는 화면 고정 위치(세로 [_climberFrac])에 있고,
-/// 높이가 오르면 사다리 발판이 아래로 흘러내려 "올라가는" 착시를 만든다.
-/// 높이 값이 정수에서 정수로 바뀔 때 [TweenAnimationBuilder]로 부드럽게 보간.
-class _LadderClimb extends StatelessWidget {
-  const _LadderClimb({required this.controller});
-
-  final LadderGameController controller;
-
-  static const double _climberFrac = 0.66;
+class _Hint extends StatelessWidget {
+  const _Hint();
 
   @override
   Widget build(BuildContext context) {
+    return Text(
+      '정답이 적힌 발판을 밟아요!',
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.black.withValues(alpha: 0.55),
+      ),
+    );
+  }
+}
+
+/// 등반 영역. 발판은 클라이머 위쪽 칸(world index `base+1 .. base+N`)에 깔리고
+/// 각 발판이 답 후보 하나를 든다.
+///
+/// 좌표는 "카메라가 클라이머를 따라간다" 모델로 계산한다. world index `i`의
+/// 화면 y = baseScreenY - (i - cam) * rungGap. 클라이머는 평소 base 칸(화면
+/// 고정 위치)에 서 있고, 정답 시:
+///   0.0~0.5 구간 — 클라이머가 정답 발판(base+landing)으로 점프(카메라 정지),
+///   0.5~1.0 구간 — 카메라가 그 칸까지 따라 올라옴(클라이머는 발판에 고정).
+/// 전환이 끝나면 컨트롤러가 새 문제를 내고, base 를 정답 칸으로 옮긴 뒤 새
+/// 후보 발판이 위쪽에 나타난다 — 아래로 떨어지는 듯한 리셋이 없다.
+class _ClimbArea extends StatefulWidget {
+  const _ClimbArea({required this.controller});
+
+  final LadderGameController controller;
+
+  @override
+  State<_ClimbArea> createState() => _ClimbAreaState();
+}
+
+class _ClimbAreaState extends State<_ClimbArea>
+    with TickerProviderStateMixin {
+  late final AnimationController _advance;
+  late final AnimationController _shake;
+  late final Worker _inputWorker;
+  late final Worker _problemWorker;
+
+  // 클라이머가 서 있는 칸(world index). 정답 전환이 끝날 때 정답 칸으로 옮긴다.
+  int _base = 0;
+  // 이번 정답에서 올라갈 칸 수(정답 발판의 위치, 1..choiceCount).
+  int _landing = 0;
+  bool _advancing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _advance = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _shake = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 360),
+    );
+
+    final c = widget.controller;
+    _inputWorker = ever<int>(c.inputTick, (_) {
+      if (c.feedbackValue.value == -1) return;
+      if (c.feedbackCorrect.value) {
+        final idx = c.choices.indexOf(c.currentProblem.value.answer);
+        _landing = (idx < 0 ? 0 : idx) + 1;
+        _advancing = true;
+        _advance.forward(from: 0);
+      } else {
+        _shake.forward(from: 0);
+      }
+    });
+    _problemWorker = ever(c.currentProblem, (_) {
+      setState(() {
+        if (_advancing) {
+          _base += _landing;
+        } else {
+          _base = 0; // restart / 새 게임
+        }
+        _advancing = false;
+        _landing = 0;
+      });
+      _advance.value = 0;
+      _shake.value = 0;
+    });
+  }
+
+  @override
+  void dispose() {
+    _inputWorker.dispose();
+    _problemWorker.dispose();
+    _advance.dispose();
+    _shake.dispose();
+    super.dispose();
+  }
+
+  double get _t => Curves.easeOut.transform(_advance.value);
+
+  double get _climberWorld {
+    if (!_advancing) return _base.toDouble();
+    final t = _t;
+    if (t <= 0.5) return _base + _landing * (t / 0.5);
+    return (_base + _landing).toDouble();
+  }
+
+  double get _camWorld {
+    if (!_advancing) return _base.toDouble();
+    final t = _t;
+    if (t <= 0.5) return _base.toDouble();
+    return _base + _landing * ((t - 0.5) / 0.5);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.controller;
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: DecoratedBox(
@@ -195,51 +302,84 @@ class _LadderClimb extends StatelessWidget {
           ),
         ),
         child: LayoutBuilder(
-          builder: (context, c) {
-            final h = c.maxHeight;
+          builder: (context, cons) {
+            final h = cons.maxHeight;
+            final w = cons.maxWidth;
             final rungGap = h / 5.5;
-            final climberY = h * _climberFrac;
-            return Obx(() {
-              final target = controller.height.value.toDouble();
-              return TweenAnimationBuilder<double>(
-                tween: Tween<double>(end: target),
-                duration: const Duration(
-                  milliseconds: LadderGameController.advanceDelayMs,
-                ),
-                curve: Curves.easeOut,
-                builder: (context, animH, _) {
+            final baseScreenY = h * 0.72;
+            final railInset = w * 0.24;
+            final xLeft = railInset;
+            final xRight = w - railInset;
+
+            return AnimatedBuilder(
+              animation: Listenable.merge([_advance, _shake]),
+              builder: (context, _) {
+                final cam = _camWorld;
+                final climberWorld = _climberWorld;
+                final shakeX = _shake.isAnimating || _shake.value > 0
+                    ? math.sin(_shake.value * math.pi * 5) *
+                          10 *
+                          (1 - _shake.value)
+                    : 0.0;
+                double screenY(num i) => baseScreenY - (i - cam) * rungGap;
+
+                return Obx(() {
+                  final choices = c.choices;
+                  final fbValue = c.feedbackValue.value;
+                  final fbCorrect = c.feedbackCorrect.value;
+                  final barH = rungGap * 0.72;
                   return Stack(
+                    clipBehavior: Clip.hardEdge,
                     children: [
                       Positioned.fill(
                         child: CustomPaint(
                           painter: _LadderPainter(
-                            animH: animH,
+                            cam: cam,
                             rungGap: rungGap,
-                            climberY: climberY,
+                            baseScreenY: baseScreenY,
+                            xLeft: xLeft,
+                            xRight: xRight,
                           ),
                         ),
                       ),
-                      // 클라이머 — 현재 발판(climberY) 바로 위에 서 있다.
+                      // 후보 발판들 — base 바로 위 칸부터 차례로.
+                      for (var k = 0; k < choices.length; k++)
+                        _CandidateRung(
+                          value: choices[k],
+                          top: screenY(_base + 1 + k) - barH / 2,
+                          left: xLeft - rungGap * 0.18,
+                          width: (xRight - xLeft) + rungGap * 0.36,
+                          height: barH,
+                          highlighted: choices[k] == fbValue,
+                          highlightCorrect: fbCorrect,
+                          onTap: () => c.onChoiceTap(choices[k]),
+                        ),
+                      // 클라이머 — 발판 탭을 막지 않도록 IgnorePointer.
                       Positioned(
                         left: 0,
                         right: 0,
-                        top: climberY - rungGap * 1.15,
-                        height: rungGap * 1.15,
-                        child: Center(
-                          child: Text(
-                            '🧗',
-                            style: TextStyle(
-                              fontSize: rungGap * 0.9,
-                              height: 1.0,
+                        top: screenY(climberWorld) - rungGap * 0.95,
+                        height: rungGap * 0.95,
+                        child: IgnorePointer(
+                          child: Transform.translate(
+                            offset: Offset(shakeX, 0),
+                            child: Center(
+                              child: Text(
+                                '🧗',
+                                style: TextStyle(
+                                  fontSize: rungGap * 0.8,
+                                  height: 1.0,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ],
                   );
-                },
-              );
-            });
+                });
+              },
+            );
           },
         ),
       ),
@@ -247,28 +387,29 @@ class _LadderClimb extends StatelessWidget {
   }
 }
 
-/// 사다리 레일 2개 + 가로 발판들을 그린다. "카메라"가 클라이머([animH] 칸)를
-/// 따라가므로, 발판 i 의 화면 y = climberY - (i - animH) * rungGap.
+/// 사다리 레일 2개 + 가로 발판들. "카메라"가 [cam] 칸을 따라가므로 world index
+/// i 의 화면 y = baseScreenY - (i - cam) * rungGap. 후보 발판이 올라앉는
+/// 칸에는 가로줄 대신 [_CandidateRung] 위젯이 덮인다.
 class _LadderPainter extends CustomPainter {
   _LadderPainter({
-    required this.animH,
+    required this.cam,
     required this.rungGap,
-    required this.climberY,
+    required this.baseScreenY,
+    required this.xLeft,
+    required this.xRight,
   });
 
-  final double animH;
+  final double cam;
   final double rungGap;
-  final double climberY;
+  final double baseScreenY;
+  final double xLeft;
+  final double xRight;
 
   static const _wood = Color(0xFF8D6E63);
   static const _woodDark = Color(0xFF5D4037);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final railInset = size.width * 0.30;
-    final xLeft = railInset;
-    final xRight = size.width - railInset;
-
     final railPaint = Paint()
       ..color = _woodDark
       ..strokeWidth = 10
@@ -281,13 +422,12 @@ class _LadderPainter extends CustomPainter {
       ..strokeWidth = 8
       ..strokeCap = StrokeCap.round;
 
-    // 화면에 보이는 발판 인덱스 범위 (i >= 0).
-    final loF = animH + (climberY - size.height) / rungGap - 1;
-    final hiF = animH + climberY / rungGap + 1;
+    final loF = cam + (baseScreenY - size.height) / rungGap - 1;
+    final hiF = cam + baseScreenY / rungGap + 1;
     final lo = loF.floor().clamp(0, 1 << 30);
     final hi = hiF.ceil();
     for (var i = lo; i <= hi; i++) {
-      final y = climberY - (i - animH) * rungGap;
+      final y = baseScreenY - (i - cam) * rungGap;
       if (y < -rungGap || y > size.height + rungGap) continue;
       canvas.drawLine(Offset(xLeft, y), Offset(xRight, y), rungPaint);
     }
@@ -295,9 +435,88 @@ class _LadderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _LadderPainter old) =>
-      old.animH != animH ||
+      old.cam != cam ||
       old.rungGap != rungGap ||
-      old.climberY != climberY;
+      old.baseScreenY != baseScreenY ||
+      old.xLeft != xLeft ||
+      old.xRight != xRight;
+}
+
+/// 답 후보가 적힌 발판. 평소엔 나무색, 정답으로 밟으면 초록·오답이면 빨강.
+class _CandidateRung extends StatelessWidget {
+  const _CandidateRung({
+    required this.value,
+    required this.top,
+    required this.left,
+    required this.width,
+    required this.height,
+    required this.highlighted,
+    required this.highlightCorrect,
+    required this.onTap,
+  });
+
+  final int value;
+  final double top;
+  final double left;
+  final double width;
+  final double height;
+  final bool highlighted;
+  final bool highlightCorrect;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color bg;
+    final Color fg;
+    final Color border;
+    if (highlighted && highlightCorrect) {
+      bg = const Color(0xFF66BB6A);
+      fg = Colors.white;
+      border = const Color(0xFF2E7D32);
+    } else if (highlighted) {
+      bg = const Color(0xFFEF5350);
+      fg = Colors.white;
+      border = const Color(0xFFC62828);
+    } else {
+      bg = const Color(0xFFFFCC80);
+      fg = const Color(0xFF5D4037);
+      border = const Color(0xFF8D6E63);
+    }
+    return Positioned(
+      top: top,
+      left: left,
+      width: width,
+      height: height,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(height * 0.4),
+            border: Border.all(color: border, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            '$value',
+            style: TextStyle(
+              fontSize: height * 0.5,
+              fontWeight: FontWeight.bold,
+              color: fg,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _ProblemBanner extends StatelessWidget {
@@ -333,100 +552,6 @@ class _ProblemBanner extends StatelessWidget {
           fontWeight: FontWeight.bold,
           color: Colors.white,
           letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-}
-
-class _ChoiceRow extends StatelessWidget {
-  const _ChoiceRow({required this.controller});
-
-  final LadderGameController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final choices = controller.choices;
-      final fbValue = controller.feedbackValue.value;
-      final fbCorrect = controller.feedbackCorrect.value;
-      return Row(
-        children: [
-          for (var i = 0; i < choices.length; i++) ...[
-            if (i > 0) const SizedBox(width: 10),
-            Expanded(
-              child: _ChoiceTile(
-                value: choices[i],
-                highlighted: choices[i] == fbValue,
-                highlightCorrect: fbCorrect,
-                onTap: () => controller.onChoiceTap(choices[i]),
-              ),
-            ),
-          ],
-        ],
-      );
-    });
-  }
-}
-
-class _ChoiceTile extends StatelessWidget {
-  const _ChoiceTile({
-    required this.value,
-    required this.highlighted,
-    required this.highlightCorrect,
-    required this.onTap,
-  });
-
-  final int value;
-  final bool highlighted;
-  final bool highlightCorrect;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    const accent = LadderGameView._accent;
-    final Color bg;
-    final Color fg;
-    final Color border;
-    if (highlighted && highlightCorrect) {
-      bg = const Color(0xFF66BB6A);
-      fg = Colors.white;
-      border = const Color(0xFF2E7D32);
-    } else if (highlighted) {
-      bg = const Color(0xFFEF5350);
-      fg = Colors.white;
-      border = const Color(0xFFC62828);
-    } else {
-      bg = Colors.white;
-      fg = accent;
-      border = accent.withValues(alpha: 0.5);
-    }
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
-        height: 72,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: border, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.10),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          '$value',
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
-            color: fg,
-          ),
         ),
       ),
     );

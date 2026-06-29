@@ -24,9 +24,10 @@ class LadderGameController extends GetxController {
   /// 답 후보 수. 3개면 6~9세도 한눈에 스캔 가능하고 정답률이 너무 낮지 않다.
   static const int choiceCount = 3;
 
-  /// 정답 후 다음 문제로 넘어가기까지의 텀. 등반 애니메이션이 끝나는 느낌을
-  /// 주면서도 답답하지 않은 길이.
-  static const int advanceDelayMs = 300;
+  /// 정답 후 다음 문제로 넘어가기까지의 텀. 클라이머가 정답 발판으로 점프하고
+  /// 카메라가 그 칸까지 따라 올라가는 연출이 끝나는 길이. View 의 등반
+  /// 애니메이션(점프→스크롤)은 이보다 살짝 짧게 잡아 자연스럽게 맞물린다.
+  static const int advanceDelayMs = 460;
 
   final SfxService _sfx = Get.find();
   final Random _rng = Random();
@@ -51,6 +52,11 @@ class LadderGameController extends GetxController {
   // -1 이면 강조 없음.
   final RxInt feedbackValue = (-1).obs;
   final RxBool feedbackCorrect = false.obs;
+
+  // 입력 이벤트 신호. 같은 값을 연속으로 눌러 [feedbackValue] 가 변하지 않는
+  // 경우에도 View 의 애니메이션 트리거(점프/흔들림)가 매번 발화하도록, 탭이
+  // 실제 처리될 때마다 1씩 증가시킨다.
+  final RxInt inputTick = 0.obs;
 
   Timer? _secondTimer;
   // 정답 처리 → 다음 문제 전환 사이 입력 잠금.
@@ -118,6 +124,7 @@ class LadderGameController extends GetxController {
     final correct = value == currentProblem.value.answer;
     feedbackValue.value = value;
     feedbackCorrect.value = correct;
+    inputTick.value += 1;
 
     if (correct) {
       _sfx.correct();
