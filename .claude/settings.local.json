@@ -35,7 +35,10 @@
       "Bash(adb -s R3CR50HX29X install -r build/app/outputs/flutter-apk/app-release.apk)",
       "Bash(adb *)",
       "Bash(adb -s R3CR50HX29X exec-out screencap -p)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(Get-ChildItem -Path \"D:\\\\dev\\\\android\\\\children_math_game\\\\lib\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)"
     ]
   }
 }
