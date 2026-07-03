@@ -81,12 +81,12 @@ class FishingGameController extends GetxController {
   }
 
   /// 라운드별 (물고기 총 수, 등장 간격 ms, 한 마리가 화면을 가로지르는 ms).
-  /// 처음엔 후보 3마리·간격 700·횡단 4200ms(느긋), 라운드가 오를수록 더 많은
+  /// 처음엔 후보 3마리·간격 800·횡단 6000ms(느긋), 라운드가 오를수록 더 많은
   /// 후보가 더 빨리 등장하고 더 빠르게 헤엄친다. 너무 가혹해지지 않도록 캡.
   ({int count, int staggerMs, int durationMs}) _roundConfig(int r) {
     final count = (3 + (r - 1) ~/ 3).clamp(3, lanes); // 3,3,3,4,4,4,5,...
-    final staggerMs = (700 - (r - 1) * 30).clamp(400, 700);
-    final durationMs = (4200 - (r - 1) * 180).clamp(2400, 4200);
+    final staggerMs = (800 - (r - 1) * 30).clamp(500, 800);
+    final durationMs = (6000 - (r - 1) * 180).clamp(3800, 6000);
     return (count: count, staggerMs: staggerMs, durationMs: durationMs);
   }
 
@@ -165,15 +165,19 @@ class FishingGameController extends GetxController {
     f.hookedMs = _sessionElapsedMs;
     fishes.refresh();
 
-    if (f.isCorrect) {
+    // 탭 정답 판정은 지정 정답 플래그가 아니라 "현재 문제의 답과 number 일치"로
+    // 동적으로 한다 — 이전 라운드에서 남은 물고기가 우연히 새 정답과 같은 수를
+    // 달고 있으면 그것을 낚아도 정답으로 인정(공정).
+    final isCorrect = f.number == currentProblem.value.answer;
+    if (isCorrect) {
       _sfx.correct();
       catches.value += 1;
       combo.value += 1;
       _roundResolved = true;
-      // 낚기 이펙트가 끝난 뒤 다음 라운드로.
+      // 낚기 이펙트가 끝난 뒤 문제만 바꾸고 남은 물고기는 그대로 유지.
       _scheduleRemoval(
         const Duration(milliseconds: catchAnimMs),
-        _startRound,
+        _advanceKeepFish,
       );
     } else {
       _sfx.wrong();
@@ -254,6 +258,61 @@ class FishingGameController extends GetxController {
     }
   }
 
+  /// 정답을 낚아 다음 문제로 넘어갈 때 호출. [_startRound] 와 달리 화면을 비우지
+  /// 않는다 — 이미 헤엄치던 오답 물고기는 그대로 두고(자연스럽게 화면 밖으로
+  /// 빠져나감), 새 문제의 지정 정답 물고기 1마리 + 밀도 유지용 디코이만 시간차로
+  /// 추가한다. 남아 있던 물고기는 모두 isCorrect=false 로 강등해, 이전 문제의
+  /// 답을 달고 있던 물고기를 놓쳐도 패널티가 없도록 한다(탭 정답 판정은 number
+  /// 매칭으로 동적 처리되므로 새 정답과 같은 수라면 낚을 수는 있다).
+  void _advanceKeepFish() {
+    _cancelPendingSpawns();
+    _cancelPendingRemovals();
+    currentProblem.value = _generateProblem();
+    _roundResolved = false;
+    final cfg = _roundConfig(round.value);
+    round.value += 1;
+    final correctAnswer = currentProblem.value.answer;
+
+    // 방금 낚인(hooked) 물고기는 제거, 나머지는 유지하되 지정 정답에서 강등.
+    fishes.removeWhere((f) => f.hookedMs != null);
+    for (final f in fishes) {
+      f.isCorrect = false;
+    }
+
+    // 화면에 이미 있는 물고기를 감안해, 지정 정답 1마리 + 부족한 만큼만 디코이를
+    // 채운다(과밀 방지). 최소 정답 1마리는 항상 스폰.
+    final decoyCount = (cfg.count - fishes.length - 1).clamp(0, cfg.count);
+    final numbers = <int>[correctAnswer];
+    final used = <int>{correctAnswer, ...fishes.map((f) => f.number)};
+    var tries = 0;
+    while (numbers.length < 1 + decoyCount && tries < 60) {
+      tries++;
+      final d = _generateDecoy(correctAnswer);
+      if (d != null && used.add(d)) numbers.add(d);
+    }
+
+    final laneOrder = List<int>.generate(lanes, (i) => i)..shuffle(_rng);
+    for (var i = 0; i < numbers.length; i++) {
+      final number = numbers[i];
+      final isCorrect = i == 0; // numbers[0] == correctAnswer, 지정 정답.
+      final lane = laneOrder[i % lanes];
+      final delay = Duration(milliseconds: i * cfg.staggerMs);
+      late final Timer t;
+      t = Timer(delay, () {
+        _pendingSpawnTimers.removeWhere((x) => identical(x, t));
+        if (isGameOver.value) return;
+        if (_roundResolved) return;
+        _spawnFish(
+          number: number,
+          isCorrect: isCorrect,
+          lane: lane,
+          durationMs: cfg.durationMs,
+        );
+      });
+      _pendingSpawnTimers.add(t);
+    }
+  }
+
   void _spawnFish({
     required int number,
     required bool isCorrect,
@@ -262,10 +321,10 @@ class FishingGameController extends GetxController {
   }) {
     // 레인 중심을 정규화 y 로. 위/아래 가장자리를 조금 피하도록 lane+0.5 배치.
     final laneY = (lane + 0.5) / lanes;
-    // 횡단 시간에 ±300ms 지터를 줘 물고기들이 기계적으로 같은 속도로 줄지어
-    // 가지 않게 한다. 라운드 캡(2400) 아래로는 안 내려가게 보정.
-    final jitter = _rng.nextInt(600) - 300;
-    final dur = (durationMs + jitter).clamp(2000, 6000);
+    // 횡단 시간에 ±400ms 지터를 줘 물고기들이 기계적으로 같은 속도로 줄지어
+    // 가지 않게 한다. 너무 빠르거나 느려지지 않게 캡.
+    final jitter = _rng.nextInt(800) - 400;
+    final dur = (durationMs + jitter).clamp(3400, 7000);
     fishes.add(
       Fish(
         id: _nextFishId++,
@@ -381,7 +440,11 @@ class Fish {
 
   final int id;
   final int number;
-  final bool isCorrect;
+  // 이번 라운드의 "지정 정답" 물고기인지. escape(놓침) 패널티 판정에만 쓴다.
+  // 정답 낚기로 라운드가 넘어갈 때 남는 물고기는 false 로 강등돼 놓쳐도
+  // 패널티를 주지 않는다. 탭 정답 여부는 이 값이 아니라 현재 문제의 답과
+  // number 가 같은지로 동적으로 판정한다.
+  bool isCorrect;
   final double laneY;
   final bool ltr;
   final int appearedMs;
