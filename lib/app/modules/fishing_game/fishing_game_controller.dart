@@ -145,9 +145,13 @@ class FishingGameController extends GetxController {
       combo.value = 0;
       _loseHp();
       if (!isGameOver.value) {
-        // 살짝 텀을 두고 다음 라운드 — 즉시 전환하면 "놓쳤구나" 자각 없이
-        // 새 문제로 넘어가 학습 피드백이 흐려진다.
-        _scheduleRemoval(const Duration(milliseconds: 300), _startRound);
+        // 놓쳤을 때도 화면을 비우지 않는다 — 남은 물고기는 그대로 두고 같은 문제의
+        // 정답 물고기만 다시 투입(난이도는 올리지 않음). 살짝 텀을 두는 건 즉시
+        // 전환하면 "놓쳤구나" 자각 없이 넘어가 학습 피드백이 흐려지기 때문.
+        _scheduleRemoval(
+          const Duration(milliseconds: 300),
+          () => _nextRound(newProblem: false, advanceDifficulty: false),
+        );
       }
     }
   }
@@ -174,10 +178,10 @@ class FishingGameController extends GetxController {
       catches.value += 1;
       combo.value += 1;
       _roundResolved = true;
-      // 낚기 이펙트가 끝난 뒤 문제만 바꾸고 남은 물고기는 그대로 유지.
+      // 낚기 이펙트가 끝난 뒤 새 문제로 넘어가되(난이도 +1) 남은 물고기는 유지.
       _scheduleRemoval(
         const Duration(milliseconds: catchAnimMs),
-        _advanceKeepFish,
+        () => _nextRound(newProblem: true, advanceDifficulty: true),
       );
     } else {
       _sfx.wrong();
@@ -258,19 +262,28 @@ class FishingGameController extends GetxController {
     }
   }
 
-  /// 정답을 낚아 다음 문제로 넘어갈 때 호출. [_startRound] 와 달리 화면을 비우지
-  /// 않는다 — 이미 헤엄치던 오답 물고기는 그대로 두고(자연스럽게 화면 밖으로
-  /// 빠져나감), 새 문제의 지정 정답 물고기 1마리 + 밀도 유지용 디코이만 시간차로
-  /// 추가한다. 남아 있던 물고기는 모두 isCorrect=false 로 강등해, 이전 문제의
-  /// 답을 달고 있던 물고기를 놓쳐도 패널티가 없도록 한다(탭 정답 판정은 number
-  /// 매칭으로 동적 처리되므로 새 정답과 같은 수라면 낚을 수는 있다).
-  void _advanceKeepFish() {
+  /// 정답을 낚거나(→ [newProblem]=true) 정답을 놓쳤을 때(→ false) 다음 라운드로
+  /// 넘어가는 공용 경로. [_startRound] 와 달리 **화면을 비우지 않는다** — 이미
+  /// 헤엄치던 물고기는 그대로 두고(자연스럽게 화면 밖으로 빠져나감) 필요한 만큼만
+  /// 새로 추가한다.
+  ///
+  /// 규칙성 제거를 위해:
+  /// - 남아 있던 물고기 중 새 정답과 같은 수를 단 물고기가 있으면 그중 하나를
+  ///   지정 정답으로 **승격**해, 정답 물고기를 새로 스폰하지 않는다. → "낚은
+  ///   직후 등장하는 물고기가 늘 정답"이라는 패턴이 사라진다.
+  /// - 정답을 새로 넣어야 할 때도 디코이와 함께 스폰 순서를 섞어, 정답이 항상
+  ///   맨 처음 등장하지 않게 한다.
+  ///
+  /// 남은 물고기는 모두 isCorrect=false 로 강등 — 이전 라운드의 지정 정답 물고기가
+  /// 화면을 벗어나도 패널티가 중복되지 않도록. (탭 정답 판정은 number 매칭으로
+  /// 동적 처리되므로 새 정답과 같은 수라면 낚을 수는 있다.)
+  void _nextRound({required bool newProblem, required bool advanceDifficulty}) {
     _cancelPendingSpawns();
     _cancelPendingRemovals();
-    currentProblem.value = _generateProblem();
+    if (newProblem) currentProblem.value = _generateProblem();
     _roundResolved = false;
     final cfg = _roundConfig(round.value);
-    round.value += 1;
+    if (advanceDifficulty) round.value += 1;
     final correctAnswer = currentProblem.value.answer;
 
     // 방금 낚인(hooked) 물고기는 제거, 나머지는 유지하되 지정 정답에서 강등.
@@ -279,22 +292,38 @@ class FishingGameController extends GetxController {
       f.isCorrect = false;
     }
 
-    // 화면에 이미 있는 물고기를 감안해, 지정 정답 1마리 + 부족한 만큼만 디코이를
-    // 채운다(과밀 방지). 최소 정답 1마리는 항상 스폰.
-    final decoyCount = (cfg.count - fishes.length - 1).clamp(0, cfg.count);
-    final numbers = <int>[correctAnswer];
-    final used = <int>{correctAnswer, ...fishes.map((f) => f.number)};
-    var tries = 0;
-    while (numbers.length < 1 + decoyCount && tries < 60) {
-      tries++;
-      final d = _generateDecoy(correctAnswer);
-      if (d != null && used.add(d)) numbers.add(d);
+    // 이미 새 정답 수를 달고 헤엄치는 물고기가 있으면 그중 하나를 지정 정답으로
+    // 승격 — 그러면 정답을 새로 스폰하지 않아 규칙성이 깨진다.
+    var needCorrect = true;
+    final matchIdx = fishes.indexWhere((f) => f.number == correctAnswer);
+    if (matchIdx >= 0) {
+      fishes[matchIdx].isCorrect = true;
+      needCorrect = false;
     }
 
+    // 목표 마릿수까지만 채운다(과밀 방지). 단, 정답을 새로 넣어야 하면 최소 2마리를
+    // 스폰해 정답+디코이를 섞을 수 있게 한다(정답 단독 등장 방지).
+    final onScreen = fishes.length;
+    var toSpawn = (cfg.count - onScreen).clamp(0, cfg.count);
+    if (needCorrect && toSpawn < 2) toSpawn = 2;
+
+    final spawnNumbers = <int>[];
+    final used = <int>{correctAnswer, ...fishes.map((f) => f.number)};
+    if (needCorrect) spawnNumbers.add(correctAnswer);
+    var tries = 0;
+    while (spawnNumbers.length < toSpawn && tries < 80) {
+      tries++;
+      final d = _generateDecoy(correctAnswer);
+      if (d != null && used.add(d)) spawnNumbers.add(d);
+    }
+    // 정답이 항상 첫 등장이 되지 않도록 스폰 순서를 섞는다.
+    spawnNumbers.shuffle(_rng);
+
     final laneOrder = List<int>.generate(lanes, (i) => i)..shuffle(_rng);
-    for (var i = 0; i < numbers.length; i++) {
-      final number = numbers[i];
-      final isCorrect = i == 0; // numbers[0] == correctAnswer, 지정 정답.
+    for (var i = 0; i < spawnNumbers.length; i++) {
+      final number = spawnNumbers[i];
+      // 정답을 새로 넣는 경우에만, 정답 수와 같은 그 물고기가 지정 정답.
+      final isCorrect = needCorrect && number == correctAnswer;
       final lane = laneOrder[i % lanes];
       final delay = Duration(milliseconds: i * cfg.staggerMs);
       late final Timer t;
