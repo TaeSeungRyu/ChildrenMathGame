@@ -12,7 +12,7 @@ High-level flow:
 2. **Tutorial** (`/tutorial`) — onboarding walkthrough. Auto-shown once on first run (marks `tutorialSeen` on entry so a force-quit still counts). Re-openable from the Home AppBar help button.
 3. **Home** (`/home`) — a 3-tab container (`IndexedStack`), driven by `HomeController.tabIndex`:
    - **학습 (Learn)** — Lottie banner + streak badge, daily-mission card, weakness recommendation card, the four basic-operation tiles (덧셈/뺄셈/곱셈/나눗셈 → level select), and a "특별 모드" row (구구단 / 혼합 / 방정식 / 플래시 / 어림셈).
-   - **게임 (Games)** — six action mini-games (몬스터 처치 / 풍선 터뜨리기 / 타워 디펜스 / 두더지 잡기 / 숫자 사다리 / 물고기 잡기). Each tile opens the shared action-select screen; 물고기 잡기 is still a "coming soon" shell.
+   - **게임 (Games)** — six action mini-games (몬스터 처치 / 풍선 터뜨리기 / 타워 디펜스 / 두더지 잡기 / 숫자 사다리 / 물고기 잡기). Each tile opens the shared action-select screen; all six are playable.
    - **기록 (Records)** — meta-tool hub: 도장판(badges) / 오답 노트(wrong notebook) / 결과 보기(records) / 학습 통계(stats) / 복습하기(review-select).
    The shared AppBar (editable name `"{name} 히어로!"`, tutorial button, mute toggle) stays across all tabs.
 4. **Game** (`/game`) — the universal session screen for all learning modes. See "Session modes" and "Learning game types" below.

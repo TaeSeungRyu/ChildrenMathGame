@@ -31,7 +31,7 @@ Splash (2초) ──▶ 첫 실행이면 Tutorial ──▶ Home (3탭: 학습 /
 | `/wrong-notebook` | 오답노트 — 틀린/미풀이 문제 집계 |
 | `/review-select` · `/review` | 날짜 선택 → 그날 오답 다시 풀기 |
 | `/times-table-select` 외 4 | 구구단/혼합/방정식/플래시/어림셈 진입 화면 |
-| `/action-select` → 6 게임 | 몬스터/풍선/타워/두더지/사다리/물고기(준비중) |
+| `/action-select` → 6 게임 | 몬스터/풍선/타워/두더지/사다리/물고기 (6종 모두 플레이 가능) |
 
 ## 난이도 규칙
 
