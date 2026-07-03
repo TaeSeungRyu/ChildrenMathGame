@@ -33,8 +33,9 @@ class FishingGameController extends GetxController {
   static const int maxHp = 3;
   static const int totalSeconds = 60;
 
-  /// 낚기 이펙트(낚싯바늘 + ✨) 지속 시간. 두더지의 hammerAnimMs 와 같은 역할.
-  static const int catchAnimMs = 340;
+  /// 낚기 이펙트(낚싯줄로 수면까지 끌어올림 + ✨) 지속 시간. 두더지의 hammerAnimMs
+  /// 와 같은 역할. 물고기가 줄을 타고 수면까지 올라가는 게 보이도록 넉넉히 준다.
+  static const int catchAnimMs = 650;
 
   /// 물고기가 헤엄칠 세로 레인 수. 후보 물고기가 최대 5마리이므로 5레인이면
   /// 한 마리씩 겹치지 않는 레인을 배정할 수 있다.
@@ -42,6 +43,25 @@ class FishingGameController extends GetxController {
 
   final SfxService _sfx = Get.find();
   final Random _rng = Random();
+
+  // 물고기(해양생물) 모양 후보. 옆을 보는 종류(🐟🐠🐡🦈🐬🦐)는 왼쪽을 바라봐
+  // View 의 방향 뒤집기(좌→우로 헤엄치면 좌우 반전)와 맞고, 좌우 대칭/수직인
+  // 종류(🐙🦑🦀)는 뒤집어도 동일하게 보여 무해하다.
+  static const List<String> _fishEmojis = [
+    '🐟',
+    '🐠',
+    '🐡',
+    '🦈',
+    '🐬',
+    '🦑',
+    '🐙',
+    '🦐',
+    '🦀',
+    '🐋',
+    '🐳',
+    '🦭',
+    '🐢',
+  ];
 
   // 셀렉트 화면 인자.
   late final GameType? gameType;
@@ -173,6 +193,7 @@ class FishingGameController extends GetxController {
     // 동적으로 한다 — 이전 라운드에서 남은 물고기가 우연히 새 정답과 같은 수를
     // 달고 있으면 그것을 낚아도 정답으로 인정(공정).
     final isCorrect = f.number == currentProblem.value.answer;
+    f.hookedCorrect = isCorrect;
     if (isCorrect) {
       _sfx.correct();
       catches.value += 1;
@@ -363,6 +384,7 @@ class FishingGameController extends GetxController {
         ltr: _rng.nextBool(),
         appearedMs: _sessionElapsedMs,
         durationMs: dur,
+        emoji: _fishEmojis[_rng.nextInt(_fishEmojis.length)],
       ),
     );
     fishes.refresh();
@@ -464,11 +486,14 @@ class Fish {
     required this.ltr,
     required this.appearedMs,
     required this.durationMs,
+    required this.emoji,
     this.hookedMs,
   });
 
   final int id;
   final int number;
+  // 물고기 모양(이모지). 스폰 시 무작위로 배정 — 순전히 시각적 다양성용.
+  final String emoji;
   // 이번 라운드의 "지정 정답" 물고기인지. escape(놓침) 패널티 판정에만 쓴다.
   // 정답 낚기로 라운드가 넘어갈 때 남는 물고기는 false 로 강등돼 놓쳐도
   // 패널티를 주지 않는다. 탭 정답 여부는 이 값이 아니라 현재 문제의 답과
@@ -479,4 +504,8 @@ class Fish {
   final int appearedMs;
   final int durationMs;
   int? hookedMs;
+  // 탭한 순간의 정답 여부. 낚기 이펙트(정답=낚싯줄+✨ / 오답=❌)와 낚싯줄 표시가
+  // 이 값을 본다. isCorrect(지정 정답)와 다를 수 있다 — 이월된 물고기가 새 정답과
+  // 같은 수를 달고 있어 낚으면 hookedCorrect=true 지만 isCorrect 는 false.
+  bool hookedCorrect = false;
 }
