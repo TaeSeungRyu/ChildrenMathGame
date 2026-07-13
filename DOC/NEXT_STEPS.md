@@ -21,7 +21,7 @@
 - [ ] **부모 대시보드 강화** — `stats` 모듈을 주간/월간 학습량 그래프로 확장
 - [ ] **오답 노트(`wrong_notebook`) 복습 모드** — 오답만 모아 재출제하는 흐름 만들기. 모듈 존재 여부 대비 활용도 확인 필요
 - [ ] **스탬프(`custom_stamp_service`) 보상 다양화** — 도장판 클리어 시 새 배지/테마 언락
-- [ ] **사운드 옵션 분리** — 현재 단일 mute 토글 → BGM / SFX 분리 + 볼륨 슬라이더
+- [x] **사운드 옵션 분리** *(2026-07-13)* — `SfxService`를 BGM/SFX 독립 채널로 확장(각 on/off + 0..1 볼륨, 키 `bgm_enabled_v1`/`bgm_volume_v1`/`sfx_enabled_v1`/`sfx_volume_v1`). 기존 `sfx_muted_v1` → `sfxEnabled` 마이그레이션. 별도 BGM 루프 플레이어(`ReleaseMode.loop`, `assets/audio/bgm.wav` — `marketing/make_bgm.py`로 오프라인 생성한 10초 루프), 홈 진입 시 `startBgm()`(idempotent). 홈 AppBar 음소거 아이콘 → "소리 설정" 바텀시트(BGM/효과음 스위치 + 볼륨 슬라이더). `flutter test` 126/126 통과.
 
 ## 콘텐츠 확장 (중기)
 

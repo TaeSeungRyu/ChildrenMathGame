@@ -4,12 +4,21 @@ import '../../data/models/action_concept.dart';
 import '../../data/models/daily_mission.dart';
 import '../../data/models/game_type.dart';
 import '../../data/services/record_service.dart';
+import '../../data/services/sfx_service.dart';
 import '../../routes/app_routes.dart';
 import '../../shared/daily_missions.dart';
 import '../../shared/weakness.dart';
 
 class HomeController extends GetxController {
   final RecordService _records = Get.find<RecordService>();
+
+  @override
+  void onReady() {
+    super.onReady();
+    // Kick off looping BGM once Home is on screen (idempotent; no-op if the
+    // user disabled BGM or the audio backend is unavailable).
+    Get.find<SfxService>().startBgm();
+  }
 
   // Current bottom-tab index. 0 = 학습, 1 = 게임, 2 = 기록.
   // Survives within the lifetime of the Home controller; reset to 0 on cold

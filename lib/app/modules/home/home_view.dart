@@ -171,13 +171,123 @@ class _MuteToggle extends StatelessWidget {
     final sfx = Get.find<SfxService>();
     return Obx(
       () => IconButton(
-        tooltip: sfx.isMuted.value ? '효과음 켜기' : '효과음 끄기',
+        // The icon reflects whether *any* audio is on, so a single glance
+        // tells the parent if the app is currently silent.
+        tooltip: '소리 설정',
         icon: Icon(
-          sfx.isMuted.value ? Icons.volume_off : Icons.volume_up,
+          (sfx.sfxEnabled.value || sfx.bgmEnabled.value)
+              ? Icons.volume_up
+              : Icons.volume_off,
           size: 28,
         ),
-        onPressed: sfx.toggleMute,
+        onPressed: () => showModalBottomSheet<void>(
+          context: context,
+          showDragHandle: true,
+          backgroundColor: const Color(0xFFFFF8E7),
+          builder: (_) => const _SoundSettingsSheet(),
+        ),
       ),
+    );
+  }
+}
+
+/// Bottom sheet exposing the two independent audio channels: BGM and SFX,
+/// each with an on/off switch and a volume slider.
+class _SoundSettingsSheet extends StatelessWidget {
+  const _SoundSettingsSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final sfx = Get.find<SfxService>();
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                '소리 설정',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Obx(
+              () => _ChannelControl(
+                icon: Icons.music_note,
+                label: '배경 음악',
+                enabled: sfx.bgmEnabled.value,
+                volume: sfx.bgmVolume.value,
+                onToggle: sfx.setBgmEnabled,
+                onVolume: sfx.setBgmVolume,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Obx(
+              () => _ChannelControl(
+                icon: Icons.graphic_eq,
+                label: '효과음',
+                enabled: sfx.sfxEnabled.value,
+                volume: sfx.sfxVolume.value,
+                onToggle: sfx.setSfxEnabled,
+                onVolume: sfx.setSfxVolume,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChannelControl extends StatelessWidget {
+  const _ChannelControl({
+    required this.icon,
+    required this.label,
+    required this.enabled,
+    required this.volume,
+    required this.onToggle,
+    required this.onVolume,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool enabled;
+  final double volume;
+  final ValueChanged<bool> onToggle;
+  final ValueChanged<double> onVolume;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: const Color(0xFF0D47A1)),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const Spacer(),
+            Switch(value: enabled, onChanged: onToggle),
+          ],
+        ),
+        Row(
+          children: [
+            const Icon(Icons.volume_down, size: 20, color: Colors.black45),
+            Expanded(
+              child: Slider(
+                value: volume,
+                onChanged: enabled ? onVolume : null,
+              ),
+            ),
+            const Icon(Icons.volume_up, size: 20, color: Colors.black45),
+          ],
+        ),
+      ],
     );
   }
 }
