@@ -3,8 +3,10 @@ import 'dart:math';
 
 import 'package:get/get.dart';
 
+import '../../data/models/action_concept.dart';
 import '../../data/models/game_type.dart';
 import '../../data/models/problem.dart';
+import '../../data/services/action_score_service.dart';
 import '../../data/services/problem_generator.dart';
 import '../../data/services/sfx_service.dart';
 
@@ -30,7 +32,10 @@ class LadderGameController extends GetxController {
   static const int advanceDelayMs = 460;
 
   final SfxService _sfx = Get.find();
+  final ActionScoreService _scores = Get.find();
   final Random _rng = Random();
+
+  static const ActionConcept concept = ActionConcept.ladder;
 
   // 진입 선택 화면 인자.
   late final GameType? gameType;
@@ -41,6 +46,7 @@ class LadderGameController extends GetxController {
   final RxInt height = 0.obs; // 오른 칸 수 = 점수
   final RxInt combo = 0.obs;
   final RxBool isGameOver = false.obs;
+  final RxBool isNewBest = false.obs;
   final RxInt elapsed = 0.obs;
 
   late final Rx<Problem> currentProblem;
@@ -192,6 +198,7 @@ class LadderGameController extends GetxController {
     _secondTimer = null;
     _cancelPending();
     _sfx.finish();
+    _scores.report(concept, height.value).then((v) => isNewBest.value = v);
   }
 
   void restart() {
@@ -200,6 +207,7 @@ class LadderGameController extends GetxController {
     combo.value = 0;
     elapsed.value = 0;
     isGameOver.value = false;
+    isNewBest.value = false;
     _locked = false;
     feedbackValue.value = -1;
     _cancelPending();

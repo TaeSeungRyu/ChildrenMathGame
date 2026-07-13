@@ -3,8 +3,10 @@ import 'dart:math';
 
 import 'package:get/get.dart';
 
+import '../../data/models/action_concept.dart';
 import '../../data/models/game_type.dart';
 import '../../data/models/problem.dart';
+import '../../data/services/action_score_service.dart';
 import '../../data/services/problem_generator.dart';
 import '../../data/services/sfx_service.dart';
 
@@ -42,7 +44,10 @@ class FishingGameController extends GetxController {
   static const int lanes = 5;
 
   final SfxService _sfx = Get.find();
+  final ActionScoreService _scores = Get.find();
   final Random _rng = Random();
+
+  static const ActionConcept concept = ActionConcept.fishing;
 
   // 물고기(해양생물) 모양 후보. 옆을 보는 종류(🐟🐠🐡🦈🐬🦐)는 왼쪽을 바라봐
   // View 의 방향 뒤집기(좌→우로 헤엄치면 좌우 반전)와 맞고, 좌우 대칭/수직인
@@ -73,6 +78,7 @@ class FishingGameController extends GetxController {
   final RxInt combo = 0.obs;
   final RxInt round = 1.obs;
   final RxBool isGameOver = false.obs;
+  final RxBool isNewBest = false.obs;
   final RxInt elapsed = 0.obs;
 
   // 현재 라운드의 문제. View 상단 배너가 이걸 보고 표시.
@@ -436,6 +442,7 @@ class FishingGameController extends GetxController {
     _cancelPendingSpawns();
     _cancelPendingRemovals();
     _sfx.finish();
+    _scores.report(concept, catches.value).then((v) => isNewBest.value = v);
   }
 
   // ───── 게임오버 오버레이 액션 ──────────────────────────────────────────────
@@ -447,6 +454,7 @@ class FishingGameController extends GetxController {
     round.value = 1;
     elapsed.value = 0;
     isGameOver.value = false;
+    isNewBest.value = false;
     _sessionElapsedMs = 0;
     _roundResolved = false;
     _cancelPendingSpawns();

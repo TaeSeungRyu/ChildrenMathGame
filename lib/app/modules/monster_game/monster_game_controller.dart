@@ -3,8 +3,10 @@ import 'dart:math';
 
 import 'package:get/get.dart';
 
+import '../../data/models/action_concept.dart';
 import '../../data/models/game_type.dart';
 import '../../data/models/problem.dart';
+import '../../data/services/action_score_service.dart';
 import '../../data/services/problem_generator.dart';
 import '../../data/services/sfx_service.dart';
 
@@ -50,6 +52,9 @@ class MonsterGameController extends GetxController {
   static const int correctBonusSeconds = 10;
 
   final SfxService _sfx = Get.find();
+  final ActionScoreService _scores = Get.find();
+
+  static const ActionConcept concept = ActionConcept.monster;
 
   // 셀렉트 화면 인자 — null 이면 무작위 연산.
   late final GameType? gameType;
@@ -61,6 +66,7 @@ class MonsterGameController extends GetxController {
   final RxInt combo = 0.obs;
   final RxString answer = ''.obs;
   final RxBool isGameOver = false.obs;
+  final RxBool isNewBest = false.obs;
   late final Rx<Problem> current;
 
   // 경과 초. 매 초 +1 되며 [totalSeconds] + [bonusSeconds] 도달 시 자동 게임오버.
@@ -214,6 +220,7 @@ class MonsterGameController extends GetxController {
     isGameOver.value = true;
     _stopTimer();
     _sfx.finish();
+    _scores.report(concept, kills.value).then((v) => isNewBest.value = v);
   }
 
   // ───── 게임오버 오버레이 액션 ────────────────────────────────────────────
@@ -224,6 +231,7 @@ class MonsterGameController extends GetxController {
     elapsed.value = 0;
     bonusSeconds.value = 0;
     isGameOver.value = false;
+    isNewBest.value = false;
     _spawnNext();
     _startTimer();
   }

@@ -4,8 +4,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../data/models/action_concept.dart';
 import '../../data/models/game_type.dart';
 import '../../data/models/problem.dart';
+import '../../data/services/action_score_service.dart';
 import '../../data/services/problem_generator.dart';
 import '../../data/services/sfx_service.dart';
 
@@ -52,7 +54,10 @@ class BalloonGameController extends GetxController {
   static const int popDurationMs = 380;
 
   final SfxService _sfx = Get.find();
+  final ActionScoreService _scores = Get.find();
   final Random _rng = Random();
+
+  static const ActionConcept concept = ActionConcept.balloon;
 
   // 셀렉트 화면 인자.
   late final GameType? gameType;
@@ -65,6 +70,7 @@ class BalloonGameController extends GetxController {
   final RxInt round = 1.obs;
   final RxInt targetAnswer = 0.obs;
   final RxBool isGameOver = false.obs;
+  final RxBool isNewBest = false.obs;
   final RxInt elapsed = 0.obs;
   // 정답 풍선으로 누적된 보너스 시간(초). 매 정답마다 [correctBonusSeconds]씩 증가.
   final RxInt bonusSeconds = 0.obs;
@@ -362,6 +368,7 @@ class BalloonGameController extends GetxController {
     isGameOver.value = true;
     _stopTimer();
     _sfx.finish();
+    _scores.report(concept, pops.value).then((v) => isNewBest.value = v);
   }
 
   // ───── 게임오버 오버레이 액션 ──────────────────────────────────────────────
@@ -374,6 +381,7 @@ class BalloonGameController extends GetxController {
     elapsed.value = 0;
     bonusSeconds.value = 0;
     isGameOver.value = false;
+    isNewBest.value = false;
     _startRound();
     _startTimer();
   }

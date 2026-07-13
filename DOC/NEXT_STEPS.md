@@ -18,8 +18,10 @@
 ## 기능 개선 (중기)
 
 - [ ] **다국어(i18n) 지원** — 영어 추가 (글로벌 출시 검토 시). `Jua` 폰트는 한글 전용이므로 영어 fallback 폰트 전략 필요
-- [ ] **부모 대시보드 강화** — `stats` 모듈을 주간/월간 학습량 그래프로 확장
+- [x] **부모 대시보드 강화 (주간 리포트)** *(2026-07-13)* — `lib/app/shared/weekly_report.dart` 순수 모듈(`computeWeeklyReport(records, now)` → 최근 7일 일별 버킷 + 학습일수/게임수/정답률 + `shareText`). 학습 결과(`stats`) 상단에 `_WeeklyReportCard`(7일 막대 그래프 + 헤드라인 지표 + `share_plus` 공유 버튼) 추가. `flutter test`에 `weekly_report_test.dart` 커버.
 - [ ] **오답 노트(`wrong_notebook`) 복습 모드** — 오답만 모아 재출제하는 흐름 만들기. 모듈 존재 여부 대비 활용도 확인 필요
+- [x] **아바타 + 다중 프로필** *(2026-07-13)* — `ProfileService`를 `profiles[]`+`activeId`로 확장(`Profile` 모델: id/name/avatar). primary(id 1)는 레거시 무접미사 키를 유지, 형제 프로필은 `_p<id>` 접미사로 `RecordService`/`CustomStampService`/`ActionScoreService` 데이터 스코프 분리(데이터 마이그레이션 0). 홈 AppBar에 아바타 버튼 → 프로필 시트(전환/추가/삭제), 이름 편집 다이얼로그에 아바타 픽커. 전환 시 스코프 서비스 reload + `/home` 리부트. 온보딩(첫 실행 프로필 선택)은 후속 작업. `flutter test`에 `profile_service_test.dart` 멀티프로필 그룹 커버.
+- [x] **미니게임 점수/최고기록 저장** *(2026-07-13)* — 액션 6종(몬스터/풍선/타워/두더지/사다리/물고기)에 `ActionScoreService`(프로필 스코프, `action_scores_v1`, best+plays) 연결. 각 컨트롤러가 게임오버 시 `report(concept, score)` → `isNewBest`. action-select 상단 "🏆 최고 기록" 카드 + 게임오버 오버레이 공용 `ActionRecordLine`(신기록/최고 표시). `flutter test`에 `action_score_service_test.dart` 커버.
 - [ ] **스탬프(`custom_stamp_service`) 보상 다양화** — 도장판 클리어 시 새 배지/테마 언락
 - [x] **사운드 옵션 분리** *(2026-07-13)* — `SfxService`를 BGM/SFX 독립 채널로 확장(각 on/off + 0..1 볼륨, 키 `bgm_enabled_v1`/`bgm_volume_v1`/`sfx_enabled_v1`/`sfx_volume_v1`). 기존 `sfx_muted_v1` → `sfxEnabled` 마이그레이션. 별도 BGM 루프 플레이어(`ReleaseMode.loop`, `assets/audio/bgm.wav` — `marketing/make_bgm.py`로 오프라인 생성한 10초 루프), 홈 진입 시 `startBgm()`(idempotent). 홈 AppBar 음소거 아이콘 → "소리 설정" 바텀시트(BGM/효과음 스위치 + 볼륨 슬라이더). `flutter test` 126/126 통과.
 

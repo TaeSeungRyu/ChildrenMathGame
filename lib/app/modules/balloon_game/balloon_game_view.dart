@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 
+import '../../data/services/action_score_service.dart';
+import '../../shared/action_record_line.dart';
 import 'balloon_game_controller.dart';
 
 /// 풍선 터뜨리기 MVP 화면.
@@ -149,6 +151,9 @@ class _BalloonGameViewState extends State<BalloonGameView>
             return _GameOverOverlay(
               round: _c.round.value,
               pops: _c.pops.value,
+              best: Get.find<ActionScoreService>()
+                  .bestFor(BalloonGameController.concept),
+              isNewBest: _c.isNewBest.value,
               onRestart: () {
                 _resetRound();
                 _ticker.start();
@@ -580,12 +585,16 @@ class _GameOverOverlay extends StatelessWidget {
   const _GameOverOverlay({
     required this.round,
     required this.pops,
+    required this.best,
+    required this.isNewBest,
     required this.onRestart,
     required this.onHome,
   });
 
   final int round;
   final int pops;
+  final int best;
+  final bool isNewBest;
   final VoidCallback onRestart;
   final VoidCallback onHome;
 
@@ -631,6 +640,8 @@ class _GameOverOverlay extends StatelessWidget {
                   color: Colors.black.withValues(alpha: 0.6),
                 ),
               ),
+              const SizedBox(height: 12),
+              ActionRecordLine(best: best, isNewBest: isNewBest),
               const SizedBox(height: 20),
               Row(
                 children: [

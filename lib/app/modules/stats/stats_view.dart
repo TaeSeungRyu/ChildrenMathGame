@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../data/models/game_type.dart';
+import '../../data/services/profile_service.dart';
 import '../../shared/date_format.dart';
 import '../../shared/weakness.dart';
+import '../../shared/weekly_report.dart';
 import 'stats_controller.dart';
 
 class StatsView extends GetView<StatsController> {
@@ -26,6 +29,10 @@ class StatsView extends GetView<StatsController> {
           : ListView(
               padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
               children: [
+                const _SectionTitle('주간 리포트 (최근 7일)'),
+                const SizedBox(height: 8),
+                _WeeklyReportCard(report: controller.weeklyReport),
+                const SizedBox(height: 24),
                 _OverviewCard(stats: controller.overall),
                 const SizedBox(height: 24),
                 const _SectionTitle('연산별'),
@@ -103,6 +110,123 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    );
+  }
+}
+
+/// Parent-facing weekly summary: a 7-day bar chart of games played plus
+/// headline totals and a share button (text summary for KakaoTalk etc.).
+class _WeeklyReportCard extends StatelessWidget {
+  const _WeeklyReportCard({required this.report});
+
+  final WeeklyReport report;
+
+  static const _weekdayLabels = ['월', '화', '수', '목', '금', '토', '일'];
+  static const _barColor = Color(0xFF4FC3F7);
+  static const _todayBar = Color(0xFF1976D2);
+
+  void _share() {
+    final name = Get.find<ProfileService>().name.value;
+    Share.share(report.shareText(name));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final maxGames = report.maxGames;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                _Metric(label: '학습한 날', value: '${report.activeDays}일'),
+                _Metric(label: '푼 게임', value: '${report.totalGames}판'),
+                _Metric(
+                  label: '정답률',
+                  value: '${(report.accuracy * 100).round()}%',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 96,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (var i = 0; i < report.days.length; i++)
+                    Expanded(
+                      child: _DayBar(
+                        label: _weekdayLabels[report.days[i].day.weekday - 1],
+                        games: report.days[i].games,
+                        maxGames: maxGames,
+                        color: i == report.days.length - 1
+                            ? _todayBar
+                            : _barColor,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _share,
+                icon: const Icon(Icons.share, size: 18),
+                label: const Text('공유하기'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DayBar extends StatelessWidget {
+  const _DayBar({
+    required this.label,
+    required this.games,
+    required this.maxGames,
+    required this.color,
+  });
+
+  final String label;
+  final int games;
+  final int maxGames;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    // Scale bar height to the busiest day; keep a tiny stub for zero so the
+    // baseline reads as "a day with no activity" rather than empty space.
+    const maxBarHeight = 64.0;
+    final ratio = maxGames == 0 ? 0.0 : games / maxGames;
+    final barHeight = games == 0 ? 3.0 : (8 + ratio * (maxBarHeight - 8));
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Text(
+          games == 0 ? '' : '$games',
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 2),
+        Container(
+          height: barHeight,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: games == 0 ? const Color(0xFFE0E0E0) : color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF6D4C41)),
+        ),
+      ],
     );
   }
 }

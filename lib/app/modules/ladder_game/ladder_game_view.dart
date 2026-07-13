@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../data/services/action_score_service.dart';
+import '../../shared/action_record_line.dart';
 import 'ladder_game_controller.dart';
 
 /// 숫자 사다리 화면 — 발판 위 객관식 등반.
@@ -81,6 +83,9 @@ class LadderGameView extends GetView<LadderGameController> {
             if (!controller.isGameOver.value) return const SizedBox.shrink();
             return _GameOverOverlay(
               height: controller.height.value,
+              best: Get.find<ActionScoreService>()
+                  .bestFor(LadderGameController.concept),
+              isNewBest: controller.isNewBest.value,
               onRestart: controller.restart,
               onHome: controller.exitToHome,
             );
@@ -561,11 +566,15 @@ class _ProblemBanner extends StatelessWidget {
 class _GameOverOverlay extends StatelessWidget {
   const _GameOverOverlay({
     required this.height,
+    required this.best,
+    required this.isNewBest,
     required this.onRestart,
     required this.onHome,
   });
 
   final int height;
+  final int best;
+  final bool isNewBest;
   final VoidCallback onRestart;
   final VoidCallback onHome;
 
@@ -603,6 +612,8 @@ class _GameOverOverlay extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              const SizedBox(height: 12),
+              ActionRecordLine(best: best, isNewBest: isNewBest),
               const SizedBox(height: 20),
               Row(
                 children: [

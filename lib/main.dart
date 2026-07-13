@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import 'app/data/services/action_score_service.dart';
 import 'app/data/services/custom_stamp_service.dart';
 import 'app/data/services/profile_service.dart';
 import 'app/data/services/record_service.dart';
@@ -22,6 +23,7 @@ Future<void> main() async {
   await Get.putAsync<RecordService>(() => RecordService().init());
   await Get.putAsync<SfxService>(() => SfxService().init());
   await Get.putAsync<CustomStampService>(() => CustomStampService().init());
+  await Get.putAsync<ActionScoreService>(() => ActionScoreService().init());
   runApp(const MyApp());
 }
 

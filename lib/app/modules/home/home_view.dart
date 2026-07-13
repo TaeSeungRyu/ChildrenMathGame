@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import '../../data/models/profile.dart';
+import '../../data/services/action_score_service.dart';
+import '../../data/services/custom_stamp_service.dart';
 import '../../data/services/profile_service.dart';
 import '../../data/services/sfx_service.dart';
 import '../../routes/app_routes.dart';
@@ -51,6 +54,7 @@ class HomeView extends GetView<HomeController> {
       },
       child: Scaffold(
         appBar: AppBar(
+          leading: const _ProfileButton(),
           title: const _EditableTitle(),
           centerTitle: true,
           actions: const [_TutorialButton(), _MuteToggle()],
@@ -343,6 +347,7 @@ class _NameEditDialog extends StatefulWidget {
 
 class _NameEditDialogState extends State<_NameEditDialog> {
   late final TextEditingController _controller;
+  late String _avatar;
 
   @override
   void initState() {
@@ -353,6 +358,7 @@ class _NameEditDialogState extends State<_NameEditDialog> {
       baseOffset: 0,
       extentOffset: _controller.text.length,
     );
+    _avatar = profile.avatar.value;
   }
 
   @override
@@ -362,25 +368,37 @@ class _NameEditDialogState extends State<_NameEditDialog> {
   }
 
   void _save() {
-    Get.find<ProfileService>().setName(_controller.text);
+    final profile = Get.find<ProfileService>();
+    profile.setName(_controller.text);
+    profile.setAvatar(_avatar);
     Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('이름 바꾸기'),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        maxLength: ProfileService.maxNameLength,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        decoration: const InputDecoration(
-          hintText: '이름을 입력하세요',
-          counterText: '',
-        ),
-        onSubmitted: (_) => _save(),
+      title: const Text('내 정보 바꾸기'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            maxLength: ProfileService.maxNameLength,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            decoration: const InputDecoration(
+              hintText: '이름을 입력하세요',
+              counterText: '',
+            ),
+            onSubmitted: (_) => _save(),
+          ),
+          const SizedBox(height: 12),
+          _AvatarPicker(
+            selected: _avatar,
+            onSelected: (a) => setState(() => _avatar = a),
+          ),
+        ],
       ),
       actions: [
         TextButton(
@@ -390,6 +408,230 @@ class _NameEditDialogState extends State<_NameEditDialog> {
         FilledButton(
           onPressed: _save,
           child: const Text('저장', style: TextStyle(fontSize: 16)),
+        ),
+      ],
+    );
+  }
+}
+
+/// Wrapping grid of emoji avatar choices. Purely a controlled widget — the
+/// caller owns the selected value.
+class _AvatarPicker extends StatelessWidget {
+  const _AvatarPicker({required this.selected, required this.onSelected});
+
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      alignment: WrapAlignment.center,
+      children: [
+        for (final emoji in Profile.avatarChoices)
+          InkWell(
+            onTap: () => onSelected(emoji),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: emoji == selected
+                    ? const Color(0xFF4FC3F7).withValues(alpha: 0.35)
+                    : const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: emoji == selected
+                      ? const Color(0xFF1976D2)
+                      : const Color(0xFFD7CCC8),
+                  width: emoji == selected ? 2 : 1,
+                ),
+              ),
+              child: Text(emoji, style: const TextStyle(fontSize: 24)),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// AppBar leading — shows the active profile's avatar and opens the profile
+/// switcher.
+class _ProfileButton extends StatelessWidget {
+  const _ProfileButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = Get.find<ProfileService>();
+    return Obx(
+      () => IconButton(
+        tooltip: '프로필',
+        icon: Text(profile.avatar.value, style: const TextStyle(fontSize: 26)),
+        onPressed: () => showModalBottomSheet<void>(
+          context: context,
+          showDragHandle: true,
+          backgroundColor: const Color(0xFFFFF8E7),
+          builder: (_) => const _ProfileSheet(),
+        ),
+      ),
+    );
+  }
+}
+
+/// Profile switcher: lists profiles (tap to switch), lets you add a sibling
+/// profile, and delete non-primary ones. Switching reloads the caches of the
+/// scoped services and reboots the home route so every screen reflects the
+/// newly active child.
+class _ProfileSheet extends StatelessWidget {
+  const _ProfileSheet();
+
+  Future<void> _switch(int id) async {
+    final profile = Get.find<ProfileService>();
+    if (profile.activeId.value == id) {
+      Get.back();
+      return;
+    }
+    await profile.switchTo(id);
+    _reloadScopedServices();
+    Get.back();
+    Get.offAllNamed(AppRoutes.home);
+  }
+
+  void _reloadScopedServices() {
+    if (Get.isRegistered<CustomStampService>()) {
+      Get.find<CustomStampService>().reload();
+    }
+    if (Get.isRegistered<ActionScoreService>()) {
+      Get.find<ActionScoreService>().reload();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = Get.find<ProfileService>();
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+        child: Obx(
+          () => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(left: 4, bottom: 8),
+                child: Text(
+                  '프로필',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+              ),
+              for (final p in profile.profiles)
+                ListTile(
+                  leading: Text(p.avatar, style: const TextStyle(fontSize: 30)),
+                  title: Text(
+                    p.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  trailing: p.id == profile.activeId.value
+                      ? const Icon(Icons.check_circle, color: Color(0xFF1976D2))
+                      : (profile.canDelete(p.id)
+                          ? IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: '삭제',
+                              onPressed: () => profile.deleteProfile(p.id),
+                            )
+                          : null),
+                  onTap: () => _switch(p.id),
+                ),
+              if (profile.canAddProfile)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: OutlinedButton.icon(
+                    onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (_) => const _AddProfileDialog(),
+                    ),
+                    icon: const Icon(Icons.add),
+                    label: const Text('프로필 추가'),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddProfileDialog extends StatefulWidget {
+  const _AddProfileDialog();
+
+  @override
+  State<_AddProfileDialog> createState() => _AddProfileDialogState();
+}
+
+class _AddProfileDialogState extends State<_AddProfileDialog> {
+  final _controller = TextEditingController();
+  String _avatar = Profile.defaultAvatar;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final profile = Get.find<ProfileService>();
+    await profile.addProfile(name: _controller.text, avatar: _avatar);
+    // Newly added profile becomes active — reload scoped caches + reboot home.
+    if (Get.isRegistered<CustomStampService>()) {
+      Get.find<CustomStampService>().reload();
+    }
+    if (Get.isRegistered<ActionScoreService>()) {
+      Get.find<ActionScoreService>().reload();
+    }
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    Get.offAllNamed(AppRoutes.home);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('프로필 추가'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _controller,
+            autofocus: true,
+            maxLength: ProfileService.maxNameLength,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            decoration: const InputDecoration(
+              hintText: '이름을 입력하세요',
+              counterText: '',
+            ),
+          ),
+          const SizedBox(height: 12),
+          _AvatarPicker(
+            selected: _avatar,
+            onSelected: (a) => setState(() => _avatar = a),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('취소', style: TextStyle(fontSize: 16)),
+        ),
+        FilledButton(
+          onPressed: _save,
+          child: const Text('추가', style: TextStyle(fontSize: 16)),
         ),
       ],
     );

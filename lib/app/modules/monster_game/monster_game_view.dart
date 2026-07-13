@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../data/services/action_score_service.dart';
+import '../../shared/action_record_line.dart';
 import '../../shared/answer_pad.dart';
 import 'monster_game_controller.dart';
 
@@ -126,6 +128,9 @@ class _MonsterGameViewState extends State<MonsterGameView>
             if (!_c.isGameOver.value) return const SizedBox.shrink();
             return _GameOverOverlay(
               kills: _c.kills.value,
+              best: Get.find<ActionScoreService>()
+                  .bestFor(MonsterGameController.concept),
+              isNewBest: _c.isNewBest.value,
               onRestart: _c.restart,
               onHome: _c.exitToHome,
             );
@@ -339,11 +344,15 @@ class _MonsterCard extends StatelessWidget {
 class _GameOverOverlay extends StatelessWidget {
   const _GameOverOverlay({
     required this.kills,
+    required this.best,
+    required this.isNewBest,
     required this.onRestart,
     required this.onHome,
   });
 
   final int kills;
+  final int best;
+  final bool isNewBest;
   final VoidCallback onRestart;
   final VoidCallback onHome;
 
@@ -381,6 +390,8 @@ class _GameOverOverlay extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              const SizedBox(height: 12),
+              ActionRecordLine(best: best, isNewBest: isNewBest),
               const SizedBox(height: 20),
               Row(
                 children: [

@@ -5,12 +5,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../shared/streak.dart';
 import '../models/game_record.dart';
+import 'profile_service.dart';
 
 class RecordService extends GetxService {
-  static const _storageKey = 'game_records_v4';
-  static const _dismissedWrongKey = 'wrong_notebook_dismissed_v1';
+  static const _storageBase = 'game_records_v4';
+  static const _dismissedWrongBase = 'wrong_notebook_dismissed_v1';
 
   late final SharedPreferences _prefs;
+
+  // Storage keys are scoped to the active profile so siblings keep separate
+  // records. The primary profile uses an empty suffix, preserving the original
+  // keys for existing single-user installs.
+  // Falls back to the primary (empty) scope when ProfileService isn't
+  // registered — e.g. service-only unit tests.
+  String get _scope => Get.isRegistered<ProfileService>()
+      ? Get.find<ProfileService>().scopeSuffix
+      : '';
+  String get _storageKey => '$_storageBase$_scope';
+  String get _dismissedWrongKey => '$_dismissedWrongBase$_scope';
 
   Future<RecordService> init() async {
     _prefs = await SharedPreferences.getInstance();

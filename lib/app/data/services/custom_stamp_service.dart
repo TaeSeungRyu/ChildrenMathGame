@@ -5,12 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/custom_stamp.dart';
 import '../models/stamp_condition.dart';
+import 'profile_service.dart';
 
 /// Persistent CRUD store for user-defined stamps. Backed by a single JSON
-/// blob under SharedPreferences key `custom_stamps_v1`. The [stamps] list is
+/// blob under a per-profile SharedPreferences key (`custom_stamps_v1` for the
+/// primary profile, `custom_stamps_v1_p<id>` otherwise). The [stamps] list is
 /// observable so the badges grid rebuilds automatically on add/edit/delete.
 class CustomStampService extends GetxService {
-  static const _storageKey = 'custom_stamps_v1';
+  static const _storageBase = 'custom_stamps_v1';
 
   late final SharedPreferences _prefs;
 
@@ -20,10 +22,21 @@ class CustomStampService extends GetxService {
 
   final RxList<CustomStamp> stamps = <CustomStamp>[].obs;
 
+  // Falls back to the primary (empty) scope when ProfileService isn't
+  // registered — e.g. service-only unit tests that construct this directly.
+  String get _storageKey =>
+      '$_storageBase${Get.isRegistered<ProfileService>() ? Get.find<ProfileService>().scopeSuffix : ''}';
+
   Future<CustomStampService> init() async {
     _prefs = await SharedPreferences.getInstance();
     stamps.assignAll(_load());
     return this;
+  }
+
+  /// Re-reads stamps for the currently active profile. Call after a profile
+  /// switch so the badges grid reflects the new child's stamps.
+  void reload() {
+    stamps.assignAll(_load());
   }
 
   List<CustomStamp> _load() {

@@ -4,6 +4,7 @@ import '../../data/models/game_record.dart';
 import '../../data/models/game_type.dart';
 import '../../data/services/record_service.dart';
 import '../../shared/weakness.dart';
+import '../../shared/weekly_report.dart';
 
 class StatsAggregate {
   StatsAggregate({
@@ -32,12 +33,14 @@ class StatsController extends GetxController {
   late final Map<GameType, StatsAggregate> byType;
   late final Map<int, StatsAggregate> byLevel;
   late final WeaknessAnalysis weakness;
+  late final WeeklyReport weeklyReport;
 
   @override
   void onInit() {
     super.onInit();
     final all = Get.find<RecordService>().all();
     overall = _aggregate(all);
+    weeklyReport = computeWeeklyReport(all);
     byType = {
       for (final t in GameType.values)
         t: _aggregate(all.where((r) => r.type == t)),

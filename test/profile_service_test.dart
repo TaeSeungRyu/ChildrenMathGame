@@ -52,6 +52,75 @@ void main() {
     });
   });
 
+  group('ProfileService multi-profile', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
+
+    tearDown(() async {
+      await Get.deleteAll(force: true);
+    });
+
+    test('fresh install seeds one primary profile with empty scope', () async {
+      final svc = await ProfileService().init();
+      expect(svc.profiles.length, 1);
+      expect(svc.active.id, 1);
+      expect(svc.scopeSuffix, '');
+    });
+
+    test('legacy name migrates into the primary profile', () async {
+      SharedPreferences.setMockInitialValues({'profile_name_v1': '하늘'});
+      final svc = await ProfileService().init();
+      expect(svc.profiles.single.name, '하늘');
+      expect(svc.name.value, '하늘');
+    });
+
+    test('addProfile creates a scoped sibling and switches to it', () async {
+      final svc = await ProfileService().init();
+      final p = await svc.addProfile(name: '서연', avatar: '🐼');
+      expect(p, isNotNull);
+      expect(svc.profiles.length, 2);
+      expect(svc.active.id, 2);
+      expect(svc.name.value, '서연');
+      expect(svc.avatar.value, '🐼');
+      // Sibling profiles namespace their data so records stay separate.
+      expect(svc.scopeSuffix, '_p2');
+    });
+
+    test('switching profiles updates the active name mirror + scope', () async {
+      final svc = await ProfileService().init();
+      await svc.setName('민준');
+      await svc.addProfile(name: '서연');
+      expect(svc.name.value, '서연');
+      await svc.switchTo(1);
+      expect(svc.name.value, '민준');
+      expect(svc.scopeSuffix, '');
+    });
+
+    test('active profile + membership persist across re-init', () async {
+      final svc = await ProfileService().init();
+      await svc.addProfile(name: '서연');
+      final svc2 = await ProfileService().init();
+      expect(svc2.profiles.length, 2);
+      expect(svc2.active.id, 2);
+    });
+
+    test('primary is protected; last profile cannot be deleted', () async {
+      final svc = await ProfileService().init();
+      expect(svc.canDelete(1), isFalse);
+      await svc.deleteProfile(1);
+      expect(svc.profiles.length, 1);
+    });
+
+    test('deleting the active sibling falls back to another profile', () async {
+      final svc = await ProfileService().init();
+      await svc.addProfile(name: '서연'); // id 2, now active
+      await svc.deleteProfile(2);
+      expect(svc.profiles.length, 1);
+      expect(svc.active.id, 1);
+    });
+  });
+
   group('vocativeParticle', () {
     test('returns "야" for names ending in vowel (no jongseong)', () {
       // 수, 아, 미 — all vowel-ending syllables.

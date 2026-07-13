@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../data/services/action_score_service.dart';
 import 'action_select_controller.dart';
 
 /// 액션 게임 4종이 공유하는 진입 선택 화면.
@@ -30,6 +31,8 @@ class ActionSelectView extends GetView<ActionSelectController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const _BestScoreCard(),
+            const SizedBox(height: 20),
             const _SectionTitle('연산을 골라요'),
             const SizedBox(height: 8),
             const _OpPicker(),
@@ -58,6 +61,60 @@ class ActionSelectView extends GetView<ActionSelectController> {
         ),
       ),
     );
+  }
+}
+
+/// 현재 컨셉의 최고 점수 + 플레이 횟수 카드. 아직 기록이 없으면 첫 도전을
+/// 독려하는 문구를 보여 준다. [ActionScoreService]의 반응형 맵을 구독하므로
+/// 방금 끝낸 판의 신기록이 뒤로 나올 때 즉시 갱신된다.
+class _BestScoreCard extends GetView<ActionSelectController> {
+  const _BestScoreCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final scores = Get.find<ActionScoreService>();
+    return Obx(() {
+      final best = scores.bestFor(controller.concept);
+      final plays = scores.playsFor(controller.concept);
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3E0),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFFFCC80), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            const Text('🏆', style: TextStyle(fontSize: 30)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    plays == 0 ? '아직 기록이 없어요' : '최고 기록 $best점',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF5D4037),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    plays == 0 ? '첫 도전을 시작해 보세요!' : '지금까지 $plays번 플레이했어요',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF8D6E63),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
 

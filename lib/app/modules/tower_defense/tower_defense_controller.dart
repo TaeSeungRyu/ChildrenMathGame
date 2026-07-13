@@ -3,8 +3,10 @@ import 'dart:math';
 
 import 'package:get/get.dart';
 
+import '../../data/models/action_concept.dart';
 import '../../data/models/game_type.dart';
 import '../../data/models/problem.dart';
+import '../../data/services/action_score_service.dart';
 import '../../data/services/problem_generator.dart';
 import '../../data/services/sfx_service.dart';
 
@@ -58,7 +60,10 @@ class TowerDefenseController extends GetxController {
   static const int defeatDurationMs = 380;
 
   final SfxService _sfx = Get.find();
+  final ActionScoreService _scores = Get.find();
   final Random _rng = Random();
+
+  static const ActionConcept concept = ActionConcept.tower;
 
   late final GameType? gameType;
   late final int digitsA;
@@ -69,6 +74,7 @@ class TowerDefenseController extends GetxController {
   final RxInt combo = 0.obs;
   final RxString answer = ''.obs;
   final RxBool isGameOver = false.obs;
+  final RxBool isNewBest = false.obs;
   final RxInt elapsed = 0.obs;
   // 처치 보너스로 누적된 시간(초). 매 정답 처치마다 [correctBonusSeconds]씩 증가.
   final RxInt bonusSeconds = 0.obs;
@@ -280,6 +286,7 @@ class TowerDefenseController extends GetxController {
     isGameOver.value = true;
     _stopAllTimers();
     _sfx.finish();
+    _scores.report(concept, kills.value).then((v) => isNewBest.value = v);
   }
 
   // ───── 게임오버 오버레이 액션 ──────────────────────────────────────────────
@@ -292,6 +299,7 @@ class TowerDefenseController extends GetxController {
     elapsed.value = 0;
     bonusSeconds.value = 0;
     isGameOver.value = false;
+    isNewBest.value = false;
     monsters.clear();
     _sessionElapsedMs = 0;
     _spawnMonster();

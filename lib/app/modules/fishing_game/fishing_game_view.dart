@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 
+import '../../data/services/action_score_service.dart';
+import '../../shared/action_record_line.dart';
 import 'fishing_game_controller.dart';
 
 /// 물고기 잡기 화면 — 객관식 "움직이는 타겟" 낚기.
@@ -120,6 +122,9 @@ class _FishingGameViewState extends State<FishingGameView>
             if (!_c.isGameOver.value) return const SizedBox.shrink();
             return _GameOverOverlay(
               catches: _c.catches.value,
+              best: Get.find<ActionScoreService>()
+                  .bestFor(FishingGameController.concept),
+              isNewBest: _c.isNewBest.value,
               onRestart: _onRestart,
               onHome: _c.exitToHome,
             );
@@ -754,11 +759,15 @@ class _BubblePainter extends CustomPainter {
 class _GameOverOverlay extends StatelessWidget {
   const _GameOverOverlay({
     required this.catches,
+    required this.best,
+    required this.isNewBest,
     required this.onRestart,
     required this.onHome,
   });
 
   final int catches;
+  final int best;
+  final bool isNewBest;
   final VoidCallback onRestart;
   final VoidCallback onHome;
 
@@ -796,6 +805,8 @@ class _GameOverOverlay extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              const SizedBox(height: 12),
+              ActionRecordLine(best: best, isNewBest: isNewBest),
               const SizedBox(height: 20),
               Row(
                 children: [
