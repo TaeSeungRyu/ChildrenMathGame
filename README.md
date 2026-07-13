@@ -4,7 +4,7 @@
 
 사칙연산(덧셈/뺄셈/곱셈/나눗셈)을 5단계 난이도로 풀고, 구구단·혼합·방정식·플래시·어림셈 등 특별 모드와 6종의 액션 미니게임을 제공합니다. 매 게임마다 점수·소요시간·콤보가 기록되고, 도장판/뱃지·오답노트·통계·복습으로 이어집니다.
 
-> 패키지 이름은 `children_math_game`이지만 앱 표시 이름은 **연산 히어로**입니다. 현재 버전 `2.2.0+16`.
+> 패키지 이름은 `children_math_game`이지만 앱 표시 이름은 **연산 히어로**입니다. 현재 버전 `2.2.1+17`.
 
 ## 화면 흐름
 
@@ -13,7 +13,7 @@ Splash (2초) ──▶ 첫 실행이면 Tutorial ──▶ Home (3탭: 학습 /
                                             │
    학습 탭 ── 기본연산 4 ─▶ Level Select ─▶ Game ─▶ Result ─▶ Records ─▶ Record Detail
           └─ 특별 모드 5 ─▶ (각 select) ──┘
-   게임 탭 ── 액션 6종 ────▶ Action Select ─▶ 각 액션 게임 (기록 미저장)
+   게임 탭 ── 액션 6종 ────▶ Action Select ─▶ 각 액션 게임 (최고 점수 저장)
    기록 탭 ── 도장판 / 오답노트 / 결과보기 / 통계 / 복습
 ```
 
@@ -21,17 +21,17 @@ Splash (2초) ──▶ 첫 실행이면 Tutorial ──▶ Home (3탭: 학습 /
 |---|---|
 | `/splash` | 2초 후 홈으로 (첫 실행이면 튜토리얼로) |
 | `/tutorial` | 온보딩 안내 (첫 실행 1회 자동, 홈에서 재열람) |
-| `/home` | 3탭 컨테이너(학습/게임/기록), 공용 AppBar(이름 편집·도움말·음소거) |
+| `/home` | 3탭 컨테이너(학습/게임/기록), 공용 AppBar(프로필 전환·이름/아바타 편집·도움말·소리 설정) |
 | `/level-select` | 1~5단계 + 모드 토글(도전/타임어택/연속/연습) |
 | `/game` | 모든 학습 모드 공용 세션 화면 |
 | `/result` | 정답·오답·미풀이·소요시간·최대콤보, 신기록 뱃지, 기록 저장 |
 | `/records` · `/record-detail` | 과거 기록 리스트 / 문항별 상세 |
 | `/badges` | 도장판 — 기본 뱃지 + 사용자 커스텀 도장 |
-| `/stats` | 학습 통계 — 정답률·연산별·레벨별·약점 |
+| `/stats` | 학습 통계 — 주간 리포트(최근 7일)·정답률·연산별·레벨별·약점 |
 | `/wrong-notebook` | 오답노트 — 틀린/미풀이 문제 집계 |
 | `/review-select` · `/review` | 날짜 선택 → 그날 오답 다시 풀기 |
 | `/times-table-select` 외 4 | 구구단/혼합/방정식/플래시/어림셈 진입 화면 |
-| `/action-select` → 6 게임 | 몬스터/풍선/타워/두더지/사다리/물고기 (6종 모두 플레이 가능) |
+| `/action-select` → 6 게임 | 몬스터/풍선/타워/두더지/사다리/물고기 (6종 모두 플레이 가능, 컨셉별 최고 점수 표시) |
 
 ## 난이도 규칙
 
@@ -99,25 +99,29 @@ lib/app/
                           # estimation_choices, action_concept
     services/
       problem_generator.dart   # 순수 함수 (Random)
-      record_service.dart      # GetxService, SharedPreferences (기록 + 오답 dismissal + streak)
-      profile_service.dart     # 이름 + 튜토리얼 노출 플래그
-      sfx_service.dart         # 효과음 + 햅틱
-      custom_stamp_service.dart# 사용자 커스텀 도장 CRUD
+      record_service.dart      # GetxService, SharedPreferences (기록 + 오답 dismissal + streak, 프로필별 스코프)
+      profile_service.dart     # 다중 프로필(이름 + 아바타) + activeId + 튜토리얼 노출 플래그
+      sfx_service.dart         # BGM/효과음 독립 채널(각 on/off + 볼륨) + 햅틱
+      custom_stamp_service.dart# 사용자 커스텀 도장 CRUD (프로필별 스코프)
+      action_score_service.dart# 액션 미니게임 최고 점수/플레이 횟수 (프로필별 스코프)
   modules/<feature>/
     <feature>_view.dart        # GetView<Controller> 위젯
     <feature>_controller.dart  # 상태 + 비즈니스 로직
     <feature>_binding.dart     # 컨트롤러 → 라우트 와이어링
   shared/                 # date_format, korean_particle, badges, daily_missions,
-                          # streak, weakness, wrong_notebook, 재사용 위젯 등
+                          # streak, weakness, wrong_notebook, weekly_report,
+                          # action_record_line, 재사용 위젯 등
 ```
 
-4개 서비스(`ProfileService`, `RecordService`, `SfxService`, `CustomStampService`)는 `main()`에서 `Get.putAsync`로 등록됩니다.
+5개 서비스(`ProfileService`, `RecordService`, `SfxService`, `CustomStampService`, `ActionScoreService`)는 `main()`에서 `Get.putAsync`로 등록됩니다.
+
+**다중 프로필**: `ProfileService`가 `profiles[]` + `activeId`를 관리합니다(형제자매용). primary 프로필(id 1)은 기존 무접미사 키를 그대로 쓰고, 추가 프로필은 `_p<id>` 접미사로 기록/도장/액션 점수 데이터를 분리합니다 — 기존 단일 사용자 설치는 마이그레이션이 필요 없습니다. 프로필 전환은 스코프 서비스 캐시를 reload한 뒤 `/home`을 리부트합니다.
 
 **Lazy vs eager binding**: 기본 `Get.lazyPut`은 `Get.find<T>()` 가 처음 호출될 때 컨트롤러를 만듭니다. `GetView<T>.controller` 를 `build`에서 안 읽는 화면(예: `onReady`에서 타이머만 도는 스플래시)은 `Get.put(...)`을 써야 `onInit/onReady`가 실행됩니다 — `SplashBinding` 참고.
 
 **기록 식별**: `RecordService`는 `finishedAt` (DateTime ms) 동등성으로 단일 기록을 식별합니다. 일괄 import / seeding을 도입한다면 명시적 `id` 필드가 필요해집니다. JSON 키는 `game_records_v4`, 스키마 변경 시 키 suffix를 올려 구버전 설치의 `fromJson` 충돌을 피하세요.
 
-**액션 게임**은 `/game`·`RecordService`를 거치지 않는 별도 아케이드 트랙입니다(MVP, 기록 미저장).
+**액션 게임**은 `/game`·`RecordService`(`GameRecord`)를 거치지 않는 별도 아케이드 트랙입니다. 학습 기록에는 남지 않지만, 컨셉별 **최고 점수·플레이 횟수**는 `ActionScoreService`로 저장되어 진입 화면과 게임오버 오버레이(신기록 배지)에 표시됩니다.
 
 ## 기술 스택
 
@@ -185,7 +189,7 @@ await Get.putAsync<RecordService>(() => RecordService().init());
 await Get.putAsync<SfxService>(() => SfxService().init());
 ```
 
-그리고 `tearDown`에서 `Get.deleteAll(force: true)`. 커스텀 도장 화면을 띄운다면 `CustomStampService`도 등록하세요. 캐노니컬 패턴은 `test/widget_test.dart` 참조.
+그리고 `tearDown`에서 `Get.deleteAll(force: true)`. 커스텀 도장 화면을 띄운다면 `CustomStampService`, 액션 게임/진입 화면을 띄운다면 `ActionScoreService`도 등록하세요. `RecordService`/`CustomStampService`/`ActionScoreService`는 `ProfileService` 미등록 시 primary(빈 접미사) 스코프로 폴백하므로 서비스 단위 테스트에서는 `ProfileService` 없이도 동작합니다. 캐노니컬 패턴은 `test/widget_test.dart` 참조.
 
 ## 빌드 타깃 / 플랫폼
 

@@ -31,19 +31,15 @@
   - 결과는 연습 모드처럼 기록 미저장 (오답을 다시 wrong 처리하면 통계가 왜곡됨).
   - 학습 효과 직접적. 작은~중간 작업량.
 
-- [ ] **9. 타임어택 모드**
-  - 60초 안에 무한 출제, 정답 수만 추적. 한 문제 풀면 즉시 다음 문제.
-  - 별도 게임 모드 — 기존 `GameController`의 10문제 종료 조건 분기 또는 새 컨트롤러.
-  - 메타: "오늘의 최고 기록" / "역대 최고" (type+level별로 저장).
-  - 새 라우트 `/time-attack-select` + 결과 저장 키 별도 분리 (기존 `GameRecord`에 mode enum 추가 또는 새 모델).
-  - 새로운 재미와 흥미. 중간 작업량 (새 모드 파이프라인).
+- [x] **9. 타임어택 모드** *(구현 완료)*
+  - 60초 카운트다운, 제출마다 새 문제 추가. 정답 수만 추적. `GameController.isTimeAttack` + `SessionMode.timeAttack`로 구현.
+  - 함께 **연속(endless)** 모드도 추가됨(타이머 없음, 첫 오답에서 종료). 둘 다 레벨 선택 세그먼트 토글(`LevelSelectMode`)에서 선택.
+  - 신기록은 `(type, level)` 버킷별 최대 정답 수(타임어택)/최장 연속(연속). 자세한 규칙은 `CLAUDE.md`의 "Session modes" 참고.
 
-- [ ] **10. 사용자 프로필 확장 (아바타 + 다중 프로필)**
-  - 이름 입력은 B에서 단일 프로필로 완료 (`ProfileService`). 남은 작업:
-  - 아바타 — 이모지 또는 아이콘 풀에서 선택. `ProfileService.avatar` 추가.
-  - 첫 실행 온보딩 — 처음 켰을 때 이름+아바타 선택 화면(스플래시 후 라우팅 분기).
-  - 다중 프로필 — 형제자매용. `ProfileService`를 `profiles: List` + `activeId`로 확장. SharedPreferences 키 prefix를 `profile_<id>_` 형태로 변경하고 기존 키는 default 프로필로 마이그레이션. 프로필 전환 셀렉터(홈 AppBar 또는 설정).
-  - 다중 프로필이 비용 큼 — 별도 phase로 분해 권장.
+- [~] **10. 사용자 프로필 확장 (아바타 + 다중 프로필)** *(대부분 완료, 온보딩만 남음)*
+  - [x] 아바타 — `Profile.avatar`(이모지 풀 `Profile.avatarChoices`), 이름 편집 다이얼로그 + 프로필 추가 시 픽커.
+  - [x] 다중 프로필 — `ProfileService`를 `profiles[]` + `activeId`로 확장. primary(id 1)는 레거시 무접미사 키 유지, 형제 프로필은 `_p<id>` 접미사로 기록/도장/액션 점수를 스코프 분리(마이그레이션 0). 홈 AppBar 아바타 버튼 → 프로필 전환/추가/삭제 시트.
+  - [ ] 첫 실행 온보딩 — 처음 켰을 때 이름+아바타 선택 화면(스플래시 후 라우팅 분기)은 아직 미구현.
 
 ## 아이디어 풀 (브레인스토밍)
 
@@ -52,11 +48,11 @@
 **재미/시각**
 - 결과 화면 콘페티/폭죽 — 만점 시 더 큰 셀러브레이션 (Lottie 또는 CustomPainter 파티클).
 - 캐릭터 반응 애니메이션 — 정답/오답에 따라 `game_character.json` 다른 상태로 스위치 (또는 별도 lottie 풀).
-- BGM — 배경 음악 트랙 + 토글 (`SfxService` 확장; loop player 분리).
+- ~~BGM — 배경 음악 트랙 + 토글~~ *(완료)* — `SfxService`에 BGM/SFX 독립 채널(on/off + 볼륨), 별도 loop player, 홈 "소리 설정" 시트.
 
 **부모 친화**
 - 부모 PIN 보호 — 기록 삭제/통계 접근 시 4자리 PIN. SharedPreferences 저장, 입력 화면 추가.
-- 주간 학습 리포트 — 일주일 활동 요약 카드(게임 수·정답률·연속 출석). 공유/스크린샷 가능 형태.
+- ~~주간 학습 리포트~~ *(완료)* — 학습 결과 화면 상단에 최근 7일 요약 카드(막대 그래프 + 학습일수·게임수·정답률) + `share_plus` 텍스트 공유. `shared/weekly_report.dart`.
 - 다크 모드 — `ThemeMode` 토글 (시스템/라이트/다크). `main.dart` 테마 + 설정 화면.
 
 **새 게임 모드**

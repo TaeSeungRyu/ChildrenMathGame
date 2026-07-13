@@ -14,12 +14,12 @@ High-level flow:
    - **학습 (Learn)** — Lottie banner + streak badge, daily-mission card, weakness recommendation card, the four basic-operation tiles (덧셈/뺄셈/곱셈/나눗셈 → level select), and a "특별 모드" row (구구단 / 혼합 / 방정식 / 플래시 / 어림셈).
    - **게임 (Games)** — six action mini-games (몬스터 처치 / 풍선 터뜨리기 / 타워 디펜스 / 두더지 잡기 / 숫자 사다리 / 물고기 잡기). Each tile opens the shared action-select screen; all six are playable.
    - **기록 (Records)** — meta-tool hub: 도장판(badges) / 오답 노트(wrong notebook) / 결과 보기(records) / 학습 통계(stats) / 복습하기(review-select).
-   The shared AppBar (editable name `"{name} 히어로!"`, tutorial button, mute toggle) stays across all tabs.
+   The shared AppBar (leading **profile-switcher** avatar button, editable name+avatar `"{name} 히어로!"`, tutorial button, **sound-settings** button) stays across all tabs. The sound button opens a bottom sheet with independent BGM/SFX toggles + volume sliders; the profile button opens a sheet to switch/add/delete profiles.
 4. **Game** (`/game`) — the universal session screen for all learning modes. See "Session modes" and "Learning game types" below.
 5. **Result** (`/result`) — correct/wrong/unsolved counts, elapsed time, max combo, and a "신기록" badge when applicable. Persists a `GameRecord` via `RecordService` (unless practice/구구단).
 6. **Records** (`/records`) — past records newest-first; row → **Record detail** (`/record-detail`) showing every attempt. Delete opens an `AlertDialog`; only **확인** removes via `RecordService.delete`.
 
-The six **action mini-games** (`/monster-game`, `/balloon-game`, `/tower-defense`, `/mole-game`, `/ladder-game`, `/fishing-game`) are a separate arcade track — they do **not** go through `/game`, `/result`, or `RecordService` (MVP stage, no record persistence yet).
+The six **action mini-games** (`/monster-game`, `/balloon-game`, `/tower-defense`, `/mole-game`, `/ladder-game`, `/fishing-game`) are a separate arcade track — they do **not** go through `/game`, `/result`, or `RecordService`/`GameRecord`. They **do** persist a per-concept **best score + play count** via `ActionScoreService` (see Services), surfaced on the shared action-select screen (top "🏆 최고 기록" card) and in each game-over overlay (shared `ActionRecordLine` shows a 신기록 badge or the running best). Each controller exposes a concept constant + `isNewBest` Rx and calls `_scores.report(concept, score)` in `_gameOver`.
 
 ### Difficulty rules
 
@@ -91,9 +91,10 @@ lib/app/
   data/
     models/    game_type, session_mode, problem, problem_attempt, game_record,
                achievement_badge, custom_stamp, stamp_condition, daily_mission,
-               wrong_notebook_entry, estimation_choices, action_concept
+               wrong_notebook_entry, estimation_choices, action_concept, profile
     services/  problem_generator (pure), record_service, sfx_service,
-               profile_service, custom_stamp_service  (last four are GetxService)
+               profile_service, custom_stamp_service, action_score_service
+               (last five are GetxService)
   modules/<feature>/
     <feature>_view.dart        widgets (extends GetView<...>)
     <feature>_controller.dart  GetxController — state + business logic
@@ -120,13 +121,15 @@ Action games: `/action-select` (shared entry) → `/monster-game`, `/balloon-gam
 - `wrong_notebook_entry.dart` — aggregated wrong/unsolved entry (sample attempt + count + lastWrongAt + bucket).
 - `estimation_choices.dart` — 3 `choices` + the `correct` value (a value, not an index).
 - `action_concept.dart` — `ActionConcept` { monster, balloon, tower, mole, ladder, fishing } with `title` + `gameRoute`.
+- `profile.dart` — `Profile` { `id`, `name`, `avatar` } for multi-profile support. `id == Profile.primaryId` (1) is the migrated/default profile; `scopeSuffix` returns `''` for the primary (legacy keys) and `_p<id>` for siblings. `avatarChoices` is the emoji picker pool.
 
 ### Services (all registered in `main()` via `Get.putAsync`)
 
-- `ProfileService` — display name (max 3 chars, key `profile_name_v1`, default `어린이`) + `tutorialSeen` flag (`tutorial_seen_v1`). Reactive `name`/`tutorialSeen`.
-- `RecordService` — single source of truth for records (`shared_preferences`, JSON list under key **`game_records_v4`**). Delete matches by `finishedAt` equality (ms precision unique enough — bulk-import/seeding would break this; add an explicit `id` then). Bump the key suffix if you change the JSON shape. Also owns wrong-notebook **dismissals** (`wrong_notebook_dismissed_v1`, signature→timestamp) and `currentStreak()`.
-- `SfxService` — single channel for SFX + haptics. Haptics always fire; sound respects the persisted mute toggle (`sfx_muted_v1`). Assets in `assets/audio/` (`correct.wav`, `wrong.wav`, `finish.wav`, `tick.wav` — CC0 Kenney Interface Sounds, see `assets/audio/LICENSE.txt`); `_play` swallows errors. Use `_sfx.click()/correct()/wrong()/finish()/tick()/combo()` — don't call `HapticFeedback` directly elsewhere. `combo()` is haptic-only (audio would double up with `correct()`).
-- `CustomStampService` — CRUD for user-defined stamps (`custom_stamps_v1`); reactive `RxList<CustomStamp>` so the badges grid rebuilds on change.
+- `ProfileService` — **multi-profile** store: `profiles` (RxList<Profile>) + `activeId`, keys `profiles_v1`/`active_profile_v1`. Legacy single-name key `profile_name_v1` migrates into the primary profile on first run. Reactive `name`/`avatar` **mirror the active profile** (so existing `Obx(() => ...name.value)` call sites are unchanged). Names max 3 chars; `scopeSuffix` (from the active profile) is what the scoped services key off. `switchTo`/`addProfile`/`deleteProfile` (primary is protected, last profile can't be deleted). Also owns `tutorialSeen` (`tutorial_seen_v1`, app-level, **not** per-profile).
+- `RecordService` — single source of truth for records (`shared_preferences`, JSON list under key **`game_records_v4`**). Keys are **profile-scoped**: the base key gets the active profile's `scopeSuffix` appended (primary → `game_records_v4`, sibling → `game_records_v4_p<id>`). Delete matches by `finishedAt` equality (ms precision unique enough — bulk-import/seeding would break this; add an explicit `id` then). Bump the key base if you change the JSON shape. Also owns wrong-notebook **dismissals** (`wrong_notebook_dismissed_v1` + scope) and `currentStreak()`. Falls back to the empty (primary) scope when `ProfileService` isn't registered (service-only unit tests).
+- `SfxService` — audio (BGM + SFX) + haptics. **Two independent channels**, each with an on/off flag + 0..1 volume: `bgmEnabled`/`bgmVolume` (`bgm_enabled_v1`/`bgm_volume_v1`) and `sfxEnabled`/`sfxVolume` (`sfx_enabled_v1`/`sfx_volume_v1`). The legacy single mute key `sfx_muted_v1` migrates into `sfxEnabled` (muted → disabled). Haptics always fire regardless. SFX assets in `assets/audio/` (`correct.wav`, `wrong.wav`, `finish.wav`, `tick.wav` — CC0 Kenney Interface Sounds); the looping BGM is `assets/audio/bgm.wav` (generated offline by `marketing/make_bgm.py`), played on a separate `ReleaseMode.loop` player. `startBgm()` is idempotent and fired from `HomeController.onReady`. `_play` swallows errors. Use `_sfx.click()/correct()/wrong()/finish()/tick()/combo()` — don't call `HapticFeedback` directly elsewhere. `combo()` is haptic-only (audio would double up with `correct()`).
+- `CustomStampService` — CRUD for user-defined stamps (`custom_stamps_v1` + profile scope); reactive `RxList<CustomStamp>` so the badges grid rebuilds on change. `reload()` re-reads after a profile switch.
+- `ActionScoreService` — best score + play count per `ActionConcept` for the six action mini-games (`action_scores_v1` + profile scope, JSON `{concept.name: {best, plays}}`). Reactive `best`/`plays` RxMaps. `report(concept, score)` bumps plays, updates best, returns whether it was a new record (a 0 score never counts). `reload()` after a profile switch.
 
 ### Conventions to keep
 
@@ -139,14 +142,14 @@ Action games: `/action-select` (shared entry) → `/monster-game`, `/balloon-gam
 
 ### Shared helpers (`lib/app/shared/`)
 
-Logic: `date_format.dart`, `korean_particle.dart`, `mixed_label.dart` (roll-up component labels), `badges.dart` (built-in badge defs + unlock logic), `daily_missions.dart` (day-seeded pool of 3), `streak.dart` (`computeStreak`), `weakness.dart` (`WeaknessBucket`/`WeaknessAnalysis`), `stamp_evaluation.dart` (auto-earn check), `wrong_notebook.dart` (aggregate/dedupe by signature, group-by-day).
-Reusable widgets: `op_tile.dart`, `answer_pad.dart`, `attempt_tile.dart`, `action_intro_scaffold.dart` (shared layout for action-game intro screens).
+Logic: `date_format.dart`, `korean_particle.dart`, `mixed_label.dart` (roll-up component labels), `badges.dart` (built-in badge defs + unlock logic), `daily_missions.dart` (day-seeded pool of 3), `streak.dart` (`computeStreak`), `weakness.dart` (`WeaknessBucket`/`WeaknessAnalysis`), `stamp_evaluation.dart` (auto-earn check), `wrong_notebook.dart` (aggregate/dedupe by signature, group-by-day), `weekly_report.dart` (`computeWeeklyReport` → last-7-days buckets for the parent report card).
+Reusable widgets: `op_tile.dart`, `answer_pad.dart`, `attempt_tile.dart`, `action_intro_scaffold.dart` (shared layout for action-game intro screens), `action_record_line.dart` (shared 신기록/best line for action game-over overlays).
 
 ## Stack & assets
 
 - **Target platform**: Android only. Don't add iOS/web/desktop platform folders or platform-specific code paths. `flutter_launcher_icons` is configured with `ios: false` for the same reason.
 - **Dart SDK**: `^3.11.4`. Code uses Dart 3 enhanced constructor inference (`colorScheme: .fromSeed(...)`, etc.) — don't "fix" those to fully-qualified forms.
-- **Dependencies of note**: `get` (navigation + state), `shared_preferences` (records, mute toggle, profile, custom stamps, last-action-select choices), `audioplayers` (SFX), `lottie` (home/game animations, e.g. `assets/lottie/home_banner.json`), `flutter_launcher_icons` (dev). Typography is a bundled TTF — no `google_fonts`.
+- **Dependencies of note**: `get` (navigation + state), `shared_preferences` (records, audio settings, profiles, custom stamps, action scores, last-action-select choices), `audioplayers` (SFX + looping BGM), `share_plus` (weekly parent-report share), `path_provider`, `lottie` (home/game animations, e.g. `assets/lottie/home_banner.json`), `flutter_launcher_icons` (dev). Typography is a bundled TTF — no `google_fonts`.
 - **Typography**: app-wide font is **Jua** (주아), bundled as `assets/fonts/Jua-Regular.ttf` and declared in `pubspec.yaml`'s `fonts:` section. `lib/main.dart` sets `ThemeData(fontFamily: 'Jua', ...)` so every `TextStyle` inherits it. Don't hard-code `fontFamily` on individual `TextStyle`s — read from `Theme.of(context).textTheme.<style>.fontFamily` if you need to mix sizes (see `splash_view.dart`). No runtime network fetch; works offline from first launch (intentional for children's-app compliance — don't reintroduce `google_fonts`).
 - **Theme**: cream scaffold (`#FFF8E7`) + light-sky AppBar (`#4FC3F7` bg, `#0D47A1` fg), Material 3. The bottom NavigationBar uses a warm beige palette (see `home_view.dart`).
 - **Assets**: `assets/images/` and `assets/lottie/` are wired as directory entries in `pubspec.yaml` — drop files in and they're picked up (no per-file listing). App launcher source: `assets/icon/app_icon.png`.
@@ -168,7 +171,7 @@ The project currently only configures the Android platform folder (`android/`). 
 
 ## Tests
 
-Tests must call `SharedPreferences.setMockInitialValues({})` and set `SfxService.audioBackendEnabled = false` in `setUp` (so the audioplayers MethodChannel, unregistered in widget-test isolates, isn't touched), then register the services the screen under test needs via `Get.putAsync` and `Get.deleteAll(force: true)` in `tearDown`. The canonical widget-test setup (`test/widget_test.dart`) registers `ProfileService`, `RecordService`, and `SfxService` before pumping `MyApp`. Screens that touch custom stamps additionally need `CustomStampService`. Service-only unit tests (`profile_service_test.dart`, `custom_stamp_test.dart`) construct+`init()` the service directly. Without the right registrations, any screen that calls `Get.find<T>()` on a missing service will throw.
+Tests must call `SharedPreferences.setMockInitialValues({})` and set `SfxService.audioBackendEnabled = false` in `setUp` (so the audioplayers MethodChannel, unregistered in widget-test isolates, isn't touched), then register the services the screen under test needs via `Get.putAsync` and `Get.deleteAll(force: true)` in `tearDown`. The canonical widget-test setup (`test/widget_test.dart`) registers `ProfileService`, `RecordService`, and `SfxService` before pumping `MyApp`. Screens that touch custom stamps additionally need `CustomStampService`; action-game / action-select screens need `ActionScoreService`. Service-only unit tests (`profile_service_test.dart`, `custom_stamp_test.dart`, `action_score_service_test.dart`, `sfx_service_test.dart`) construct+`init()` the service directly — `RecordService`/`CustomStampService`/`ActionScoreService` fall back to the primary (empty) scope when `ProfileService` isn't registered, so they work standalone. Without the right registrations, any screen that calls `Get.find<T>()` on a missing service will throw.
 
 ## Documentation (`DOC/`)
 
