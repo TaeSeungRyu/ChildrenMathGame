@@ -18,7 +18,8 @@
 | [GAME_MODE_PLAN.md](GAME_MODE_PLAN.md) | 게임모드(액션) 기획안 — "연산 히어로" 액션 미니게임 설계 |
 | [HOME_REDESIGN_PLAN.md](HOME_REDESIGN_PLAN.md) | 홈 화면 개편안 — 게임모드 추가 대비 레이아웃 재배치 |
 | [LEARNING_FEATURES_ANALYSIS.md](LEARNING_FEATURES_ANALYSIS.md) | 학습 효과 강화("가르치기" 레이어) 기능 후보 분석. 채택 항목은 ROADMAP으로 이관 |
-| [BLUETOOTH_VERSUS.md](BLUETOOTH_VERSUS.md) | 블루투스 1:1 대전 모드 단계별 계획(구현 전 결정 사항 포함) |
+| [BLUETOOTH_VERSUS.md](BLUETOOTH_VERSUS.md) | 1:1 **대전** 모드 단계별 계획(구현 전 결정 사항 포함). 전송 레이어는 아래 협동학습 문서와 공유 |
+| [PARENT_COOP_LEARNING.md](PARENT_COOP_LEARNING.md) | **부모와 함께하는 학습**(부모 가이드형) 계획 — Nearby Connections 1:1, 아이 화면 실시간 미러링 + 원격 난이도/칭찬 |
 
 ## 출시 · 운영
 

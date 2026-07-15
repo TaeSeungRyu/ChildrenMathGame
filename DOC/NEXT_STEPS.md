@@ -17,6 +17,7 @@
 
 ## 기능 개선 (중기)
 
+- [ ] **부모와 함께하는 학습 모드 (Nearby Connections)** — 부모 가이드형 실시간 코칭(아이 화면 미러링 + 원격 난이도/칭찬). 계획: [PARENT_COOP_LEARNING.md](PARENT_COOP_LEARNING.md). 연결/서비스/전송 레이어는 [BLUETOOTH_VERSUS.md](BLUETOOTH_VERSUS.md)와 공유. **근거리 권한 추가 → privacy-policy/Data Safety 갱신 필수.**
 - [ ] **다국어(i18n) 지원** — 영어 추가 (글로벌 출시 검토 시). `Jua` 폰트는 한글 전용이므로 영어 fallback 폰트 전략 필요
 - [x] **부모 대시보드 강화 (주간 리포트)** *(2026-07-13)* — `lib/app/shared/weekly_report.dart` 순수 모듈(`computeWeeklyReport(records, now)` → 최근 7일 일별 버킷 + 학습일수/게임수/정답률 + `shareText`). 학습 결과(`stats`) 상단에 `_WeeklyReportCard`(7일 막대 그래프 + 헤드라인 지표 + `share_plus` 공유 버튼) 추가. `flutter test`에 `weekly_report_test.dart` 커버.
 - [ ] **오답 노트(`wrong_notebook`) 복습 모드** — 오답만 모아 재출제하는 흐름 만들기. 모듈 존재 여부 대비 활용도 확인 필요
