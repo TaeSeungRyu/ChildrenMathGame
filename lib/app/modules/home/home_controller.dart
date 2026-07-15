@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/action_concept.dart';
@@ -103,6 +104,20 @@ class HomeController extends GetxController {
         'level': bucket.level,
         'isPractice': true,
       },
+    );
+  }
+
+  // 함께 탭(부모와 함께하는 학습) 진입점. 실제 화면은 후속 단계에서 연결한다.
+  void openCoopLobby() => _coopComingSoon('부모와 함께 연결하기');
+  void openCoopRecords() => _coopComingSoon('함께 학습 기록');
+
+  void _coopComingSoon(String what) {
+    Get.snackbar(
+      '준비 중',
+      '$what 기능은 곧 만나요!',
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+      duration: const Duration(seconds: 2),
     );
   }
 }

@@ -9,6 +9,7 @@ import '../../data/services/profile_service.dart';
 import '../../data/services/sfx_service.dart';
 import '../../routes/app_routes.dart';
 import 'home_controller.dart';
+import 'tabs/coop_tab.dart';
 import 'tabs/games_tab.dart';
 import 'tabs/learn_tab.dart';
 import 'tabs/records_tab.dart';
@@ -62,7 +63,7 @@ class HomeView extends GetView<HomeController> {
         body: Obx(
           () => IndexedStack(
             index: controller.tabIndex.value,
-            children: const [LearnTab(), GamesTab(), RecordsTab()],
+            children: const [LearnTab(), GamesTab(), RecordsTab(), CoopTab()],
           ),
         ),
         bottomNavigationBar: const _HomeNavBar(),
@@ -145,6 +146,11 @@ class _HomeNavBar extends GetView<HomeController> {
                 icon: Icon(Icons.bar_chart_outlined),
                 selectedIcon: Icon(Icons.bar_chart),
                 label: '기록',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.family_restroom_outlined),
+                selectedIcon: Icon(Icons.family_restroom),
+                label: '함께',
               ),
             ],
           ),
