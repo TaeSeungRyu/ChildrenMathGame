@@ -185,33 +185,43 @@ class _LevelPicker extends GetView<CoopLobbyController> {
   }
 }
 
-/// 참여자: 발견된 방 목록.
+/// 참여자: 발견된 방 목록. 아직 없으면 화면 중앙에 안내를 정렬한다.
 class _Discovering extends GetView<CoopLobbyController> {
   const _Discovering();
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const _SectionTitle('주변의 방을 찾는 중...'),
-        const SizedBox(height: 8),
-        Expanded(
-          child: Obx(() {
-            final peers = controller.mp.peers;
-            if (peers.isEmpty) {
-              return const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('상대가 방을 열면 여기에 나타나요'),
-                  ],
-                ),
-              );
-            }
-            return ListView.separated(
+    return Obx(() {
+      final peers = controller.mp.peers;
+      if (peers.isEmpty) {
+        return Column(
+          children: const [
+            Spacer(),
+            CircularProgressIndicator(),
+            SizedBox(height: 20),
+            Text(
+              '주변의 방을 찾는 중...',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '상대가 방을 열면 여기에 나타나요',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.black54),
+            ),
+            Spacer(),
+            _CancelButton(),
+          ],
+        );
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _SectionTitle('찾은 방'),
+          const SizedBox(height: 8),
+          Expanded(
+            child: ListView.separated(
               itemCount: peers.length,
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (_, i) {
@@ -232,12 +242,12 @@ class _Discovering extends GetView<CoopLobbyController> {
                   ),
                 );
               },
-            );
-          }),
-        ),
-        const _CancelButton(),
-      ],
-    );
+            ),
+          ),
+          const _CancelButton(),
+        ],
+      );
+    });
   }
 }
 
