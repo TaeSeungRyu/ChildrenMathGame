@@ -128,6 +128,13 @@ class CoopSession {
     mp.markInSession();
   }
 
+  /// This device ends the session: tell the partner and mark ended locally so
+  /// the lobby returns everyone to the setup screen.
+  void leave() {
+    send(const ByeMessage(reason: 'left'));
+    if (phase.value != CoopPhase.ended) phase.value = CoopPhase.ended;
+  }
+
   void send(CoopMessage m) => unawaited(mp.sendMessage(m.encode()));
 
   void dispose() {

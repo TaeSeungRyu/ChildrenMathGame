@@ -288,8 +288,9 @@ class CoopCoachController extends GetxController with WidgetsBindingObserver {
 
   void endSession() {
     _saveRecord();
-    session.send(const ByeMessage(reason: 'parent_ended'));
-    Get.back();
+    // Leaving marks the session ended; the lobby underneath returns everyone to
+    // the setup screen, so we don't pop here ourselves.
+    session.leave();
   }
 
   @override

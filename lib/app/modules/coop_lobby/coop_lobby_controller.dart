@@ -106,6 +106,11 @@ class CoopLobbyController extends GetxController {
   }
 
   Future<void> cancel() async {
+    _teardown();
+    await mp.disconnect();
+  }
+
+  void _teardown() {
     _connectTimer?.cancel();
     _connectTimer = null;
     _phaseWorker?.dispose();
@@ -114,7 +119,17 @@ class CoopLobbyController extends GetxController {
     session.value?.dispose();
     session.value = null;
     role.value = null;
-    await mp.disconnect();
+  }
+
+  /// Session ended (this device left, partner left, or the link dropped):
+  /// return everyone to the room-setup screen. Pops the learn/coach screen if
+  /// it's on top, then resets the lobby to idle so `_Setup` shows.
+  void _onSessionEnded() {
+    final route = Get.currentRoute;
+    if (route == AppRoutes.coopLearn || route == AppRoutes.coopCoach) {
+      Get.back();
+    }
+    cancel();
   }
 
   void openSettings() => openAppSettings();
@@ -142,6 +157,8 @@ class CoopLobbyController extends GetxController {
             ? AppRoutes.coopLearn
             : AppRoutes.coopCoach;
         Get.toNamed(route, arguments: {'session': s});
+      } else if (phase == CoopPhase.ended) {
+        _onSessionEnded();
       }
     });
     s.start();

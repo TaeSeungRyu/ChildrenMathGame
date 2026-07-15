@@ -30,7 +30,10 @@ class CoopLobbyView extends GetView<CoopLobbyController> {
             }
             final connected = controller.state == MultiplayerState.connected ||
                 controller.state == MultiplayerState.inSession;
-            if (connected) {
+            // Require a live session too, so during teardown (session cleared,
+            // socket not yet idle) we fall through to the setup screen instead
+            // of flashing the role picker.
+            if (connected && controller.session.value != null) {
               return controller.role.value == null
                   ? const _RolePicker()
                   : const _SessionArea();
@@ -196,21 +199,29 @@ class _Discovering extends GetView<CoopLobbyController> {
       if (peers.isEmpty) {
         return Column(
           children: const [
-            Spacer(),
-            CircularProgressIndicator(),
-            SizedBox(height: 20),
-            Text(
-              '주변의 방을 찾는 중...',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 20),
+                    Text(
+                      '주변의 방을 찾는 중...',
+                      textAlign: TextAlign.center,
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      '상대가 방을 열면 여기에 나타나요',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            SizedBox(height: 8),
-            Text(
-              '상대가 방을 열면 여기에 나타나요',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.black54),
-            ),
-            Spacer(),
             _CancelButton(),
           ],
         );
@@ -260,15 +271,25 @@ class _Waiting extends GetView<CoopLobbyController> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Spacer(),
-        const CircularProgressIndicator(),
-        const SizedBox(height: 20),
-        Text(
-          message,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 20),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        const Spacer(),
         const _CancelButton(),
       ],
     );
@@ -283,43 +304,50 @@ class _RolePicker extends GetView<CoopLobbyController> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Spacer(),
-        const Icon(Icons.link, size: 56, color: Color(0xFF1976D2)),
-        const SizedBox(height: 12),
-        const Text(
-          '연결됐어요! 이 기기는 누구인가요?',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 24),
-        FilledButton(
-          onPressed: () => controller.chooseRole(CoopRole.parent),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(64),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.link, size: 56, color: Color(0xFF1976D2)),
+                const SizedBox(height: 12),
+                const Text(
+                  '연결됐어요! 이 기기는 누구인가요?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: () => controller.chooseRole(CoopRole.parent),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(220, 64),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    '👩‍👦 나는 부모예요',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.tonal(
+                  onPressed: () => controller.chooseRole(CoopRole.child),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(220, 64),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    '🧒 나는 아이예요',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
           ),
-          child: const Text(
-            '👩‍👦 나는 부모예요',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
         ),
-        const SizedBox(height: 12),
-        FilledButton.tonal(
-          onPressed: () => controller.chooseRole(CoopRole.child),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(64),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-          child: const Text(
-            '🧒 나는 아이예요',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        ),
-        const Spacer(),
         const _CancelButton(),
       ],
     );
@@ -363,36 +391,50 @@ class _Ready extends GetView<CoopLobbyController> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Spacer(),
-        const Icon(Icons.link, size: 56, color: Color(0xFF1976D2)),
-        const SizedBox(height: 12),
-        Text(
-          partnerName == null ? '연결됐어요!' : '$partnerName 님과 연결됐어요!',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 24),
-        if (isHost)
-          FilledButton.icon(
-            onPressed: controller.startSession,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(64),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.link, size: 56, color: Color(0xFF1976D2)),
+                const SizedBox(height: 12),
+                Text(
+                  partnerName == null
+                      ? '연결됐어요!'
+                      : '$partnerName 님과 연결됐어요!',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                if (isHost)
+                  FilledButton.icon(
+                    onPressed: controller.startSession,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(220, 64),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    icon: const Icon(Icons.play_arrow, size: 28),
+                    label: const Text(
+                      '시작하기',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                  )
+                else
+                  const Text(
+                    '상대가 시작하기를 기다리는 중...',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+              ],
             ),
-            icon: const Icon(Icons.play_arrow, size: 28),
-            label: const Text(
-              '시작하기',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-          )
-        else
-          const Text(
-            '상대가 시작하기를 기다리는 중...',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
-        const Spacer(),
+        ),
         const _CancelButton(label: '연결 끊기'),
       ],
     );
@@ -409,16 +451,29 @@ class _SessionStartedPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Spacer(),
-        const Icon(Icons.check_circle, size: 64, color: Color(0xFF2E7D32)),
-        const SizedBox(height: 16),
-        Text(
-          '세션이 시작됐어요! (${role?.label})\n'
-          '${role == CoopRole.child ? '학습' : '코치'} 화면은 곧 준비돼요.',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.check_circle,
+                  size: 64,
+                  color: Color(0xFF2E7D32),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '세션이 시작됐어요! (${role?.label})',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        const Spacer(),
         const _CancelButton(label: '연결 끊기'),
       ],
     );

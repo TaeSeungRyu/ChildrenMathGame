@@ -407,10 +407,10 @@ class _EndedOverlay extends GetView<CoopCoachController> {
                     style: const TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ],
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: Get.back,
-                  child: const Text('나가기'),
+                const SizedBox(height: 16),
+                const Text(
+                  '잠시 후 돌아가요',
+                  style: TextStyle(fontSize: 15, color: Colors.white70),
                 ),
               ],
             ),

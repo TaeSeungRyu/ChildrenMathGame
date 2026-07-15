@@ -229,21 +229,17 @@ class _PartnerLeftOverlay extends GetView<CoopLearnController> {
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.link_off, size: 72, color: Colors.white),
-                const SizedBox(height: 12),
-                const Text(
-                  '상대가 나갔어요',
+              children: const [
+                Icon(Icons.link_off, size: 72, color: Colors.white),
+                SizedBox(height: 12),
+                Text(
+                  '상대가 나갔어요\n잠시 후 돌아가요',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: Get.back,
-                  child: const Text('나가기'),
                 ),
               ],
             ),

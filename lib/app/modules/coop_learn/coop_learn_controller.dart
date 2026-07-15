@@ -232,7 +232,9 @@ class CoopLearnController extends GetxController with WidgetsBindingObserver {
     );
   }
 
-  /// Child ends the session — saves its record, reports a summary, says bye.
+  /// Child ends the session — saves its record, reports a summary, then leaves.
+  /// The lobby (underneath) sees the session end and returns to the setup
+  /// screen, so we don't pop here ourselves.
   void endSession() {
     _saveRecord();
     session.send(
@@ -242,8 +244,7 @@ class CoopLearnController extends GetxController with WidgetsBindingObserver {
         elapsedMs: elapsedMs,
       ),
     );
-    session.send(const ByeMessage(reason: 'child_ended'));
-    Get.back();
+    session.leave();
   }
 
   @override
