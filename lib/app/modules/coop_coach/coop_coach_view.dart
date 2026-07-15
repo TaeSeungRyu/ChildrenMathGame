@@ -37,29 +37,36 @@ class CoopCoachView extends GetView<CoopCoachController> {
       body: SafeArea(
         child: Stack(
           children: [
-            ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              children: const [
-                _MirrorCard(),
-                SizedBox(height: 16),
-                _SectionTitle('풀이 도와주기 (선긋기 / 지우개)'),
-                SizedBox(height: 8),
-                _DrawBoard(),
-                SizedBox(height: 8),
-                _DrawToolbar(),
-                SizedBox(height: 16),
-                _RecentWrong(),
-                SizedBox(height: 16),
-                _SectionTitle('난이도 바꾸기'),
-                SizedBox(height: 8),
-                _OpPicker(),
-                SizedBox(height: 10),
-                _LevelPicker(),
-                SizedBox(height: 20),
-                _SectionTitle('응원 보내기'),
-                SizedBox(height: 8),
-                _EmojiPalette(),
-              ],
+            Obx(
+              () => ListView(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                // Freeze scrolling while drawing on the board so the stroke
+                // gesture isn't captured by the list's vertical drag.
+                physics: controller.boardActive.value
+                    ? const NeverScrollableScrollPhysics()
+                    : const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  _MirrorCard(),
+                  SizedBox(height: 16),
+                  _SectionTitle('풀이 도와주기 (선긋기 / 지우개)'),
+                  SizedBox(height: 8),
+                  _DrawBoard(),
+                  SizedBox(height: 8),
+                  _DrawToolbar(),
+                  SizedBox(height: 16),
+                  _RecentWrong(),
+                  SizedBox(height: 16),
+                  _SectionTitle('난이도 바꾸기'),
+                  SizedBox(height: 8),
+                  _OpPicker(),
+                  SizedBox(height: 10),
+                  _LevelPicker(),
+                  SizedBox(height: 20),
+                  _SectionTitle('응원 보내기'),
+                  SizedBox(height: 8),
+                  _EmojiPalette(),
+                ],
+              ),
             ),
             const _EndedOverlay(),
           ],
@@ -160,12 +167,24 @@ class _DrawBoard extends GetView<CoopCoachController> {
         const h = _height;
         double nx(double dx) => (dx / w).clamp(0.0, 1.0);
         double ny(double dy) => (dy / h).clamp(0.0, 1.0);
-        return GestureDetector(
-          onPanStart: (d) =>
-              controller.panStart(nx(d.localPosition.dx), ny(d.localPosition.dy)),
-          onPanUpdate: (d) =>
-              controller.panUpdate(nx(d.localPosition.dx), ny(d.localPosition.dy)),
-          onPanEnd: (_) => controller.panEnd(),
+        // Raw pointer events (not the gesture arena) so the stroke is never
+        // handed to the surrounding scrollable; boardActive freezes the list.
+        return Listener(
+          behavior: HitTestBehavior.opaque,
+          onPointerDown: (e) {
+            controller.boardActive.value = true;
+            controller.panStart(nx(e.localPosition.dx), ny(e.localPosition.dy));
+          },
+          onPointerMove: (e) =>
+              controller.panUpdate(nx(e.localPosition.dx), ny(e.localPosition.dy)),
+          onPointerUp: (e) {
+            controller.panEnd();
+            controller.boardActive.value = false;
+          },
+          onPointerCancel: (e) {
+            controller.panEnd();
+            controller.boardActive.value = false;
+          },
           child: Container(
             height: h,
             decoration: BoxDecoration(

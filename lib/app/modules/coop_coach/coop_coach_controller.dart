@@ -66,6 +66,9 @@ class CoopCoachController extends GetxController with WidgetsBindingObserver {
   final RxList<DrawStrokeMessage> strokes = <DrawStrokeMessage>[].obs;
   final RxList<double> livePoints = <double>[].obs;
   final RxBool eraser = false.obs;
+  // True while a finger is down on the draw board — the dashboard list stops
+  // scrolling so the stroke isn't stolen by the scroll gesture.
+  final RxBool boardActive = false.obs;
   int _strokeId = 0;
   static const double _eraseRadius = 0.05;
 
