@@ -40,6 +40,10 @@ dependencies:
   audioplayers: ^6.1.0
   share_plus: ^10.1.4
   path_provider: ^2.1.4
+  # 부모와 함께하는 학습 모드 — 근거리 1:1 P2P 연결 + API별 런타임 권한 요청.
+  nearby_connections: ^4.3.0
+  permission_handler: ^11.3.1
+  device_info_plus: ^11.1.0
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,27 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 부모와 함께하는 학습 모드 (Nearby Connections, 근거리 1:1 P2P).
+         모두 로컬 연결 전용 — 인터넷 전송/데이터 수집 없음. 자세한 근거는
+         DOC/PARENT_COOP_LEARNING.md §3 참고. -->
+    <!-- Android 12+ 블루투스 런타임 권한 (위치 추론에 사용 안 함) -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- Android 11 이하 블루투스 + 스캔용 위치 (구형 기기 지원 위해 유지) -->
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:maxSdkVersion="30" />
+
+    <!-- Android 13+ 근거리 Wi-Fi 기기 (위치 추론에 사용 안 함) -->
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
     <application
         android:label="연산 히어로"
         android:name="${applicationName}"
