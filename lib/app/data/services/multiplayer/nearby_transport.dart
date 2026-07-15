@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 
+import 'package:flutter/services.dart';
 import 'package:nearby_connections/nearby_connections.dart';
 
 import 'multiplayer_transport.dart';
@@ -63,14 +63,27 @@ class NearbyTransport implements MultiplayerTransport {
   }
 
   @override
-  Future<bool> requestConnection(String name, String endpointId) {
-    return _nearby.requestConnection(
-      name,
-      endpointId,
-      onConnectionInitiated: _onConnectionInitiated,
-      onConnectionResult: _onConnectionResult,
-      onDisconnected: _onDisconnected,
-    );
+  Future<bool> requestConnection(String name, String endpointId) async {
+    try {
+      return await _nearby.requestConnection(
+        name,
+        endpointId,
+        onConnectionInitiated: _onConnectionInitiated,
+        onConnectionResult: _onConnectionResult,
+        onDisconnected: _onDisconnected,
+      );
+    } on PlatformException catch (e) {
+      // 8003 = STATUS_ALREADY_CONNECTED_TO_ENDPOINT: a connection to this
+      // endpoint already exists, so surface it as a successful result instead
+      // of throwing and leaving the state machine stuck on "connecting".
+      final msg = e.message ?? '';
+      if (msg.contains('ALREADY_CONNECTED') || msg.contains('8003')) {
+        _controller.add(ConnectionResultEvent(endpointId, true));
+        return true;
+      }
+      _controller.add(ConnectionResultEvent(endpointId, false));
+      return false;
+    }
   }
 
   @override

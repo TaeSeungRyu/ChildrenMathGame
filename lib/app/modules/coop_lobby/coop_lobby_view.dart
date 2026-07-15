@@ -30,10 +30,10 @@ class CoopLobbyView extends GetView<CoopLobbyController> {
             }
             final connected = controller.state == MultiplayerState.connected ||
                 controller.state == MultiplayerState.inSession;
-            // Require a live session too, so during teardown (session cleared,
-            // socket not yet idle) we fall through to the setup screen instead
-            // of flashing the role picker.
-            if (connected && controller.session.value != null) {
+            if (connected) {
+              // Connected but no role yet → role picker. Role chosen → session
+              // area. (Right after connecting, session is still null, so this
+              // must NOT depend on session being non-null.)
               return controller.role.value == null
                   ? const _RolePicker()
                   : const _SessionArea();

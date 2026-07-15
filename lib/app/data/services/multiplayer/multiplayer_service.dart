@@ -81,8 +81,12 @@ class MultiplayerService extends GetxService {
     if (!ok) state.value = MultiplayerState.error;
   }
 
-  /// Guest: request a connection to a discovered peer.
+  /// Guest: request a connection to a discovered peer. Ignores repeat calls
+  /// while already connecting/connected (a second request to the same endpoint
+  /// throws STATUS_ALREADY_CONNECTED).
   Future<void> connectTo(String endpointId) async {
+    if (connectedEndpointId != null) return;
+    if (state.value == MultiplayerState.connecting) return;
     state.value = MultiplayerState.connecting;
     final ok = await transport.requestConnection(_displayName, endpointId);
     if (!ok) state.value = MultiplayerState.error;

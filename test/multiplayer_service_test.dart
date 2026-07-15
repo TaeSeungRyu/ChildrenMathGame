@@ -87,6 +87,18 @@ void main() {
     expect(svc.peers, isEmpty);
   });
 
+  test('connectTo ignores repeat calls while connecting/connected', () async {
+    await svc.startJoining('아이');
+    await svc.connectTo('h1');
+    await svc.connectTo('h1'); // ignored — already connecting
+    expect(fake.calls.where((c) => c == 'request:h1').length, 1);
+
+    fake.emit(const ConnectionResultEvent('h1', true));
+    await _flush();
+    await svc.connectTo('h1'); // ignored — already connected
+    expect(fake.calls.where((c) => c == 'request:h1').length, 1);
+  });
+
   test('connection failure before connect → error', () async {
     await svc.startJoining('아이');
     await svc.connectTo('h1');
