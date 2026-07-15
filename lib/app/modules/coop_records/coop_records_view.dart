@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/coop_session_record.dart';
+import '../../routes/app_routes.dart';
 import '../../shared/date_format.dart';
 import 'coop_records_controller.dart';
 
@@ -55,50 +56,51 @@ class _RecordTile extends GetView<CoopRecordsController> {
     final op = record.gameType?.label ?? '랜덤';
     return Card(
       margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-        child: Row(
-          children: [
-            Text(
-              record.partnerAvatar,
-              style: const TextStyle(fontSize: 30),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${record.partnerName} 님과 · $op 레벨 ${record.level}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Get.toNamed(AppRoutes.coopRecordDetail, arguments: record),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+          child: Row(
+            children: [
+              Text(record.partnerAvatar, style: const TextStyle(fontSize: 30)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${record.partnerName} 님과 · $op 레벨 ${record.level}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '정답 ${record.correct} · 오답 ${record.wrong} · '
-                    '정답률 ${(record.accuracy * 100).round()}% · '
-                    '${formatElapsedSeconds(record.elapsedSeconds)}',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    formatRecordDate(record.finishedAt),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.black.withValues(alpha: 0.5),
+                    const SizedBox(height: 4),
+                    Text(
+                      '정답 ${record.correct} · 오답 ${record.wrong} · '
+                      '정답률 ${(record.accuracy * 100).round()}% · '
+                      '${formatElapsedSeconds(record.elapsedSeconds)}',
+                      style: const TextStyle(fontSize: 13),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      formatRecordDate(record.finishedAt),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.black.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: '삭제',
-              onPressed: () => _confirmDelete(context),
-            ),
-          ],
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: '삭제',
+                onPressed: () => _confirmDelete(context),
+              ),
+            ],
+          ),
         ),
       ),
     );

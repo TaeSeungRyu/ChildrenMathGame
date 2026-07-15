@@ -8,6 +8,7 @@ import '../../data/models/coop_message.dart';
 import '../../data/models/coop_session_record.dart';
 import '../../data/models/game_type.dart';
 import '../../data/models/problem.dart';
+import '../../data/models/problem_attempt.dart';
 import '../../data/services/coop_record_service.dart';
 import '../../data/services/multiplayer/coop_session.dart';
 import '../../data/services/problem_generator.dart';
@@ -34,6 +35,7 @@ class CoopLearnController extends GetxController with WidgetsBindingObserver {
 
   // A session yields at most one saved record per device.
   bool _saved = false;
+  final List<ProblemAttempt> _attempts = [];
   // True only while paused *because* we backgrounded — so we auto-resume only
   // our own pause, never one the parent initiated.
   bool _bgPaused = false;
@@ -131,6 +133,17 @@ class CoopLearnController extends GetxController with WidgetsBindingObserver {
       wrongCount.value += 1;
       _sfx.wrong();
     }
+    final p = current.value;
+    _attempts.add(
+      ProblemAttempt(
+        operandA: p.operandA,
+        operandB: p.operandB,
+        type: p.type,
+        correctAnswer: p.answer,
+        userAnswer: userAnswer,
+        status: correct ? AttemptStatus.correct : AttemptStatus.wrong,
+      ),
+    );
     session.send(
       AttemptResultMessage(
         index: index.value,
@@ -205,6 +218,7 @@ class CoopLearnController extends GetxController with WidgetsBindingObserver {
         correct: correctCount.value,
         wrong: wrongCount.value,
         elapsedSeconds: elapsedMs ~/ 1000,
+        attempts: List.of(_attempts),
       ),
     );
   }

@@ -10,6 +10,8 @@ import '../modules/coop_learn/coop_learn_binding.dart';
 import '../modules/coop_learn/coop_learn_view.dart';
 import '../modules/coop_lobby/coop_lobby_binding.dart';
 import '../modules/coop_lobby/coop_lobby_view.dart';
+import '../modules/coop_record_detail/coop_record_detail_binding.dart';
+import '../modules/coop_record_detail/coop_record_detail_view.dart';
 import '../modules/coop_records/coop_records_binding.dart';
 import '../modules/coop_records/coop_records_view.dart';
 import '../modules/balloon_game/balloon_game_binding.dart';
@@ -171,6 +173,11 @@ abstract class AppPages {
       name: AppRoutes.coopRecords,
       page: () => const CoopRecordsView(),
       binding: CoopRecordsBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.coopRecordDetail,
+      page: () => const CoopRecordDetailView(),
+      binding: CoopRecordDetailBinding(),
     ),
     GetPage(
       name: AppRoutes.actionSelect,

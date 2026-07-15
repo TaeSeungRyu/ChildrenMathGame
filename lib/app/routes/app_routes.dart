@@ -23,6 +23,7 @@ abstract class AppRoutes {
   static const coopLearn = '/coop-learn';
   static const coopCoach = '/coop-coach';
   static const coopRecords = '/coop-records';
+  static const coopRecordDetail = '/coop-record-detail';
 
   // Action game modes — intro/select shells in 1st pass; play logic added later.
   // `actionSelect` is the common entry-select screen shared by all concepts;

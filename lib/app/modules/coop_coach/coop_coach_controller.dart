@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../data/models/coop_message.dart';
 import '../../data/models/coop_session_record.dart';
 import '../../data/models/game_type.dart';
+import '../../data/models/problem_attempt.dart';
 import '../../data/services/coop_record_service.dart';
 import '../../data/services/multiplayer/coop_session.dart';
 import '../../data/services/sfx_service.dart';
@@ -53,6 +54,7 @@ class CoopCoachController extends GetxController with WidgetsBindingObserver {
   final RxInt correctCount = 0.obs;
   final RxInt wrongCount = 0.obs;
   final RxList<WrongEntry> recentWrong = <WrongEntry>[].obs;
+  final List<ProblemAttempt> _attempts = [];
 
   final RxBool paused = false.obs;
   final RxBool ended = false.obs;
@@ -122,6 +124,7 @@ class CoopCoachController extends GetxController with WidgetsBindingObserver {
             recentWrong.removeLast();
           }
         }
+        _recordAttempt(correct, correctAnswer, userAnswer);
       case SessionSummaryMessage():
         summary.value = m;
         ended.value = true;
@@ -155,6 +158,7 @@ class CoopCoachController extends GetxController with WidgetsBindingObserver {
         wrong: wrong,
         elapsedSeconds:
             (s?.elapsedMs ?? _stopwatch.elapsedMilliseconds) ~/ 1000,
+        attempts: List.of(_attempts),
       ),
     );
   }
@@ -162,6 +166,27 @@ class CoopCoachController extends GetxController with WidgetsBindingObserver {
   String _currentExpr() {
     if (operands.isEmpty) return '';
     return operands.join(' ${op.value} ');
+  }
+
+  // Rebuild a ProblemAttempt from the mirrored problem_state (operands + op
+  // symbol) plus this attempt_result. Coop problems are single-op, so the op
+  // symbol maps unambiguously back to a concrete GameType.
+  void _recordAttempt(bool correct, int correctAnswer, int? userAnswer) {
+    if (operands.length < 2) return;
+    final type = GameType.values.firstWhere(
+      (t) => !t.isRollup && t.symbol == op.value,
+      orElse: () => GameType.addition,
+    );
+    _attempts.add(
+      ProblemAttempt(
+        operandA: operands[0],
+        operandB: operands[1],
+        type: type,
+        correctAnswer: correctAnswer,
+        userAnswer: userAnswer,
+        status: correct ? AttemptStatus.correct : AttemptStatus.wrong,
+      ),
+    );
   }
 
   // ───── coaching controls ─────

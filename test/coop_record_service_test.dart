@@ -1,5 +1,6 @@
 import 'package:children_math_game/app/data/models/coop_session_record.dart';
 import 'package:children_math_game/app/data/models/game_type.dart';
+import 'package:children_math_game/app/data/models/problem_attempt.dart';
 import 'package:children_math_game/app/data/services/coop_record_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -15,6 +16,24 @@ CoopSessionRecord _rec(DateTime when, {int correct = 8, int wrong = 2}) =>
       correct: correct,
       wrong: wrong,
       elapsedSeconds: 90,
+      attempts: [
+        ProblemAttempt(
+          operandA: 3,
+          operandB: 4,
+          type: GameType.addition,
+          correctAnswer: 7,
+          userAnswer: 7,
+          status: AttemptStatus.correct,
+        ),
+        ProblemAttempt(
+          operandA: 5,
+          operandB: 2,
+          type: GameType.addition,
+          correctAnswer: 7,
+          userAnswer: 6,
+          status: AttemptStatus.wrong,
+        ),
+      ],
     );
 
 void main() {
@@ -51,6 +70,16 @@ void main() {
     expect(r.wrong, 1);
     expect(r.total, 6);
     expect(r.accuracy, closeTo(5 / 6, 1e-9));
+  });
+
+  test('attempts persist and wrongAttempts filters', () async {
+    final svc = await CoopRecordService().init();
+    await svc.add(_rec(DateTime(2026, 7, 6)));
+    final r = (await CoopRecordService().init()).records.first;
+    expect(r.attempts.length, 2);
+    expect(r.wrongAttempts.length, 1);
+    expect(r.wrongAttempts.first.operandA, 5);
+    expect(r.wrongAttempts.first.userAnswer, 6);
   });
 
   test('delete removes by finishedAt', () async {
