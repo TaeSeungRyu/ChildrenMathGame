@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/coop_role.dart';
+import '../../data/services/multiplayer/coop_session.dart';
 import '../../data/services/multiplayer/multiplayer_service.dart';
 import 'coop_lobby_controller.dart';
 
@@ -32,7 +33,7 @@ class CoopLobbyView extends GetView<CoopLobbyController> {
             if (connected) {
               return controller.role.value == null
                   ? const _RolePicker()
-                  : const _ConnectedPlaceholder();
+                  : const _SessionArea();
             }
             switch (controller.state) {
               case MultiplayerState.advertising:
@@ -310,9 +311,84 @@ class _RolePicker extends GetView<CoopLobbyController> {
   }
 }
 
-/// 단계 4 종료 지점 — 학습/코치 화면은 다음 단계에서 연결.
-class _ConnectedPlaceholder extends GetView<CoopLobbyController> {
-  const _ConnectedPlaceholder();
+/// 역할 선택 후 — 프로토콜 세션(핸드셰이크 → 설정 → 시작) 상태에 따라 렌더.
+class _SessionArea extends GetView<CoopLobbyController> {
+  const _SessionArea();
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final session = controller.session.value;
+      if (session == null) return const SizedBox.shrink();
+      final phase = session.phase.value;
+      final partner = session.partner.value;
+
+      switch (phase) {
+        case CoopPhase.handshaking:
+          return const _Waiting(message: '친구와 준비를 맞추는 중...');
+        case CoopPhase.ready:
+          return _Ready(isHost: session.isHost, partnerName: partner?.name);
+        case CoopPhase.running:
+        case CoopPhase.paused:
+          return _SessionStartedPlaceholder(role: controller.role.value);
+        case CoopPhase.ended:
+          return const _Waiting(message: '세션이 끝났어요.');
+      }
+    });
+  }
+}
+
+class _Ready extends GetView<CoopLobbyController> {
+  const _Ready({required this.isHost, this.partnerName});
+
+  final bool isHost;
+  final String? partnerName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const Spacer(),
+        const Icon(Icons.link, size: 56, color: Color(0xFF1976D2)),
+        const SizedBox(height: 12),
+        Text(
+          partnerName == null ? '연결됐어요!' : '$partnerName 님과 연결됐어요!',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 24),
+        if (isHost)
+          FilledButton.icon(
+            onPressed: controller.startSession,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(64),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            icon: const Icon(Icons.play_arrow, size: 28),
+            label: const Text(
+              '시작하기',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          )
+        else
+          const Text(
+            '상대가 시작하기를 기다리는 중...',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        const Spacer(),
+        const _CancelButton(label: '연결 끊기'),
+      ],
+    );
+  }
+}
+
+/// 단계 5 종료 지점 — 실제 학습/코치 화면은 단계 6/7에서 연결.
+class _SessionStartedPlaceholder extends StatelessWidget {
+  const _SessionStartedPlaceholder({required this.role});
+
+  final CoopRole? role;
 
   @override
   Widget build(BuildContext context) {
@@ -322,7 +398,8 @@ class _ConnectedPlaceholder extends GetView<CoopLobbyController> {
         const Icon(Icons.check_circle, size: 64, color: Color(0xFF2E7D32)),
         const SizedBox(height: 16),
         Text(
-          '연결 완료! (${controller.role.value?.label})\n학습 화면은 곧 준비돼요.',
+          '세션이 시작됐어요! (${role?.label})\n'
+          '${role == CoopRole.child ? '학습' : '코치'} 화면은 곧 준비돼요.',
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),

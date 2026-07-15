@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../data/models/coop_role.dart';
 import '../../data/models/game_type.dart';
 import '../../data/services/coop_permissions.dart';
+import '../../data/services/multiplayer/coop_session.dart';
 import '../../data/services/multiplayer/multiplayer_service.dart';
 import '../../data/services/profile_service.dart';
 
@@ -36,6 +37,9 @@ class CoopLobbyController extends GetxController {
   /// The role this device picked after connecting (null until chosen).
   final Rxn<CoopRole> role = Rxn<CoopRole>();
 
+  /// The protocol session, created once a role is chosen.
+  final Rxn<CoopSession> session = Rxn<CoopSession>();
+
   MultiplayerState get state => mp.state.value;
   String get displayName => _profile.name.value;
 
@@ -64,13 +68,37 @@ class CoopLobbyController extends GetxController {
   Future<void> connectToPeer(String endpointId) => mp.connectTo(endpointId);
 
   Future<void> cancel() async {
+    session.value?.dispose();
+    session.value = null;
     role.value = null;
     await mp.disconnect();
   }
 
   void openSettings() => openAppSettings();
 
-  /// Pick this device's role after connecting. Navigation to the learn/coach
-  /// screens is wired once those screens exist; here it records the choice.
-  void chooseRole(CoopRole picked) => role.value = picked;
+  /// Pick this device's role after connecting, then start the protocol session
+  /// (hello handshake → host pushes config/start). The host seeds the learning
+  /// selection; the guest receives it via config.
+  void chooseRole(CoopRole picked) {
+    role.value = picked;
+    final s = CoopSession(
+      mp: mp,
+      selfName: _profile.name.value,
+      selfAvatar: _profile.avatar.value,
+      role: picked,
+      gameType: mp.isHost ? selectedOp.value : null,
+      level: selectedLevel.value,
+    );
+    session.value = s;
+    s.start();
+  }
+
+  /// Host: begin the session for both devices.
+  void startSession() => session.value?.startSession();
+
+  @override
+  void onClose() {
+    session.value?.dispose();
+    super.onClose();
+  }
 }
