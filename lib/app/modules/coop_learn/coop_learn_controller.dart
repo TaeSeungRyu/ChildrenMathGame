@@ -4,8 +4,10 @@ import 'dart:math';
 import 'package:get/get.dart';
 
 import '../../data/models/coop_message.dart';
+import '../../data/models/coop_session_record.dart';
 import '../../data/models/game_type.dart';
 import '../../data/models/problem.dart';
+import '../../data/services/coop_record_service.dart';
 import '../../data/services/multiplayer/coop_session.dart';
 import '../../data/services/problem_generator.dart';
 import '../../data/services/sfx_service.dart';
@@ -24,9 +26,13 @@ class CoachReaction {
 /// per the design (child device is the source of truth for content).
 class CoopLearnController extends GetxController {
   final SfxService _sfx = Get.find();
+  final CoopRecordService _records = Get.find();
   final Random _rng = Random();
 
   static const int maxAnswerLength = 6;
+
+  // A session yields at most one saved record per device.
+  bool _saved = false;
 
   late final CoopSession session;
 
@@ -154,6 +160,7 @@ class CoopLearnController extends GetxController {
         paused.value = false;
       case ByeMessage():
         partnerLeft.value = true;
+        _saveRecord();
       default:
         break;
     }
@@ -161,8 +168,28 @@ class CoopLearnController extends GetxController {
 
   int get elapsedMs => _stopwatch.elapsedMilliseconds;
 
-  /// Child ends the session — reports a summary then says bye.
+  void _saveRecord() {
+    if (_saved) return;
+    if (correctCount.value + wrongCount.value == 0) return;
+    _saved = true;
+    final partner = session.partner.value;
+    _records.add(
+      CoopSessionRecord(
+        finishedAt: DateTime.now(),
+        partnerName: partner?.name ?? '부모님',
+        partnerAvatar: partner?.avatar ?? '👩‍👦',
+        gameType: session.gameType,
+        level: session.level.value,
+        correct: correctCount.value,
+        wrong: wrongCount.value,
+        elapsedSeconds: elapsedMs ~/ 1000,
+      ),
+    );
+  }
+
+  /// Child ends the session — saves its record, reports a summary, says bye.
   void endSession() {
+    _saveRecord();
     session.send(
       SessionSummaryMessage(
         correct: correctCount.value,

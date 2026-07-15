@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/action_concept.dart';
@@ -109,15 +108,5 @@ class HomeController extends GetxController {
 
   // 함께 탭(부모와 함께하는 학습) 진입점.
   void openCoopLobby() => Get.toNamed(AppRoutes.coopLobby);
-  void openCoopRecords() => _coopComingSoon('함께 학습 기록');
-
-  void _coopComingSoon(String what) {
-    Get.snackbar(
-      '준비 중',
-      '$what 기능은 곧 만나요!',
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
-    );
-  }
+  void openCoopRecords() => Get.toNamed(AppRoutes.coopRecords);
 }

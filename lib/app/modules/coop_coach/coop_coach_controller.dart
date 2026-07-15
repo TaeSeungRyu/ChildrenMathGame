@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:get/get.dart';
 
 import '../../data/models/coop_message.dart';
+import '../../data/models/coop_session_record.dart';
 import '../../data/models/game_type.dart';
+import '../../data/services/coop_record_service.dart';
 import '../../data/services/multiplayer/coop_session.dart';
 import '../../data/services/sfx_service.dart';
 
@@ -20,6 +22,9 @@ class WrongEntry {
 /// (set_difficulty), emoji reactions (coach_emoji), pause/resume.
 class CoopCoachController extends GetxController {
   final SfxService _sfx = Get.find();
+  final CoopRecordService _records = Get.find();
+  final Stopwatch _stopwatch = Stopwatch()..start();
+  bool _saved = false;
 
   static const List<GameType?> opChoices = [
     GameType.addition,
@@ -101,11 +106,38 @@ class CoopCoachController extends GetxController {
       case SessionSummaryMessage():
         summary.value = m;
         ended.value = true;
+        _saveRecord();
       case ByeMessage():
         ended.value = true;
+        _saveRecord();
       default:
         break;
     }
+  }
+
+  void _saveRecord() {
+    if (_saved) return;
+    // Prefer the child's authoritative summary; fall back to what the parent
+    // accumulated from attempt_results if the session ended without one.
+    final s = summary.value;
+    final correct = s?.correct ?? correctCount.value;
+    final wrong = s?.wrong ?? wrongCount.value;
+    if (correct + wrong == 0) return;
+    _saved = true;
+    final partner = session.partner.value;
+    _records.add(
+      CoopSessionRecord(
+        finishedAt: DateTime.now(),
+        partnerName: partner?.name ?? '아이',
+        partnerAvatar: partner?.avatar ?? '🧒',
+        gameType: session.gameType,
+        level: session.level.value,
+        correct: correct,
+        wrong: wrong,
+        elapsedSeconds:
+            (s?.elapsedMs ?? _stopwatch.elapsedMilliseconds) ~/ 1000,
+      ),
+    );
   }
 
   String _currentExpr() {
@@ -147,6 +179,7 @@ class CoopCoachController extends GetxController {
   }
 
   void endSession() {
+    _saveRecord();
     session.send(const ByeMessage(reason: 'parent_ended'));
     Get.back();
   }
@@ -154,6 +187,7 @@ class CoopCoachController extends GetxController {
   @override
   void onClose() {
     _sub?.cancel();
+    _stopwatch.stop();
     super.onClose();
   }
 }
