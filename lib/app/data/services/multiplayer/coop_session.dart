@@ -53,6 +53,7 @@ class CoopSession {
   Stream<CoopMessage> get messages => _messages.stream;
 
   StreamSubscription<String>? _sub;
+  Worker? _stateWorker;
   bool _sentHello = false;
   bool _gotHello = false;
   bool _configDone = false;
@@ -61,6 +62,15 @@ class CoopSession {
 
   void start() {
     _sub = mp.incoming.listen(_onRaw);
+    // An ungraceful drop (radio out of range, app killed) surfaces as a
+    // transport disconnect rather than a `bye`. Treat it like a partner-left so
+    // the screens react uniformly.
+    _stateWorker = ever<MultiplayerState>(mp.state, (s) {
+      if (s == MultiplayerState.disconnected && phase.value != CoopPhase.ended) {
+        phase.value = CoopPhase.ended;
+        _messages.add(const ByeMessage(reason: 'connection_lost'));
+      }
+    });
     _sendHello();
   }
 
@@ -122,6 +132,7 @@ class CoopSession {
 
   void dispose() {
     _sub?.cancel();
+    _stateWorker?.dispose();
     unawaited(_messages.close());
   }
 }

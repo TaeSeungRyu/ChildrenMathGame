@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -35,6 +37,13 @@ class CoopLobbyController extends GetxController {
   /// offers a jump to system settings.
   final RxBool permissionBlocked = false.obs;
 
+  /// True when a connection attempt exceeded [_connectTimeout] with no result.
+  final RxBool connectTimedOut = false.obs;
+
+  static const Duration _connectTimeout = Duration(seconds: 15);
+  Timer? _connectTimer;
+  Worker? _stateWorker;
+
   /// The role this device picked after connecting (null until chosen).
   final Rxn<CoopRole> role = Rxn<CoopRole>();
 
@@ -46,6 +55,18 @@ class CoopLobbyController extends GetxController {
 
   MultiplayerState get state => mp.state.value;
   String get displayName => _profile.name.value;
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Cancel the connection watchdog as soon as we're connected.
+    _stateWorker = ever<MultiplayerState>(mp.state, (s) {
+      if (s == MultiplayerState.connected) {
+        _connectTimer?.cancel();
+        _connectTimer = null;
+      }
+    });
+  }
 
   void setOp(GameType? op) => selectedOp.value = op;
   void setLevel(int level) => selectedLevel.value = level;
@@ -60,18 +81,33 @@ class CoopLobbyController extends GetxController {
   }
 
   Future<void> hostRoom() async {
+    connectTimedOut.value = false;
     if (!await _ensurePermissions()) return;
     await mp.startHosting(displayName);
   }
 
   Future<void> joinRoom() async {
+    connectTimedOut.value = false;
     if (!await _ensurePermissions()) return;
     await mp.startJoining(displayName);
   }
 
-  Future<void> connectToPeer(String endpointId) => mp.connectTo(endpointId);
+  Future<void> connectToPeer(String endpointId) async {
+    connectTimedOut.value = false;
+    _connectTimer?.cancel();
+    _connectTimer = Timer(_connectTimeout, _onConnectTimeout);
+    await mp.connectTo(endpointId);
+  }
+
+  Future<void> _onConnectTimeout() async {
+    if (mp.state.value == MultiplayerState.connected) return;
+    connectTimedOut.value = true;
+    await mp.disconnect(); // back to idle → user can retry
+  }
 
   Future<void> cancel() async {
+    _connectTimer?.cancel();
+    _connectTimer = null;
     _phaseWorker?.dispose();
     _phaseWorker = null;
     _navigatedToSession = false;
@@ -116,6 +152,8 @@ class CoopLobbyController extends GetxController {
 
   @override
   void onClose() {
+    _connectTimer?.cancel();
+    _stateWorker?.dispose();
     _phaseWorker?.dispose();
     session.value?.dispose();
     super.onClose();

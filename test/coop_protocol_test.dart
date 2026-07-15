@@ -208,5 +208,26 @@ void main() {
       expect(s.phase.value, CoopPhase.ended);
       s.dispose();
     });
+
+    test('ungraceful transport disconnect ends the session', () async {
+      await connectAsHost();
+      final s = CoopSession(
+        mp: mp,
+        selfName: '엄마',
+        selfAvatar: '🦸',
+        role: CoopRole.parent,
+      );
+      s.start();
+      await _flush();
+
+      final byeReceived =
+          s.messages.firstWhere((m) => m is ByeMessage);
+      fake.emit(const DisconnectedEvent('e1'));
+      await _flush();
+
+      expect(s.phase.value, CoopPhase.ended);
+      expect(await byeReceived, isA<ByeMessage>());
+      s.dispose();
+    });
   });
 }

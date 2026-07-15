@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/coop_message.dart';
@@ -24,7 +25,7 @@ class CoachReaction {
 /// sends an `attempt_result`. Incoming coaching (`set_difficulty`, `coach_emoji`,
 /// pause/resume) is applied here. Problems are generated locally by the child,
 /// per the design (child device is the source of truth for content).
-class CoopLearnController extends GetxController {
+class CoopLearnController extends GetxController with WidgetsBindingObserver {
   final SfxService _sfx = Get.find();
   final CoopRecordService _records = Get.find();
   final Random _rng = Random();
@@ -33,6 +34,9 @@ class CoopLearnController extends GetxController {
 
   // A session yields at most one saved record per device.
   bool _saved = false;
+  // True only while paused *because* we backgrounded — so we auto-resume only
+  // our own pause, never one the parent initiated.
+  bool _bgPaused = false;
 
   late final CoopSession session;
 
@@ -64,9 +68,27 @@ class CoopLearnController extends GetxController {
     _gameType = session.gameType;
     _level = session.level.value;
     _msgSub = session.messages.listen(_onMessage);
+    WidgetsBinding.instance.addObserver(this);
     _stopwatch.start();
     current = _generate().obs;
     _sendProblemState();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (partnerLeft.value) return;
+    if (state == AppLifecycleState.resumed) {
+      if (_bgPaused) {
+        _bgPaused = false;
+        paused.value = false;
+        session.send(const SessionResumeMessage());
+      }
+    } else if (!paused.value) {
+      // Backgrounded/inactive while active → pause and tell the partner.
+      _bgPaused = true;
+      paused.value = true;
+      session.send(const SessionPauseMessage());
+    }
   }
 
   Problem _generate() {
@@ -203,6 +225,7 @@ class CoopLearnController extends GetxController {
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
     _stateDebounce?.cancel();
     _msgSub?.cancel();
     _stopwatch.stop();

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/coop_message.dart';
@@ -20,11 +21,12 @@ class WrongEntry {
 /// Parent (coach) side of 부모와 함께하는 학습. Observes the child's live screen
 /// (problem_state / attempt_result), and pushes coaching: difficulty changes
 /// (set_difficulty), emoji reactions (coach_emoji), pause/resume.
-class CoopCoachController extends GetxController {
+class CoopCoachController extends GetxController with WidgetsBindingObserver {
   final SfxService _sfx = Get.find();
   final CoopRecordService _records = Get.find();
   final Stopwatch _stopwatch = Stopwatch()..start();
   bool _saved = false;
+  bool _bgPaused = false;
 
   static const List<GameType?> opChoices = [
     GameType.addition,
@@ -74,6 +76,23 @@ class CoopCoachController extends GetxController {
     selectedOp.value = session.gameType;
     selectedLevel.value = session.level.value;
     _sub = session.messages.listen(_onMessage);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (ended.value) return;
+    if (state == AppLifecycleState.resumed) {
+      if (_bgPaused) {
+        _bgPaused = false;
+        paused.value = false;
+        session.send(const SessionResumeMessage());
+      }
+    } else if (!paused.value) {
+      _bgPaused = true;
+      paused.value = true;
+      session.send(const SessionPauseMessage());
+    }
   }
 
   void _onMessage(CoopMessage m) {
@@ -186,6 +205,7 @@ class CoopCoachController extends GetxController {
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
     _stopwatch.stop();
     super.onClose();
