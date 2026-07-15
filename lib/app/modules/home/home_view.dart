@@ -321,12 +321,16 @@ class _EditableTitle extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                '$name 히어로!',
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: titleColor,
+              Flexible(
+                child: Text(
+                  '$name 히어로!',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: titleColor,
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
@@ -383,6 +387,8 @@ class _NameEditDialogState extends State<_NameEditDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      // Scrollable so the avatar grid + soft keyboard never overflow the dialog.
+      scrollable: true,
       title: const Text('내 정보 바꾸기'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -608,6 +614,7 @@ class _AddProfileDialogState extends State<_AddProfileDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
       title: const Text('프로필 추가'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
