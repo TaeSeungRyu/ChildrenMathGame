@@ -7,6 +7,7 @@ import '../../data/services/coop_permissions.dart';
 import '../../data/services/multiplayer/coop_session.dart';
 import '../../data/services/multiplayer/multiplayer_service.dart';
 import '../../data/services/profile_service.dart';
+import '../../routes/app_routes.dart';
 
 /// Lobby for 부모와 함께하는 학습: pick the learning content, open a room or
 /// join one, then choose this device's role once connected.
@@ -40,6 +41,9 @@ class CoopLobbyController extends GetxController {
   /// The protocol session, created once a role is chosen.
   final Rxn<CoopSession> session = Rxn<CoopSession>();
 
+  Worker? _phaseWorker;
+  bool _navigatedToSession = false;
+
   MultiplayerState get state => mp.state.value;
   String get displayName => _profile.name.value;
 
@@ -68,6 +72,9 @@ class CoopLobbyController extends GetxController {
   Future<void> connectToPeer(String endpointId) => mp.connectTo(endpointId);
 
   Future<void> cancel() async {
+    _phaseWorker?.dispose();
+    _phaseWorker = null;
+    _navigatedToSession = false;
     session.value?.dispose();
     session.value = null;
     role.value = null;
@@ -90,6 +97,16 @@ class CoopLobbyController extends GetxController {
       level: selectedLevel.value,
     );
     session.value = s;
+    // When the session starts, the child device jumps to the learn screen.
+    // (The parent goes to the coach dashboard — wired in a later stage.)
+    _phaseWorker = ever<CoopPhase>(s.phase, (phase) {
+      if (phase == CoopPhase.running &&
+          !_navigatedToSession &&
+          role.value == CoopRole.child) {
+        _navigatedToSession = true;
+        Get.toNamed(AppRoutes.coopLearn, arguments: {'session': s});
+      }
+    });
     s.start();
   }
 
@@ -98,6 +115,7 @@ class CoopLobbyController extends GetxController {
 
   @override
   void onClose() {
+    _phaseWorker?.dispose();
     session.value?.dispose();
     super.onClose();
   }

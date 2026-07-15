@@ -18,8 +18,9 @@ abstract class AppRoutes {
   static const tutorial = '/tutorial';
   static const wrongNotebook = '/wrong-notebook';
 
-  // 부모와 함께하는 학습 (Nearby Connections). 로비 → (학습/코치 화면은 후속 단계).
+  // 부모와 함께하는 학습 (Nearby Connections). 로비 → 아이(학습)/부모(코치) 화면.
   static const coopLobby = '/coop-lobby';
+  static const coopLearn = '/coop-learn';
 
   // Action game modes — intro/select shells in 1st pass; play logic added later.
   // `actionSelect` is the common entry-select screen shared by all concepts;
