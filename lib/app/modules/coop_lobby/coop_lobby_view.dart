@@ -72,16 +72,11 @@ class _Setup extends GetView<CoopLobbyController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (controller.connectTimedOut.value)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: _Notice('연결 시간이 초과됐어요. 다시 시도해 주세요.'),
-            )
-          else if (controller.state == MultiplayerState.error ||
+          if (controller.state == MultiplayerState.error ||
               controller.state == MultiplayerState.disconnected)
             const Padding(
               padding: EdgeInsets.only(bottom: 12),
-              child: _Notice('연결이 끊겼어요. 다시 시도해 주세요.'),
+              child: _Notice('연결에 실패했어요. 다시 시도해 주세요.'),
             ),
           const _SectionTitle('무엇을 함께 풀까요?'),
           const SizedBox(height: 8),
