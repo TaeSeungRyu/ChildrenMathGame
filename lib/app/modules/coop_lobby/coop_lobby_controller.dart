@@ -97,14 +97,15 @@ class CoopLobbyController extends GetxController {
       level: selectedLevel.value,
     );
     session.value = s;
-    // When the session starts, the child device jumps to the learn screen.
-    // (The parent goes to the coach dashboard — wired in a later stage.)
+    // When the session starts, each device jumps to its role's screen:
+    // the child to the learn screen, the parent to the coach dashboard.
     _phaseWorker = ever<CoopPhase>(s.phase, (phase) {
-      if (phase == CoopPhase.running &&
-          !_navigatedToSession &&
-          role.value == CoopRole.child) {
+      if (phase == CoopPhase.running && !_navigatedToSession) {
         _navigatedToSession = true;
-        Get.toNamed(AppRoutes.coopLearn, arguments: {'session': s});
+        final route = role.value == CoopRole.child
+            ? AppRoutes.coopLearn
+            : AppRoutes.coopCoach;
+        Get.toNamed(route, arguments: {'session': s});
       }
     });
     s.start();

@@ -21,6 +21,7 @@ abstract class AppRoutes {
   // 부모와 함께하는 학습 (Nearby Connections). 로비 → 아이(학습)/부모(코치) 화면.
   static const coopLobby = '/coop-lobby';
   static const coopLearn = '/coop-learn';
+  static const coopCoach = '/coop-coach';
 
   // Action game modes — intro/select shells in 1st pass; play logic added later.
   // `actionSelect` is the common entry-select screen shared by all concepts;

@@ -4,6 +4,8 @@ import '../modules/action_select/action_select_binding.dart';
 import '../modules/action_select/action_select_view.dart';
 import '../modules/badges/badges_binding.dart';
 import '../modules/badges/badges_view.dart';
+import '../modules/coop_coach/coop_coach_binding.dart';
+import '../modules/coop_coach/coop_coach_view.dart';
 import '../modules/coop_learn/coop_learn_binding.dart';
 import '../modules/coop_learn/coop_learn_view.dart';
 import '../modules/coop_lobby/coop_lobby_binding.dart';
@@ -157,6 +159,11 @@ abstract class AppPages {
       name: AppRoutes.coopLearn,
       page: () => const CoopLearnView(),
       binding: CoopLearnBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.coopCoach,
+      page: () => const CoopCoachView(),
+      binding: CoopCoachBinding(),
     ),
     GetPage(
       name: AppRoutes.actionSelect,
