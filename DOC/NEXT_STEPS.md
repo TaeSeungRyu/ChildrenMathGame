@@ -1,6 +1,6 @@
 # 다음 단계 작업 리스트
 
-> 현재 상태: 마켓 배포 진행(버전 `2.2.1+17`). 게임 탭 미니게임 6종 모두 플레이 가능(몬스터 처치 / 풍선 터뜨리기 / 타워 디펜스 / 두더지 잡기 / 숫자 사다리 / 물고기 잡기). 최근 반영: BGM/효과음 채널 분리, 미니게임 최고기록 저장, 부모 주간 리포트, 아바타+다중 프로필.
+> 현재 상태: 마켓 배포 진행(버전 `2.2.1+18`). 게임 탭 미니게임 6종 모두 플레이 가능(몬스터 처치 / 풍선 터뜨리기 / 타워 디펜스 / 두더지 잡기 / 숫자 사다리 / 물고기 잡기). 최근 반영: BGM/효과음 채널 분리, 미니게임 최고기록 저장, 부모 주간 리포트, 아바타+다중 프로필, **부모와 함께하는 학습(Nearby Connections 실시간 협동)**.
 
 ## 출시 직후 (단기, 1주 이내)
 
@@ -17,7 +17,7 @@
 
 ## 기능 개선 (중기)
 
-- [ ] **부모와 함께하는 학습 모드 (Nearby Connections)** — 부모 가이드형 실시간 코칭(아이 화면 미러링 + 원격 난이도/칭찬). 계획: [PARENT_COOP_LEARNING.md](PARENT_COOP_LEARNING.md). 연결/서비스/전송 레이어는 [BLUETOOTH_VERSUS.md](BLUETOOTH_VERSUS.md)와 공유. **근거리 권한 추가 → privacy-policy/Data Safety 갱신 필수.**
+- [x] **부모와 함께하는 학습 모드 (Nearby Connections)** *(2026-07-15)* — 부모 가이드형 실시간 협동 학습 구현 완료. 계획: [PARENT_COOP_LEARNING.md](PARENT_COOP_LEARNING.md). 구성: `MultiplayerService`(전송 추상화 + 상태머신, `nearby_connections`) + `CoopSession`(hello 핸드셰이크 → config/start 프로토콜) + `CoopMessage` 프로토콜. 홈 4번째 "함께" 탭(연결하기/기록보기), 로비(방 개설/참여 + 역할 선택), 아이 화면(`/coop-learn`, 문제 풀이 + problem_state/attempt_result 스트리밍), 부모 대시보드(`/coop-coach`, 실시간 관찰 + 난이도 원격 변경 + 마리오파티식 이모지 + **선긋기/지우개 풀이 도와주기**). 세션 종료 시 양쪽 경량 `CoopSessionRecord` 저장 → 기록보기 상세 + 틀린 문제 다시풀기. 끊김/백그라운드 일시정지/종료 시 셋업 화면 자동 복귀. 단위 테스트: `multiplayer_service_test`/`coop_protocol_test`/`coop_record_service_test`. **남은 것: privacy-policy/Play Data Safety 갱신(근거리·위치 권한), 첫 실행 온보딩.**
 - [ ] **다국어(i18n) 지원** — 영어 추가 (글로벌 출시 검토 시). `Jua` 폰트는 한글 전용이므로 영어 fallback 폰트 전략 필요
 - [x] **부모 대시보드 강화 (주간 리포트)** *(2026-07-13)* — `lib/app/shared/weekly_report.dart` 순수 모듈(`computeWeeklyReport(records, now)` → 최근 7일 일별 버킷 + 학습일수/게임수/정답률 + `shareText`). 학습 결과(`stats`) 상단에 `_WeeklyReportCard`(7일 막대 그래프 + 헤드라인 지표 + `share_plus` 공유 버튼) 추가. `flutter test`에 `weekly_report_test.dart` 커버.
 - [ ] **오답 노트(`wrong_notebook`) 복습 모드** — 오답만 모아 재출제하는 흐름 만들기. 모듈 존재 여부 대비 활용도 확인 필요
