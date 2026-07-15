@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../shared/stroke_painter.dart';
 import 'coop_coach_controller.dart';
 
 /// 부모(코치) 대시보드 — 아이 화면을 실시간으로 관찰하고, 난이도 조절·이모지
@@ -40,6 +41,12 @@ class CoopCoachView extends GetView<CoopCoachController> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               children: const [
                 _MirrorCard(),
+                SizedBox(height: 16),
+                _SectionTitle('풀이 도와주기 (선긋기 / 지우개)'),
+                SizedBox(height: 8),
+                _DrawBoard(),
+                SizedBox(height: 8),
+                _DrawToolbar(),
                 SizedBox(height: 16),
                 _RecentWrong(),
                 SizedBox(height: 16),
@@ -134,6 +141,109 @@ class _Stat extends StatelessWidget {
         ),
         Text(label, style: const TextStyle(fontSize: 13)),
       ],
+    );
+  }
+}
+
+/// 아이 화면 미리보기 위에 부모가 선을 긋는 보드. 정규화 좌표(0..1)로 아이
+/// 기기에 미러링된다.
+class _DrawBoard extends GetView<CoopCoachController> {
+  const _DrawBoard();
+
+  static const double _height = 170;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth;
+        const h = _height;
+        double nx(double dx) => (dx / w).clamp(0.0, 1.0);
+        double ny(double dy) => (dy / h).clamp(0.0, 1.0);
+        return GestureDetector(
+          onPanStart: (d) =>
+              controller.panStart(nx(d.localPosition.dx), ny(d.localPosition.dy)),
+          onPanUpdate: (d) =>
+              controller.panUpdate(nx(d.localPosition.dx), ny(d.localPosition.dy)),
+          onPanEnd: (_) => controller.panEnd(),
+          child: Container(
+            height: h,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF90CAF9), width: 1.5),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                Center(
+                  child: Obx(() {
+                    if (!controller.hasProblem.value) {
+                      return const Text('아이가 시작하면 여기에 표시돼요');
+                    }
+                    final expr =
+                        controller.operands.join(' ${controller.op.value} ');
+                    final typed = controller.typedAnswer.value;
+                    return Text(
+                      '$expr = ${typed.isEmpty ? '?' : typed}',
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0D47A1),
+                      ),
+                    );
+                  }),
+                ),
+                Positioned.fill(
+                  child: Obx(
+                    () => CustomPaint(
+                      painter: StrokePainter(
+                        strokes: controller.strokes.toList(),
+                        live: controller.livePoints.toList(),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DrawToolbar extends GetView<CoopCoachController> {
+  const _DrawToolbar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => Row(
+        children: [
+          ChoiceChip(
+            label: const Text('✏️ 펜'),
+            selected: !controller.eraser.value,
+            onSelected: (_) {
+              if (controller.eraser.value) controller.toggleEraser();
+            },
+          ),
+          const SizedBox(width: 8),
+          ChoiceChip(
+            label: const Text('🧽 지우개'),
+            selected: controller.eraser.value,
+            onSelected: (_) {
+              if (!controller.eraser.value) controller.toggleEraser();
+            },
+          ),
+          const Spacer(),
+          TextButton.icon(
+            onPressed: controller.clearDrawing,
+            icon: const Icon(Icons.clear_all, size: 20),
+            label: const Text('전체 지우기'),
+          ),
+        ],
+      ),
     );
   }
 }

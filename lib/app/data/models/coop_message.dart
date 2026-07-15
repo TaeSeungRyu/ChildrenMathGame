@@ -33,6 +33,12 @@ sealed class CoopMessage {
         return SetDifficultyMessage.fromJson(json);
       case 'coach_emoji':
         return CoachEmojiMessage.fromJson(json);
+      case 'draw_stroke':
+        return DrawStrokeMessage.fromJson(json);
+      case 'draw_erase':
+        return DrawEraseMessage.fromJson(json);
+      case 'draw_clear':
+        return const DrawClearMessage();
       case 'session_pause':
         return const SessionPauseMessage();
       case 'session_resume':
@@ -234,6 +240,55 @@ class CoachEmojiMessage extends CoopMessage {
         emoji: j['emoji'] as String? ?? '👍',
         id: j['id'] as int? ?? 0,
       );
+}
+
+/// Parent → child: one finished pen stroke drawn over the shared problem area.
+/// [points] are normalized (0..1) x,y pairs flattened: [x0,y0,x1,y1,...].
+class DrawStrokeMessage extends CoopMessage {
+  const DrawStrokeMessage({required this.id, required this.points});
+
+  final int id;
+  final List<double> points;
+
+  @override
+  String get type => 'draw_stroke';
+
+  @override
+  Map<String, dynamic> toJson() => {'type': type, 'id': id, 'points': points};
+
+  factory DrawStrokeMessage.fromJson(Map<String, dynamic> j) =>
+      DrawStrokeMessage(
+        id: j['id'] as int? ?? 0,
+        points: (j['points'] as List<dynamic>? ?? [])
+            .map((e) => (e as num).toDouble())
+            .toList(),
+      );
+}
+
+/// Parent → child: erase the strokes with these ids.
+class DrawEraseMessage extends CoopMessage {
+  const DrawEraseMessage(this.strokeIds);
+
+  final List<int> strokeIds;
+
+  @override
+  String get type => 'draw_erase';
+
+  @override
+  Map<String, dynamic> toJson() => {'type': type, 'strokeIds': strokeIds};
+
+  factory DrawEraseMessage.fromJson(Map<String, dynamic> j) => DrawEraseMessage(
+        (j['strokeIds'] as List<dynamic>? ?? []).map((e) => e as int).toList(),
+      );
+}
+
+/// Parent → child: clear all strokes.
+class DrawClearMessage extends CoopMessage {
+  const DrawClearMessage();
+  @override
+  String get type => 'draw_clear';
+  @override
+  Map<String, dynamic> toJson() => {'type': type};
 }
 
 class SessionPauseMessage extends CoopMessage {

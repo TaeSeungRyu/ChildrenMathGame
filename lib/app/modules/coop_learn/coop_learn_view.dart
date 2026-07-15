@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../shared/answer_pad.dart';
+import '../../shared/stroke_painter.dart';
 import 'coop_learn_controller.dart';
 
 /// 아이 화면 — 평소처럼 문제를 풀고, 화면/입력이 부모에게 실시간 미러링된다.
@@ -35,16 +36,32 @@ class CoopLearnView extends GetView<CoopLearnController> {
                   const _ConnectedBadge(),
                   const SizedBox(height: 8),
                   Expanded(
-                    child: Center(
-                      child: Obx(
-                        () => Text(
-                          '${controller.current.value.questionText} = ?',
-                          style: const TextStyle(
-                            fontSize: 44,
-                            fontWeight: FontWeight.bold,
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: Obx(
+                            () => Text(
+                              '${controller.current.value.questionText} = ?',
+                              style: const TextStyle(
+                                fontSize: 44,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        // Coach's pen strokes, mirrored over the problem area.
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: Obx(
+                              () => CustomPaint(
+                                painter: StrokePainter(
+                                  strokes: controller.strokes.toList(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Obx(() => AnswerDisplay(value: controller.answer.value)),

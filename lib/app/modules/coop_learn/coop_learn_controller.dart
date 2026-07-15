@@ -53,6 +53,9 @@ class CoopLearnController extends GetxController with WidgetsBindingObserver {
   final Rxn<CoachReaction> reaction = Rxn<CoachReaction>();
   int _lastEmojiId = -1;
 
+  /// Coach pen strokes drawn over the child's problem area.
+  final RxList<DrawStrokeMessage> strokes = <DrawStrokeMessage>[].obs;
+
   late final Rx<Problem> current;
 
   // Active difficulty; null gameType == 🎲 랜덤 (random op each problem).
@@ -189,6 +192,12 @@ class CoopLearnController extends GetxController with WidgetsBindingObserver {
           _lastEmojiId = id;
           reaction.value = CoachReaction(emoji, id);
         }
+      case DrawStrokeMessage():
+        strokes.add(m);
+      case DrawEraseMessage(:final strokeIds):
+        strokes.removeWhere((s) => strokeIds.contains(s.id));
+      case DrawClearMessage():
+        strokes.clear();
       case SessionPauseMessage():
         paused.value = true;
       case SessionResumeMessage():

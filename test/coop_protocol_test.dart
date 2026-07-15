@@ -81,6 +81,22 @@ void main() {
       expect(m.id, 42);
     });
 
+    test('draw messages round-trip', () {
+      final s = roundTrip<DrawStrokeMessage>(
+        const DrawStrokeMessage(id: 3, points: [0.1, 0.2, 0.5, 0.6]),
+      );
+      expect(s.id, 3);
+      expect(s.points, [0.1, 0.2, 0.5, 0.6]);
+
+      final e = roundTrip<DrawEraseMessage>(const DrawEraseMessage([1, 2, 5]));
+      expect(e.strokeIds, [1, 2, 5]);
+
+      expect(
+        CoopMessage.decode(const DrawClearMessage().encode()),
+        isA<DrawClearMessage>(),
+      );
+    });
+
     test('unknown type decodes to UnknownMessage (forward compatible)', () {
       final decoded = CoopMessage.decode('{"type":"from_future"}');
       expect(decoded, isA<UnknownMessage>());

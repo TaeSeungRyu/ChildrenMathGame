@@ -60,6 +60,15 @@ class CoopCoachController extends GetxController with WidgetsBindingObserver {
   final RxBool ended = false.obs;
   final Rxn<SessionSummaryMessage> summary = Rxn<SessionSummaryMessage>();
 
+  // ───── drawing (풀이 도와주기) ─────
+  // Committed pen strokes + the in-progress one, all normalized (0..1) to the
+  // draw board. Mirrored to the child as draw_stroke/erase/clear messages.
+  final RxList<DrawStrokeMessage> strokes = <DrawStrokeMessage>[].obs;
+  final RxList<double> livePoints = <double>[].obs;
+  final RxBool eraser = false.obs;
+  int _strokeId = 0;
+  static const double _eraseRadius = 0.05;
+
   // Difficulty the parent is dialing in (mirrors what the child will use next).
   final Rxn<GameType> selectedOp = Rxn<GameType>();
   final RxInt selectedLevel = 1.obs;
@@ -213,6 +222,61 @@ class CoopCoachController extends GetxController with WidgetsBindingObserver {
     _emojiId += 1;
     session.send(CoachEmojiMessage(emoji: emoji, id: _emojiId));
     _sfx.click();
+  }
+
+  void panStart(double x, double y) {
+    if (eraser.value) {
+      _eraseAt(x, y);
+      return;
+    }
+    livePoints
+      ..clear()
+      ..addAll([x, y]);
+  }
+
+  void panUpdate(double x, double y) {
+    if (eraser.value) {
+      _eraseAt(x, y);
+      return;
+    }
+    livePoints.addAll([x, y]);
+  }
+
+  void panEnd() {
+    if (eraser.value) return;
+    if (livePoints.length < 2) {
+      livePoints.clear();
+      return;
+    }
+    final stroke =
+        DrawStrokeMessage(id: _strokeId++, points: livePoints.toList());
+    strokes.add(stroke);
+    session.send(stroke);
+    livePoints.clear();
+  }
+
+  void _eraseAt(double x, double y) {
+    final removed = <int>[];
+    strokes.removeWhere((s) {
+      for (var i = 0; i + 1 < s.points.length; i += 2) {
+        final dx = s.points[i] - x;
+        final dy = s.points[i + 1] - y;
+        if (dx * dx + dy * dy <= _eraseRadius * _eraseRadius) {
+          removed.add(s.id);
+          return true;
+        }
+      }
+      return false;
+    });
+    if (removed.isNotEmpty) session.send(DrawEraseMessage(removed));
+  }
+
+  void toggleEraser() => eraser.value = !eraser.value;
+
+  void clearDrawing() {
+    strokes.clear();
+    livePoints.clear();
+    session.send(const DrawClearMessage());
   }
 
   void togglePause() {
