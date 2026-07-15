@@ -107,8 +107,8 @@ class HomeController extends GetxController {
     );
   }
 
-  // 함께 탭(부모와 함께하는 학습) 진입점. 실제 화면은 후속 단계에서 연결한다.
-  void openCoopLobby() => _coopComingSoon('부모와 함께 연결하기');
+  // 함께 탭(부모와 함께하는 학습) 진입점.
+  void openCoopLobby() => Get.toNamed(AppRoutes.coopLobby);
   void openCoopRecords() => _coopComingSoon('함께 학습 기록');
 
   void _coopComingSoon(String what) {

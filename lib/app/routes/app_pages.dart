@@ -4,6 +4,8 @@ import '../modules/action_select/action_select_binding.dart';
 import '../modules/action_select/action_select_view.dart';
 import '../modules/badges/badges_binding.dart';
 import '../modules/badges/badges_view.dart';
+import '../modules/coop_lobby/coop_lobby_binding.dart';
+import '../modules/coop_lobby/coop_lobby_view.dart';
 import '../modules/balloon_game/balloon_game_binding.dart';
 import '../modules/balloon_game/balloon_game_view.dart';
 import '../modules/fishing_game/fishing_game_binding.dart';
@@ -143,6 +145,11 @@ abstract class AppPages {
       name: AppRoutes.wrongNotebook,
       page: () => const WrongNotebookView(),
       binding: WrongNotebookBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.coopLobby,
+      page: () => const CoopLobbyView(),
+      binding: CoopLobbyBinding(),
     ),
     GetPage(
       name: AppRoutes.actionSelect,
