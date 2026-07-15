@@ -64,7 +64,9 @@
   - `pubspec.yaml:2` `description: "A new Flutter project."` → 의미 있는 한 줄로 교체 (콘솔 설명과는 별개지만 정리 차원).
 
 - [ ] **권한 매니페스트 재확인**
-  - 현재 매니페스트에 권한 선언 0개. 추가 라이브러리 도입 시 자동 병합되는 권한이 없는지 `flutter build apk --release` 후 merged manifest 확인 (`build/app/outputs/logs/` 또는 Android Studio Merged Manifest 뷰).
+  - "부모와 함께하는 학습"(Nearby Connections) 기능 때문에 근거리 P2P 권한이 선언돼 있음: `BLUETOOTH_SCAN`/`ADVERTISE`/`CONNECT`(Android 12+, `neverForLocation` 플래그), `NEARBY_WIFI_DEVICES`(Android 13+, `neverForLocation`), `ACCESS_WIFI_STATE`/`CHANGE_WIFI_STATE`, 그리고 구형(≤API30)용 `BLUETOOTH`/`BLUETOOTH_ADMIN`/`ACCESS_FINE_LOCATION`(`maxSdkVersion=30`).
+  - **위치 권한 주의:** 구형 안드로이드 근거리 검색 요건 때문에만 선언됨. `neverForLocation` 플래그로 위치 추론에 쓰지 않음을 명시. Play 콘솔의 위치 권한 선언 시 "근처 기기 연결(비위치)"로 사유 기재.
+  - 새 라이브러리 도입 시 자동 병합 권한이 없는지 `flutter build apk --release` 후 merged manifest 확인 (`build/app/outputs/logs/` 또는 Android Studio Merged Manifest 뷰).
 
 - [ ] **앱 아이콘 최종 적용**
   - `assets/icon/app_icon.png` → `dart run flutter_launcher_icons` 로 재생성됐는지 확인. 512×512 PNG는 콘솔용으로도 따로 필요.
@@ -85,8 +87,9 @@
 
 - [ ] **데이터 안전성 양식 (Data Safety)**
   - 모든 앱 의무.
-  - google_fonts 런타임 fetch를 끈 경우 → "데이터 수집/공유 없음"으로 가장 단순.
-  - 끄지 않은 경우 → "앱 기능을 위해 디스플레이 에셋 다운로드 (수집 안 함)" 신고.
+  - Jua 폰트 번들 + 인터넷 서버 미사용이므로 → **"데이터 수집 없음 / 공유 없음"** 으로 신고.
+  - **근거리 연결(Nearby) 기능 참고:** "부모와 함께하는 학습"은 두 기기 사이의 **로컬 직접 연결**로만 데이터를 주고받고(문제/답/이모지/선긋기/별명·아바타), 외부 서버·개발자·제3자에게 전송·저장되지 않으며 세션 종료로 사라짐. Google Data Safety는 "수집(collection)=기기 밖으로 전송"을 기준으로 하므로 이 로컬 P2P는 **수집·공유에 해당하지 않음** → "수집/공유 없음" 유지 가능.
+  - 위치는 수집하지 않음(위치 권한은 구형 기기 근거리 검색 요건일 뿐, `neverForLocation`). 위치 데이터 유형은 신고하지 않음.
 
 - [ ] **콘텐츠 등급 (IARC) 설문**
   - 설문 응답만 하면 자동 등급 발급. 수학 게임은 대부분 "전체이용가/3+".
