@@ -7,6 +7,7 @@ import '../../data/services/action_score_service.dart';
 import '../../data/services/custom_stamp_service.dart';
 import '../../data/services/profile_service.dart';
 import '../../data/services/sfx_service.dart';
+import '../../data/services/theme_service.dart';
 import '../../routes/app_routes.dart';
 import 'home_controller.dart';
 import 'tabs/coop_tab.dart';
@@ -183,7 +184,7 @@ class _MuteToggle extends StatelessWidget {
       () => IconButton(
         // The icon reflects whether *any* audio is on, so a single glance
         // tells the parent if the app is currently silent.
-        tooltip: '소리 설정',
+        tooltip: '설정',
         icon: Icon(
           (sfx.sfxEnabled.value || sfx.bgmEnabled.value)
               ? Icons.volume_up
@@ -193,7 +194,7 @@ class _MuteToggle extends StatelessWidget {
         onPressed: () => showModalBottomSheet<void>(
           context: context,
           showDragHandle: true,
-          backgroundColor: const Color(0xFFFFF8E7),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           builder: (_) => const _SoundSettingsSheet(),
         ),
       ),
@@ -219,7 +220,7 @@ class _SoundSettingsSheet extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.only(bottom: 8),
               child: Text(
-                '소리 설정',
+                '설정',
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
             ),
@@ -244,6 +245,10 @@ class _SoundSettingsSheet extends StatelessWidget {
                 onVolume: sfx.setSfxVolume,
               ),
             ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            const _ThemePicker(),
           ],
         ),
       ),
@@ -296,6 +301,58 @@ class _ChannelControl extends StatelessWidget {
             ),
             const Icon(Icons.volume_up, size: 20, color: Colors.black45),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+/// 라이트/다크/시스템 3지선다 테마 선택.
+class _ThemePicker extends StatelessWidget {
+  const _ThemePicker();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Get.find<ThemeService>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.brightness_6,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              '화면 테마',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Obx(
+          () => SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(
+                value: ThemeMode.system,
+                label: Text('시스템'),
+                icon: Icon(Icons.phone_android),
+              ),
+              ButtonSegment(
+                value: ThemeMode.light,
+                label: Text('밝게'),
+                icon: Icon(Icons.light_mode),
+              ),
+              ButtonSegment(
+                value: ThemeMode.dark,
+                label: Text('어둡게'),
+                icon: Icon(Icons.dark_mode),
+              ),
+            ],
+            selected: {theme.mode.value},
+            onSelectionChanged: (s) => theme.setMode(s.first),
+          ),
         ),
       ],
     );

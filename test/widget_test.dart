@@ -1,6 +1,7 @@
 import 'package:children_math_game/app/data/services/profile_service.dart';
 import 'package:children_math_game/app/data/services/record_service.dart';
 import 'package:children_math_game/app/data/services/sfx_service.dart';
+import 'package:children_math_game/app/data/services/theme_service.dart';
 import 'package:children_math_game/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -13,6 +14,7 @@ void main() {
     await Get.putAsync<ProfileService>(() => ProfileService().init());
     await Get.putAsync<RecordService>(() => RecordService().init());
     await Get.putAsync<SfxService>(() => SfxService().init());
+    await Get.putAsync<ThemeService>(() => ThemeService().init());
   });
 
   tearDown(() async {

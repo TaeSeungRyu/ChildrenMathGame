@@ -8,6 +8,7 @@ import 'app/data/services/custom_stamp_service.dart';
 import 'app/data/services/profile_service.dart';
 import 'app/data/services/record_service.dart';
 import 'app/data/services/sfx_service.dart';
+import 'app/data/services/theme_service.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
 
@@ -26,6 +27,7 @@ Future<void> main() async {
   await Get.putAsync<CustomStampService>(() => CustomStampService().init());
   await Get.putAsync<ActionScoreService>(() => ActionScoreService().init());
   await Get.putAsync<CoopRecordService>(() => CoopRecordService().init());
+  await Get.putAsync<ThemeService>(() => ThemeService().init());
   runApp(const MyApp());
 }
 
@@ -78,34 +80,52 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      title: '연산 히어로',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
+    final themeService = Get.find<ThemeService>();
+    return Obx(
+      () => GetMaterialApp(
+        title: '연산 히어로',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.light,
+          ),
+          // Warm cream rather than clinical white — pairs with the light-sky
+          // AppBar as a warm/cool complement and reads more "놀이감" than
+          // "교과서" for the 6–9세 target. Cards (primaryContainer /
+          // secondaryContainer / tertiaryContainer) are saturated enough to
+          // stand out against it.
+          scaffoldBackgroundColor: const Color(0xFFFFF8E7),
+          appBarTheme: const AppBarTheme(
+            // Light sky (#4FC3F7) for a softer, playful tone; deep-blue fg
+            // (#0D47A1) keeps WCAG contrast comfortably above 4.5 — white text
+            // on the lighter sky would dip below 2.5.
+            backgroundColor: Color(0xFF4FC3F7),
+            foregroundColor: Color(0xFF0D47A1),
+          ),
+          fontFamily: 'Jua',
+          useMaterial3: true,
         ),
-        // Warm cream rather than clinical white — pairs with the light-sky
-        // AppBar as a warm/cool complement and reads more "놀이감" than
-        // "교과서" for the 6–9세 target. Cards (primaryContainer /
-        // secondaryContainer / tertiaryContainer) are saturated enough to
-        // stand out against it.
-        scaffoldBackgroundColor: const Color(0xFFFFF8E7),
-        appBarTheme: const AppBarTheme(
-          // Light sky (#4FC3F7) for a softer, playful tone; deep-blue fg
-          // (#0D47A1) keeps WCAG contrast comfortably above 4.5 — white text
-          // on the lighter sky would dip below 2.5.
-          backgroundColor: Color(0xFF4FC3F7),
-          foregroundColor: Color(0xFF0D47A1),
+        // Dark: keep the sky-blue identity but tone it down for legibility on
+        // a dark scaffold; deeper AppBar so it still reads as the app's
+        // signature color at night.
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.dark,
+          ),
+          scaffoldBackgroundColor: const Color(0xFF121417),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF0D47A1),
+            foregroundColor: Colors.white,
+          ),
+          fontFamily: 'Jua',
+          useMaterial3: true,
         ),
-        // Bundled in assets/fonts/Jua-Regular.ttf — pubspec.yaml registers
-        // the family. No runtime fetch, works offline from first launch.
-        fontFamily: 'Jua',
-        useMaterial3: true,
+        themeMode: themeService.mode.value,
+        initialRoute: AppRoutes.splash,
+        getPages: AppPages.pages,
+        debugShowCheckedModeBanner: false,
       ),
-      initialRoute: AppRoutes.splash,
-      getPages: AppPages.pages,
-      debugShowCheckedModeBanner: false,
     );
   }
 }
