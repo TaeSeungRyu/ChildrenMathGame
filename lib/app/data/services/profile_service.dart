@@ -20,6 +20,7 @@ class ProfileService extends GetxService {
   static const _profilesKey = 'profiles_v1';
   static const _activeIdKey = 'active_profile_v1';
   static const _tutorialSeenKey = 'tutorial_seen_v1';
+  static const _onboardingSeenKey = 'onboarding_seen_v1';
 
   static const defaultName = '어린이';
   static const maxNameLength = 3;
@@ -37,10 +38,12 @@ class ProfileService extends GetxService {
   final name = defaultName.obs;
   final avatar = Profile.defaultAvatar.obs;
   final tutorialSeen = false.obs;
+  final onboardingSeen = false.obs;
 
   Future<ProfileService> init() async {
     _prefs = await SharedPreferences.getInstance();
     tutorialSeen.value = _prefs.getBool(_tutorialSeenKey) ?? false;
+    onboardingSeen.value = _prefs.getBool(_onboardingSeenKey) ?? false;
     _loadProfiles();
     return this;
   }
@@ -98,6 +101,12 @@ class ProfileService extends GetxService {
     if (tutorialSeen.value) return;
     tutorialSeen.value = true;
     await _prefs.setBool(_tutorialSeenKey, true);
+  }
+
+  Future<void> markOnboardingSeen() async {
+    if (onboardingSeen.value) return;
+    onboardingSeen.value = true;
+    await _prefs.setBool(_onboardingSeenKey, true);
   }
 
   String _clampName(String value) {

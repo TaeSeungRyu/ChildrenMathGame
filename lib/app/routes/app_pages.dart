@@ -10,6 +10,8 @@ import '../modules/coop_learn/coop_learn_binding.dart';
 import '../modules/coop_learn/coop_learn_view.dart';
 import '../modules/coop_lobby/coop_lobby_binding.dart';
 import '../modules/coop_lobby/coop_lobby_view.dart';
+import '../modules/onboarding/onboarding_binding.dart';
+import '../modules/onboarding/onboarding_view.dart';
 import '../modules/coop_record_detail/coop_record_detail_binding.dart';
 import '../modules/coop_record_detail/coop_record_detail_view.dart';
 import '../modules/coop_records/coop_records_binding.dart';
@@ -148,6 +150,11 @@ abstract class AppPages {
       name: AppRoutes.tutorial,
       page: () => const TutorialView(),
       binding: TutorialBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.onboarding,
+      page: () => const OnboardingView(),
+      binding: OnboardingBinding(),
     ),
     GetPage(
       name: AppRoutes.wrongNotebook,

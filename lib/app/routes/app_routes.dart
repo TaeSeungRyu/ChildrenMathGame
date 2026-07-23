@@ -16,6 +16,7 @@ abstract class AppRoutes {
   static const flashSelect = '/flash-select';
   static const estimationSelect = '/estimation-select';
   static const tutorial = '/tutorial';
+  static const onboarding = '/onboarding';
   static const wrongNotebook = '/wrong-notebook';
 
   // 부모와 함께하는 학습 (Nearby Connections). 로비 → 아이(학습)/부모(코치) 화면.

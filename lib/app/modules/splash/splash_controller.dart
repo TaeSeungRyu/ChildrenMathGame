@@ -12,17 +12,20 @@ class SplashController extends GetxController {
   void onReady() {
     super.onReady();
     _timer = Timer(const Duration(seconds: 2), () {
-      // First launch ever → auto-show the tutorial; afterwards skip straight
-      // to home. The tutorial itself marks the flag on entry (onInit), so
-      // force-quitting mid-tutorial still counts as "seen".
-      final seen = Get.find<ProfileService>().tutorialSeen.value;
-      if (seen) {
-        Get.offNamed(AppRoutes.home);
-      } else {
+      // First launch → onboarding (name + avatar) → tutorial → home.
+      // Returning users skip straight to home once both flags are set. The
+      // tutorial marks its own flag on entry, so mid-tutorial force-quits still
+      // count as "seen" and won't re-trigger the onboarding.
+      final profile = Get.find<ProfileService>();
+      if (!profile.onboardingSeen.value) {
+        Get.offNamed(AppRoutes.onboarding);
+      } else if (!profile.tutorialSeen.value) {
         Get.offNamed(
           AppRoutes.tutorial,
           arguments: const {'isFirstRun': true},
         );
+      } else {
+        Get.offNamed(AppRoutes.home);
       }
     });
   }

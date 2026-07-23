@@ -20,6 +20,15 @@ void main() {
       expect(ProfileService.defaultName, '어린이');
     });
 
+    test('onboardingSeen defaults to false and persists once marked', () async {
+      final svc = await ProfileService().init();
+      expect(svc.onboardingSeen.value, isFalse);
+      await svc.markOnboardingSeen();
+      expect(svc.onboardingSeen.value, isTrue);
+      final reloaded = await ProfileService().init();
+      expect(reloaded.onboardingSeen.value, isTrue);
+    });
+
     test('setName persists across re-init', () async {
       final svc = await ProfileService().init();
       await svc.setName('민준');
