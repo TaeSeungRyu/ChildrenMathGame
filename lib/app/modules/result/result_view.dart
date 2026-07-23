@@ -119,7 +119,9 @@ class _ResultViewState extends State<ResultView> {
           ),
         ],
       ),
-      body: Padding(
+      body: Stack(
+        children: [
+          Padding(
         padding: EdgeInsets.fromLTRB(
           24,
           24,
@@ -157,6 +159,10 @@ class _ResultViewState extends State<ResultView> {
                               ),
                             ],
                             const SizedBox(height: 16),
+                            if (controller.showStars) ...[
+                              _StarRow(count: controller.starCount),
+                              const SizedBox(height: 12),
+                            ],
                             _ScoreText(
                               text: isEndless || isTimeAttack
                                   ? '${r.correctCount}'
@@ -281,8 +287,165 @@ class _ResultViewState extends State<ResultView> {
           ],
         ),
       ),
+      // 만점(3★)일 때만 상단에 잠깐 폭죽이 터진다.
+      if (controller.isPerfect)
+        const Positioned.fill(
+          child: IgnorePointer(child: _ConfettiOverlay()),
+        ),
+        ],
+      ),
     );
   }
+}
+
+/// 결과 화면 별점(1~3). 획득한 별은 금색 채움, 나머지는 회색 윤곽.
+class _StarRow extends StatefulWidget {
+  const _StarRow({required this.count});
+
+  final int count;
+
+  @override
+  State<_StarRow> createState() => _StarRowState();
+}
+
+class _StarRowState extends State<_StarRow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    duration: const Duration(milliseconds: 900),
+    vsync: this,
+  )..forward();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(3, (i) {
+            // Stagger — each star pops in ~250ms after the previous.
+            final start = i * 0.25;
+            final t = ((_c.value - start) / 0.55).clamp(0.0, 1.0);
+            final scale = Curves.elasticOut.transform(t);
+            final earned = i < widget.count;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Transform.scale(
+                scale: earned ? scale : 1.0,
+                child: Icon(
+                  earned ? Icons.star_rounded : Icons.star_outline_rounded,
+                  size: 56,
+                  color:
+                      earned ? const Color(0xFFFFB300) : Colors.grey.shade400,
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+}
+
+/// 만점 셀러브레이션 폭죽. CustomPainter로 파티클 몇 개를 잠깐 뿌린다
+/// (외부 의존성 없이 오프라인·저비용).
+class _ConfettiOverlay extends StatefulWidget {
+  const _ConfettiOverlay();
+
+  @override
+  State<_ConfettiOverlay> createState() => _ConfettiOverlayState();
+}
+
+class _ConfettiOverlayState extends State<_ConfettiOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    duration: const Duration(milliseconds: 1800),
+    vsync: this,
+  )..forward();
+
+  static const List<Color> _palette = [
+    Color(0xFFE53935),
+    Color(0xFF43A047),
+    Color(0xFF1E88E5),
+    Color(0xFFFB8C00),
+    Color(0xFF8E24AA),
+    Color(0xFFFFC107),
+  ];
+
+  static const int _particleCount = 40;
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) => CustomPaint(
+        painter: _ConfettiPainter(
+          progress: _c.value,
+          palette: _palette,
+          count: _particleCount,
+        ),
+        size: Size.infinite,
+      ),
+    );
+  }
+}
+
+class _ConfettiPainter extends CustomPainter {
+  _ConfettiPainter({
+    required this.progress,
+    required this.palette,
+    required this.count,
+  });
+
+  final double progress;
+  final List<Color> palette;
+  final int count;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Deterministic pseudo-random so particles feel consistent across frames.
+    for (var i = 0; i < count; i++) {
+      final seed = i * 9301 + 49297;
+      final rx = ((seed % 233280) / 233280.0);
+      final ry = (((seed * 1103) % 233280) / 233280.0);
+      final rc = ((seed * 51749) % palette.length);
+      final drift = (rx - 0.5) * size.width * 0.9;
+      final startX = size.width / 2 + drift * 0.2;
+      final startY = -30.0;
+      final fallEnd = size.height * (0.35 + ry * 0.55);
+      final t = progress;
+      final easedFall = Curves.easeIn.transform(t);
+      final x = startX + drift * t;
+      final y = startY + (fallEnd + 30) * easedFall;
+      final rot = t * 6.28 * (rx + 0.4);
+      final opacity = (1.0 - Curves.easeIn.transform((t - 0.75).clamp(0, 1) / 0.25))
+          .clamp(0.0, 1.0);
+      final paint = Paint()..color = palette[rc].withValues(alpha: opacity);
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(rot);
+      canvas.drawRect(
+        const Rect.fromLTWH(-4, -6, 8, 12),
+        paint,
+      );
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ConfettiPainter old) => old.progress != progress;
 }
 
 class _Greeting extends StatelessWidget {

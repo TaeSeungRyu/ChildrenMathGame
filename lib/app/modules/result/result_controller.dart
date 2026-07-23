@@ -35,6 +35,30 @@ class ResultController extends GetxController {
   bool get isNewBest =>
       isNewPerfectBest || isNewTimeAttackBest || isNewEndlessBest;
 
+  /// 도전 모드에서만 1~3개의 별을 준다. 미풀이 문제는 정답률에 페널티를 준다.
+  /// - 3★: 만점 (모두 정답)
+  /// - 2★: 80% 이상
+  /// - 1★: 50% 이상
+  /// - 0★: 그 외 (별 표시 자체를 감춤)
+  /// 연습·구구단·타임어택·연속·roll-up 모드는 시간/셋 구성이 달라 별점 부여를
+  /// 하지 않는다(신기록 뱃지가 이미 그 역할).
+  int get starCount {
+    if (isPractice) return 0;
+    if (isTimesTable) return 0;
+    if (isTimeAttack || isEndless) return 0;
+    if (isMixed || isEquation || isFlash || isEstimation) return 0;
+    final total = record.totalCount;
+    if (total == 0) return 0;
+    final rate = record.correctCount / total;
+    if (rate >= 1.0) return 3;
+    if (rate >= 0.8) return 2;
+    if (rate >= 0.5) return 1;
+    return 0;
+  }
+
+  bool get showStars => starCount > 0;
+  bool get isPerfect => starCount == 3;
+
 
   @override
   void onInit() {
