@@ -44,7 +44,15 @@ class MultiplayerService extends GetxService {
   final Rx<MultiplayerState> state = MultiplayerState.idle.obs;
   final RxList<DiscoveredPeer> peers = <DiscoveredPeer>[].obs;
 
-  final StreamController<String> _incoming = StreamController<String>.broadcast();
+  late final StreamController<String> _incoming;
+
+  // Messages that arrived before anyone subscribed to [incoming]. The protocol
+  // session ([CoopSession]) subscribes only *after* the user picks a role, and
+  // the two devices pick at different moments — so the earlier device's `hello`
+  // reaches a peer whose session hasn't attached yet. A plain broadcast stream
+  // would drop it (→ handshake never completes → infinite loading). We buffer
+  // those and replay them to the first listener instead.
+  final List<String> _pendingIncoming = [];
 
   /// Decoded incoming protocol messages (JSON strings).
   Stream<String> get incoming => _incoming.stream;
@@ -57,8 +65,20 @@ class MultiplayerService extends GetxService {
   bool get isConnected => connectedEndpointId != null;
 
   Future<MultiplayerService> init() async {
+    _incoming = StreamController<String>.broadcast(
+      onListen: () => scheduleMicrotask(_flushPending),
+    );
     _sub = transport.events.listen(_onEvent);
     return this;
+  }
+
+  void _flushPending() {
+    if (_pendingIncoming.isEmpty || !_incoming.hasListener) return;
+    final buffered = List<String>.of(_pendingIncoming);
+    _pendingIncoming.clear();
+    for (final m in buffered) {
+      _incoming.add(m);
+    }
   }
 
   /// Host: start advertising and wait for a peer.
@@ -112,6 +132,7 @@ class MultiplayerService extends GetxService {
     await transport.stopAll();
     connectedEndpointId = null;
     peers.clear();
+    _pendingIncoming.clear();
     state.value = MultiplayerState.idle;
   }
 
@@ -144,7 +165,13 @@ class MultiplayerService extends GetxService {
           state.value = MultiplayerState.disconnected;
         }
       case PayloadReceivedEvent(:final bytes):
-        _incoming.add(utf8.decode(bytes));
+        final msg = utf8.decode(bytes);
+        // Buffer until a listener attaches so an early `hello` isn't dropped.
+        if (_incoming.hasListener) {
+          _incoming.add(msg);
+        } else {
+          _pendingIncoming.add(msg);
+        }
     }
   }
 

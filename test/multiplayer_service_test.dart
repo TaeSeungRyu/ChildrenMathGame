@@ -134,6 +134,24 @@ void main() {
     expect(await received, '안녕');
   });
 
+  test('incoming buffers messages that arrive before a listener attaches',
+      () async {
+    await svc.startHosting('엄마');
+    fake.emit(const ConnectionResultEvent('e1', true));
+    await _flush();
+
+    // A hello arrives while no CoopSession has subscribed yet.
+    fake.emit(
+      PayloadReceivedEvent('e1', Uint8List.fromList(utf8.encode('early'))),
+    );
+    await _flush();
+
+    // Subscribing later still delivers the buffered message (no drop → no
+    // stuck handshake).
+    final first = svc.incoming.first;
+    expect(await first, 'early');
+  });
+
   test('markInSession only advances from connected', () async {
     svc.markInSession();
     expect(svc.state.value, MultiplayerState.idle); // no-op when not connected
