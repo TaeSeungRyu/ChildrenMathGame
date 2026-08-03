@@ -342,6 +342,80 @@ class ProblemGenerator {
     return candidates[_random.nextInt(candidates.length)];
   }
 
+  // ───── 부호 맞추기 (sign-guess) ─────
+  // 식에서 연산 기호를 숨기고 아이가 맞히는 모드. 레벨별로 맞혀야 하는 기호
+  // 개수와 후보 연산 풀이 다르다.
+  static const Map<int, int> _signGuessOpCount = {1: 1, 2: 2, 3: 3, 4: 3, 5: 5};
+
+  /// 후보 연산 풀: 레벨 1~3은 +/−, 레벨 4~5는 +/−/×/÷.
+  static List<GameType> signGuessPool(int level) => level <= 3
+      ? const [GameType.addition, GameType.subtraction]
+      : const [
+          GameType.addition,
+          GameType.subtraction,
+          GameType.multiplication,
+          GameType.division,
+        ];
+
+  /// 레벨별로 맞혀야 하는 기호 개수. (1→1, 2→2, 3→3, 4→3, 5→5)
+  static int signGuessOpCount(int level) => _signGuessOpCount[level] ?? 1;
+
+  /// [totalProblems]개의 부호 맞추기 문제. 각 문제는 피연산자 체인 + 정답 기호
+  /// 열([Problem.operations])과 결과값([Problem.answer])을 담은 compound Problem.
+  /// View는 기호를 가리고 빈칸으로 보여 준다. 피연산자는 한 자리(1~9)로 고정해
+  /// 기호 판단에 집중하게 한다.
+  static List<Problem> generateSignGuess(int level) {
+    final count = signGuessOpCount(level);
+    final pool = signGuessPool(level);
+    return List.generate(totalProblems, (_) => _signGuessOne(count, pool));
+  }
+
+  static Problem _signGuessOne(int opCount, List<GameType> pool) {
+    for (var attempt = 0; attempt < _maxRetries; attempt++) {
+      final ops = List<GameType>.generate(
+        opCount,
+        (_) => pool[_random.nextInt(pool.length)],
+      );
+      final built = _tryBuildCompound(ops, 1, 1);
+      if (built != null) return built;
+    }
+    final ops = List<GameType>.filled(opCount, GameType.addition);
+    return _tryBuildCompound(ops, 1, 1) ?? _compoundFallback(ops);
+  }
+
+  /// 아이가 고른 기호 열로 식을 평가한다(표준 우선순위). 정수 정답과 정확히
+  /// 같으면 정답으로 인정 — 원래 기호와 다른 조합이라도 결과가 같으면 맞음.
+  /// ÷가 나눠떨어지지 않으면 소수가 나와 자연히 오답 처리된다.
+  static double evaluateChain(List<int> operands, List<GameType> ops) {
+    final terms = <double>[operands[0].toDouble()];
+    final between = <GameType>[];
+    for (var i = 0; i < ops.length; i++) {
+      final next = operands[i + 1].toDouble();
+      switch (ops[i]) {
+        case GameType.multiplication:
+          terms[terms.length - 1] *= next;
+        case GameType.division:
+          terms[terms.length - 1] /= next;
+        case GameType.addition:
+          between.add(GameType.addition);
+          terms.add(next);
+        case GameType.subtraction:
+          between.add(GameType.subtraction);
+          terms.add(next);
+        case GameType.mixed:
+        case GameType.equation:
+        case GameType.flash:
+        case GameType.estimation:
+          break;
+      }
+    }
+    var sum = terms[0];
+    for (var i = 0; i < between.length; i++) {
+      sum += between[i] == GameType.addition ? terms[i + 1] : -terms[i + 1];
+    }
+    return sum;
+  }
+
   static Problem _compoundFallback(List<GameType> allowedTypes) {
     // Last-resort small-addition expression that always validates: 1 + 1 + ...
     // The shape still satisfies the "every selected op appears" contract by

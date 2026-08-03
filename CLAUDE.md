@@ -11,7 +11,7 @@ High-level flow:
 1. **Splash** (`/splash`) — 2s, then routes to **Home** normally, or to **Tutorial** on first launch (`ProfileService.tutorialSeen == false`).
 2. **Tutorial** (`/tutorial`) — onboarding walkthrough. Auto-shown once on first run (marks `tutorialSeen` on entry so a force-quit still counts). Re-openable from the Home AppBar help button.
 3. **Home** (`/home`) — a 3-tab container (`IndexedStack`), driven by `HomeController.tabIndex`:
-   - **학습 (Learn)** — Lottie banner + streak badge, daily-mission card, weakness recommendation card, the four basic-operation tiles (덧셈/뺄셈/곱셈/나눗셈 → level select), and a "특별 모드" row (구구단 / 혼합 / 방정식 / 플래시 / 어림셈).
+   - **학습 (Learn)** — Lottie banner + streak badge, daily-mission card, weakness recommendation card, the four basic-operation tiles (덧셈/뺄셈/곱셈/나눗셈 → level select), and a "특별 모드" grid (2 rows × 3: 구구단 / 혼합 / 방정식 / 플래시 / 어림셈 / 부호 맞추기).
    - **게임 (Games)** — six action mini-games (몬스터 처치 / 풍선 터뜨리기 / 타워 디펜스 / 두더지 잡기 / 숫자 사다리 / 물고기 잡기). Each tile opens the shared action-select screen; all six are playable.
    - **기록 (Records)** — meta-tool hub: 도장판(badges) / 오답 노트(wrong notebook) / 결과 보기(records) / 학습 통계(stats) / 복습하기(review-select).
    The shared AppBar (leading **profile-switcher** avatar button, editable name+avatar `"{name} 히어로!"`, tutorial button, **sound-settings** button) stays across all tabs. The sound button opens a bottom sheet with independent BGM/SFX toggles + volume sliders; the profile button opens a sheet to switch/add/delete profiles.
@@ -80,6 +80,8 @@ All run through `/game` but flip an extra flag and roll up to a roll-up `GameTyp
 - **Equation / 방정식** (`isEquation`, generated for a concrete `equationType` → rolls up to `GameType.equation`): presented as "A op ? = C"; the player solves for `operandB`. Expected answer is `current.operandB`, not `current.answer`.
 - **Flash / 플래시** (`isFlash`, concrete `flashType`, `flashDisplayMs` window → `GameType.flash`): the problem is visible for `flashDisplayMs` (picker offers 1.5s/2s/2.5s) then hidden via `_flashTimer` (`flashVisible` Rx); the player answers from memory. `_startFlashWindow` re-fires on each advance.
 - **Estimation / 어림셈** (`isEstimation`, concrete `estimationType` ∈ {+,−,×}; ÷ excluded → `GameType.estimation`): operands are rounded to a level-appropriate unit (`_estimationUnit`: L1→5, L2–4→10, L5→100); the player taps one of **3 choices** via `submitChoice(int)` instead of the keypad. Choice sets are precomputed once in `onInit` (`estimationChoices`) so they don't reshuffle on rebuild. Distractors are drawn from correct ± unit / ± 2·unit (positive only).
+
+**부호 맞추기 (sign-guess)** is a **standalone special mode** (not a `/game` roll-up): `/sign-guess-select` (level picker) → `/sign-guess` (`SignGuessController`/`View`). The operators in an expression are hidden and the child fills each blank left-to-right from an operator palette. Levels drive **operator count** ({1:1, 2:2, 3:3, 4:3, 5:5}) and **pool** (L1–3 = {+,−}; L4–5 = {+,−,×,÷}) via `ProblemGenerator.generateSignGuess/signGuessOpCount/signGuessPool` (compound `Problem`s built by reusing `_tryBuildCompound` with 1-digit operands). Answer check accepts **any** operator combo that evaluates (standard precedence, via `ProblemGenerator.evaluateChain`) to the shown result — non-clean ÷ yields a non-integer and is naturally rejected. Practice-style: **not persisted** (no `GameRecord`), self-contained result overlay like the action games.
 
 ## Architecture
 

@@ -15,6 +15,8 @@ abstract class AppRoutes {
   static const equationSelect = '/equation-select';
   static const flashSelect = '/flash-select';
   static const estimationSelect = '/estimation-select';
+  static const signGuessSelect = '/sign-guess-select';
+  static const signGuess = '/sign-guess';
   static const tutorial = '/tutorial';
   static const onboarding = '/onboarding';
   static const wrongNotebook = '/wrong-notebook';

@@ -134,9 +134,9 @@ class _BasicOpsGrid extends GetView<HomeController> {
   }
 }
 
-/// 특별 모드 5타일 — 화면 폭이 좁아도 모두 동일한 비중으로 보이도록 Expanded
-/// 균등분할. 360dp 환경에서 한 타일 ≒ 60dp인데 아이콘 28 + 라벨 14가 그 안에
-/// 들어와 6~9세 손가락 탭 타깃으로도 충분.
+/// 특별 모드 6타일 — 3열 × 2행 그리드. 6번째("부호 맞추기")가 늘면서 한 줄에
+/// 6개를 넣으면 타일이 좁아져 라벨이 잘리므로, 3개씩 두 줄로 배치해 각 타일
+/// 폭(360dp에서 ≒ 110dp)을 확보한다. 행마다 Expanded 균등분할.
 class _SpecialModesRow extends GetView<HomeController> {
   const _SpecialModesRow();
 
@@ -152,18 +152,34 @@ class _SpecialModesRow extends GetView<HomeController> {
         label: '어림셈',
         onTap: controller.openEstimation,
       ),
+      (
+        icon: Icons.question_mark,
+        label: '부호 맞추기',
+        onTap: controller.openSignGuess,
+      ),
     ];
-    final children = <Widget>[];
-    for (var i = 0; i < tiles.length; i++) {
-      if (i > 0) children.add(const SizedBox(width: 8));
-      final t = tiles[i];
-      children.add(
-        Expanded(
-          child: _SpecialTile(icon: t.icon, label: t.label, onTap: t.onTap),
-        ),
-      );
+
+    Widget rowFor(int start) {
+      final children = <Widget>[];
+      for (var i = start; i < start + 3; i++) {
+        if (i > start) children.add(const SizedBox(width: 8));
+        final t = tiles[i];
+        children.add(
+          Expanded(
+            child: _SpecialTile(icon: t.icon, label: t.label, onTap: t.onTap),
+          ),
+        );
+      }
+      return SizedBox(height: 66, child: Row(children: children));
     }
-    return SizedBox(height: 72, child: Row(children: children));
+
+    return Column(
+      children: [
+        rowFor(0),
+        const SizedBox(height: 8),
+        rowFor(3),
+      ],
+    );
   }
 }
 

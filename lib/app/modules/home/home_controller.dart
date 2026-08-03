@@ -72,6 +72,10 @@ class HomeController extends GetxController {
     Get.toNamed(AppRoutes.estimationSelect);
   }
 
+  void openSignGuess() {
+    Get.toNamed(AppRoutes.signGuessSelect);
+  }
+
   void openWrongNotebook() {
     Get.toNamed(AppRoutes.wrongNotebook);
   }

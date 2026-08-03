@@ -12,6 +12,9 @@ import '../modules/coop_lobby/coop_lobby_binding.dart';
 import '../modules/coop_lobby/coop_lobby_view.dart';
 import '../modules/onboarding/onboarding_binding.dart';
 import '../modules/onboarding/onboarding_view.dart';
+import '../modules/sign_guess/sign_guess_binding.dart';
+import '../modules/sign_guess/sign_guess_view.dart';
+import '../modules/sign_guess_select/sign_guess_select_view.dart';
 import '../modules/coop_record_detail/coop_record_detail_binding.dart';
 import '../modules/coop_record_detail/coop_record_detail_view.dart';
 import '../modules/coop_records/coop_records_binding.dart';
@@ -145,6 +148,15 @@ abstract class AppPages {
       name: AppRoutes.estimationSelect,
       page: () => const EstimationSelectView(),
       binding: EstimationSelectBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.signGuessSelect,
+      page: () => const SignGuessSelectView(),
+    ),
+    GetPage(
+      name: AppRoutes.signGuess,
+      page: () => const SignGuessView(),
+      binding: SignGuessBinding(),
     ),
     GetPage(
       name: AppRoutes.tutorial,
