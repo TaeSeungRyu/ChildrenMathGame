@@ -12,14 +12,16 @@ High-level flow:
 2. **Tutorial** (`/tutorial`) — onboarding walkthrough. Auto-shown once on first run (marks `tutorialSeen` on entry so a force-quit still counts). Re-openable from the Home AppBar help button.
 3. **Home** (`/home`) — a 3-tab container (`IndexedStack`), driven by `HomeController.tabIndex`:
    - **학습 (Learn)** — Lottie banner + streak badge, daily-mission card, weakness recommendation card, the four basic-operation tiles (덧셈/뺄셈/곱셈/나눗셈 → level select), and a "특별 모드" grid (2 rows × 3: 구구단 / 혼합 / 방정식 / 플래시 / 어림셈 / 부호 맞추기).
-   - **게임 (Games)** — six action mini-games (몬스터 처치 / 풍선 터뜨리기 / 타워 디펜스 / 두더지 잡기 / 숫자 사다리 / 물고기 잡기). Each tile opens the shared action-select screen; all six are playable.
+   - **게임 (Games)** — seven action mini-games (몬스터 처치 / 풍선 터뜨리기 / 타워 디펜스 / 두더지 잡기 / 숫자 사다리 / 물고기 잡기 / 저울 맞추기). Each tile opens the shared action-select screen; all seven are playable. The tab is driven by `_GameSpec.all` in `games_tab.dart`; the 2-column grid takes an even number of tiles and, when the count is odd, the last spec is rendered below it as a full-width horizontal card (`_WideGameModeTile`) instead of leaving a hole.
    - **기록 (Records)** — meta-tool hub: 도장판(badges) / 오답 노트(wrong notebook) / 결과 보기(records) / 학습 통계(stats) / 복습하기(review-select).
    The shared AppBar (leading **profile-switcher** avatar button, editable name+avatar `"{name} 히어로!"`, tutorial button, **sound-settings** button) stays across all tabs. The sound button opens a bottom sheet with independent BGM/SFX toggles + volume sliders; the profile button opens a sheet to switch/add/delete profiles.
 4. **Game** (`/game`) — the universal session screen for all learning modes. See "Session modes" and "Learning game types" below.
 5. **Result** (`/result`) — correct/wrong/unsolved counts, elapsed time, max combo, and a "신기록" badge when applicable. Persists a `GameRecord` via `RecordService` (unless practice/구구단).
 6. **Records** (`/records`) — past records newest-first; row → **Record detail** (`/record-detail`) showing every attempt. Delete opens an `AlertDialog`; only **확인** removes via `RecordService.delete`.
 
-The six **action mini-games** (`/monster-game`, `/balloon-game`, `/tower-defense`, `/mole-game`, `/ladder-game`, `/fishing-game`) are a separate arcade track — they do **not** go through `/game`, `/result`, or `RecordService`/`GameRecord`. They **do** persist a per-concept **best score + play count** via `ActionScoreService` (see Services), surfaced on the shared action-select screen (top "🏆 최고 기록" card) and in each game-over overlay (shared `ActionRecordLine` shows a 신기록 badge or the running best). Each controller exposes a concept constant + `isNewBest` Rx and calls `_scores.report(concept, score)` in `_gameOver`.
+The seven **action mini-games** (`/monster-game`, `/balloon-game`, `/tower-defense`, `/mole-game`, `/ladder-game`, `/fishing-game`, `/balance-game`) are a separate arcade track — they do **not** go through `/game`, `/result`, or `RecordService`/`GameRecord`. They **do** persist a per-concept **best score + play count** via `ActionScoreService` (see Services), surfaced on the shared action-select screen (top "🏆 최고 기록" card) and in each game-over overlay (shared `ActionRecordLine` shows a 신기록 badge or the running best). Each controller exposes a concept constant + `isNewBest` Rx and calls `_scores.report(concept, score)` in `_gameOver`.
+
+**저울 맞추기 (balance)** is the odd one out among the seven: every other action game is `식 하나 → 답 하나` (typed on the keypad or tapped among candidates), while this one asks only for the **relation** between two expressions — `>` / `=` / `<` — so it can be answered by estimation without computing either side exactly. Rounds come from `ProblemGenerator.balancePair(type, digitsA, digitsB, solved)`: the left expression is generated normally, then the right one is **back-synthesized** via `synthesizeForAnswer` to land on `left.answer ± gap`, so the gap (and therefore the difficulty) is controlled. The gap band narrows with `solved` (`<4` → 5–12, `<10` → 2–6, else 1–3), and `balanceEqualChance` (0.22) deliberately forces `=` rounds that random generation would almost never produce. When no gap in the band is reachable for a given (op, digits) combo — e.g. 1-digit division only yields answers 2–4 — it widens, then falls back to generating the right side independently. Right/wrong both reveal by tilting the beam toward the true answer; a wrong pick does **not** replay the same round, because with three choices a retry is just a guess.
 
 ### Difficulty rules
 
@@ -108,7 +110,7 @@ lib/app/
 
 Learning + meta: `/splash`, `/home`, `/tutorial`, `/level-select`, `/game`, `/result`, `/records`, `/record-detail`, `/badges`, `/stats`, `/wrong-notebook`, `/review-select`, `/review`.
 Special-mode entry screens: `/times-table-select`, `/mixed-select`, `/equation-select`, `/flash-select`, `/estimation-select`.
-Action games: `/action-select` (shared entry) → `/monster-game`, `/balloon-game`, `/tower-defense`, `/mole-game`, `/ladder-game`, `/fishing-game`.
+Action games: `/action-select` (shared entry) → `/monster-game`, `/balloon-game`, `/tower-defense`, `/mole-game`, `/ladder-game`, `/fishing-game`, `/balance-game`.
 
 ### Data models
 
@@ -122,7 +124,8 @@ Action games: `/action-select` (shared entry) → `/monster-game`, `/balloon-gam
 - `daily_mission.dart` — `DailyMission` + `DailyMissionStatus`; types: correctAnswers, perfectGames, achieveCombo, correctInType.
 - `wrong_notebook_entry.dart` — aggregated wrong/unsolved entry (sample attempt + count + lastWrongAt + bucket).
 - `estimation_choices.dart` — 3 `choices` + the `correct` value (a value, not an index).
-- `action_concept.dart` — `ActionConcept` { monster, balloon, tower, mole, ladder, fishing } with `title` + `gameRoute`.
+- `action_concept.dart` — `ActionConcept` { monster, balloon, tower, mole, ladder, fishing, balance } with `title` + `gameRoute`.
+- `balance_pair.dart` — `BalancePair` for 저울 맞추기: two `Problem`s (좌/우 접시) whose `relation` (`1`/`0`/`-1`) and `gap` are **derived** from the answers, never stored — the relation is the answer, so a stored copy could contradict the expressions.
 - `profile.dart` — `Profile` { `id`, `name`, `avatar` } for multi-profile support. `id == Profile.primaryId` (1) is the migrated/default profile; `scopeSuffix` returns `''` for the primary (legacy keys) and `_p<id>` for siblings. `avatarChoices` is the emoji picker pool.
 
 ### Services (all registered in `main()` via `Get.putAsync`)
@@ -131,7 +134,7 @@ Action games: `/action-select` (shared entry) → `/monster-game`, `/balloon-gam
 - `RecordService` — single source of truth for records (`shared_preferences`, JSON list under key **`game_records_v4`**). Keys are **profile-scoped**: the base key gets the active profile's `scopeSuffix` appended (primary → `game_records_v4`, sibling → `game_records_v4_p<id>`). Delete matches by `finishedAt` equality (ms precision unique enough — bulk-import/seeding would break this; add an explicit `id` then). Bump the key base if you change the JSON shape. Also owns wrong-notebook **dismissals** (`wrong_notebook_dismissed_v1` + scope) and `currentStreak()`. Falls back to the empty (primary) scope when `ProfileService` isn't registered (service-only unit tests).
 - `SfxService` — audio (BGM + SFX) + haptics. **Two independent channels**, each with an on/off flag + 0..1 volume: `bgmEnabled`/`bgmVolume` (`bgm_enabled_v1`/`bgm_volume_v1`) and `sfxEnabled`/`sfxVolume` (`sfx_enabled_v1`/`sfx_volume_v1`). The legacy single mute key `sfx_muted_v1` migrates into `sfxEnabled` (muted → disabled). Haptics always fire regardless. SFX assets in `assets/audio/` (`correct.wav`, `wrong.wav`, `finish.wav`, `tick.wav` — CC0 Kenney Interface Sounds); the looping BGM is `assets/audio/bgm.wav` (generated offline by `marketing/make_bgm.py`), played on a separate `ReleaseMode.loop` player. `startBgm()` is idempotent and fired from `HomeController.onReady`. `_play` swallows errors. Use `_sfx.click()/correct()/wrong()/finish()/tick()/combo()` — don't call `HapticFeedback` directly elsewhere. `combo()` is haptic-only (audio would double up with `correct()`).
 - `CustomStampService` — CRUD for user-defined stamps (`custom_stamps_v1` + profile scope); reactive `RxList<CustomStamp>` so the badges grid rebuilds on change. `reload()` re-reads after a profile switch.
-- `ActionScoreService` — best score + play count per `ActionConcept` for the six action mini-games (`action_scores_v1` + profile scope, JSON `{concept.name: {best, plays}}`). Reactive `best`/`plays` RxMaps. `report(concept, score)` bumps plays, updates best, returns whether it was a new record (a 0 score never counts). `reload()` after a profile switch.
+- `ActionScoreService` — best score + play count per `ActionConcept` for the seven action mini-games (`action_scores_v1` + profile scope, JSON `{concept.name: {best, plays}}`). Reactive `best`/`plays` RxMaps. `report(concept, score)` bumps plays, updates best, returns whether it was a new record (a 0 score never counts). `reload()` after a profile switch.
 
 ### Conventions to keep
 

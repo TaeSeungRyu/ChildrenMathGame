@@ -38,4 +38,5 @@ abstract class AppRoutes {
   static const moleGame = '/mole-game';
   static const ladderGame = '/ladder-game';
   static const fishingGame = '/fishing-game';
+  static const balanceGame = '/balance-game';
 }

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../models/balance_pair.dart';
 import '../models/estimation_choices.dart';
 import '../models/game_type.dart';
 import '../models/problem.dart';
@@ -127,6 +128,115 @@ class ProblemGenerator {
         // Roll-up labels never carry a problem of their own.
         return null;
     }
+  }
+
+  // ───── 저울 맞추기 (balance) ───────────────────────────────────────────────
+
+  /// 평형(`=`) 라운드가 나올 확률. 무작위로 두 식을 만들면 답이 딱 같아질 일이
+  /// 거의 없어서, `=` 를 고를 일 자체가 사라진다. 의도적으로 끼워 넣는다.
+  static const balanceEqualChance = 0.22;
+
+  /// 좌우 답 차이를 시도해 볼 최대 폭. 이보다 큰 차이는 어차피 한눈에 보여
+  /// 난이도 조절에 의미가 없다.
+  static const _balanceMaxGap = 15;
+
+  /// 한 목표값당 식 합성 재시도 횟수. `type` 이 null(🎲 랜덤)이면 매 호출마다
+  /// 다른 연산을 뽑으므로 재시도가 성공률을 크게 올린다.
+  static const _balanceSynthTries = 12;
+
+  /// 저울 맞추기 한 라운드 생성 — 좌/우 접시에 오를 식 두 개.
+  ///
+  /// 왼쪽 식을 먼저 뽑고, 오른쪽은 "왼쪽 답 ± 목표 차이"를 답으로 갖도록
+  /// [synthesizeForAnswer]로 **역합성**한다. 그래야 차이 폭(= 체감 난이도)을
+  /// 통제할 수 있다. [solved]가 늘수록 차이를 좁혀(큰 차이 → 1~3) 어림으로
+  /// 때려 맞히던 아이가 점점 정확히 계산하도록 유도한다.
+  ///
+  /// 목표 차이는 큰 것부터가 아니라 **밴드 안에서 무작위 순서**로 시도하고,
+  /// 밴드가 전부 실패하면(연산·자릿수 조합에 따라 도달 불가능한 답이 많다 —
+  /// 예: 1자리 나눗셈의 답은 2~4뿐) 나머지 폭으로 넓혀 본다. 그래도 안 되면
+  /// 오른쪽을 독립 생성하는 폴백 — 차이 폭은 못 잡지만 라운드는 항상 성립한다.
+  static BalancePair balancePair({
+    required GameType? type,
+    required int digitsA,
+    required int digitsB,
+    required int solved,
+  }) {
+    final left = generateOneForDigits(
+      type: type,
+      digitsA: digitsA,
+      digitsB: digitsB,
+    );
+    final l = left.answer;
+
+    if (_random.nextDouble() < balanceEqualChance) {
+      final r = _balanceSynthesize(type, digitsA, digitsB, l, left);
+      if (r != null) return BalancePair(left: left, right: r);
+    }
+
+    for (final gap in _balanceGapOrder(solved)) {
+      final upFirst = _random.nextBool();
+      final targets = upFirst ? [l + gap, l - gap] : [l - gap, l + gap];
+      for (final target in targets) {
+        if (target < 1) continue;
+        final r = _balanceSynthesize(type, digitsA, digitsB, target, left);
+        if (r != null) return BalancePair(left: left, right: r);
+      }
+    }
+
+    return BalancePair(
+      left: left,
+      right: generateOneForDigits(
+        type: type,
+        digitsA: digitsA,
+        digitsB: digitsB,
+      ),
+    );
+  }
+
+  /// 진행도에 따른 목표 차이 후보 — 밴드를 먼저, 그다음 나머지 폭을 섞어서.
+  static List<int> _balanceGapOrder(int solved) {
+    final (lo, hi) = _balanceBand(solved);
+    final band = [for (var g = lo; g <= hi; g++) g]..shuffle(_random);
+    final rest = [
+      for (var g = 1; g <= _balanceMaxGap; g++)
+        if (g < lo || g > hi) g,
+    ]..shuffle(_random);
+    return [...band, ...rest];
+  }
+
+  /// 맞힌 개수별 차이 밴드. 초반엔 5~12로 크게 벌려 계산 없이 어림만으로도
+  /// 성공 경험을 주고, 후반엔 1~3까지 좁혀 정확한 계산을 요구한다.
+  static (int, int) _balanceBand(int solved) {
+    if (solved < 4) return (5, 12);
+    if (solved < 10) return (2, 6);
+    return (1, 3);
+  }
+
+  /// 답이 [target]인 식을 합성. [exclude]와 글자 그대로 같은 식은 거른다 —
+  /// `=` 라운드에서 좌우가 `7 + 5` / `7 + 5` 로 똑같이 나오면 문제가 안 된다.
+  static Problem? _balanceSynthesize(
+    GameType? type,
+    int digitsA,
+    int digitsB,
+    int target,
+    Problem exclude,
+  ) {
+    for (var i = 0; i < _balanceSynthTries; i++) {
+      final p = synthesizeForAnswer(
+        type: type,
+        digitsA: digitsA,
+        digitsB: digitsB,
+        target: target,
+      );
+      if (p == null) continue;
+      if (p.type == exclude.type &&
+          p.operandA == exclude.operandA &&
+          p.operandB == exclude.operandB) {
+        continue;
+      }
+      return p;
+    }
+    return null;
   }
 
   static GameType _randomConcreteType() {

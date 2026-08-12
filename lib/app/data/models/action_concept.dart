@@ -1,6 +1,6 @@
 import '../../routes/app_routes.dart';
 
-/// 액션 게임의 6가지 컨셉. 홈 "게임" 탭의 각 타일이 자신의 컨셉을 들고
+/// 액션 게임의 7가지 컨셉. 홈 "게임" 탭의 각 타일이 자신의 컨셉을 들고
 /// 공통 진입 선택 화면(`/action-select`)으로 들어가며, 거기서 시작 버튼을
 /// 누르면 [gameRoute]로 라우팅된다. 컨셉별 본편 화면(일부는 인트로 셸)이
 /// [gameRoute]에 매핑돼 있다.
@@ -10,7 +10,8 @@ enum ActionConcept {
   tower('타워 디펜스', AppRoutes.towerDefense),
   mole('두더지 잡기', AppRoutes.moleGame),
   ladder('숫자 사다리', AppRoutes.ladderGame),
-  fishing('물고기 잡기', AppRoutes.fishingGame);
+  fishing('물고기 잡기', AppRoutes.fishingGame),
+  balance('저울 맞추기', AppRoutes.balanceGame);
 
   const ActionConcept(this.title, this.gameRoute);
 

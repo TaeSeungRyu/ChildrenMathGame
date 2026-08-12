@@ -4,6 +4,8 @@ import '../modules/action_select/action_select_binding.dart';
 import '../modules/action_select/action_select_view.dart';
 import '../modules/badges/badges_binding.dart';
 import '../modules/badges/badges_view.dart';
+import '../modules/balance_game/balance_game_binding.dart';
+import '../modules/balance_game/balance_game_view.dart';
 import '../modules/coop_coach/coop_coach_binding.dart';
 import '../modules/coop_coach/coop_coach_view.dart';
 import '../modules/coop_learn/coop_learn_binding.dart';
@@ -232,6 +234,11 @@ abstract class AppPages {
       name: AppRoutes.fishingGame,
       page: () => const FishingGameView(),
       binding: FishingGameBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.balanceGame,
+      page: () => const BalanceGameView(),
+      binding: BalanceGameBinding(),
     ),
   ];
 }
