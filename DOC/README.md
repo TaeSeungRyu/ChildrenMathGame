@@ -4,6 +4,10 @@
 "작업 문서"는 모두 여기에 둔다. (루트에는 기능적 파일만 유지: `CLAUDE.md`,
 `README.md`, `privacy-policy.md`.)
 
+> 새 PC에 클론해서 개발 환경을 세팅하는 방법(필요 도구 버전, 저장소에 없는
+> 파일, 릴리즈 서명, 함께 학습 개발 조건)은 루트 [`README.md`의 "개발 환경 설정"](../README.md#개발-환경-설정-클론-후-첫-셋업)
+> 섹션에 있습니다. 코드 작업 규칙은 [`CLAUDE.md`](../CLAUDE.md).
+
 ## 현재 진행 / 할 일
 
 | 문서 | 내용 |
@@ -26,7 +30,7 @@
 | 문서 | 내용 |
 |------|------|
 | [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) | Play Store 출시 체크리스트 — "무엇을" (블로커 → 권장 → 메타데이터 → 출시 후) |
-| [PLAY_STORE_LAUNCH.md](PLAY_STORE_LAUNCH.md) | Play Store 출시 절차 — "어떻게/언제". **`.gitignore` 등록(미커밋), 개인정보 포함 가능** |
+| [PLAY_STORE_LAUNCH.md](PLAY_STORE_LAUNCH.md) | Play Store 출시 절차 — "어떻게/언제". **`.gitignore` 등록(미커밋), 개인정보 포함 가능 → 새로 클론한 저장소에는 이 파일이 없습니다(정상)** |
 | [TESTER_GUIDE.md](TESTER_GUIDE.md) | 비공개 테스트 참여 안내(테스터 배포용) |
 
 ---

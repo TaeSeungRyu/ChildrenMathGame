@@ -1,0 +1,6 @@
+# pubspec.yaml이 `assets/images/`를 디렉터리 단위 에셋으로 등록해 두었는데,
+# git은 빈 디렉터리를 추적하지 못한다. 이 파일이 없으면 새로 클론한 저장소에는
+# 디렉터리 자체가 없어서 `flutter analyze`가
+#   warning - The asset directory 'assets/images/' doesn't exist
+# 를 내고 빌드도 같은 지점에서 걸린다. 이미지 에셋을 실제로 넣기 시작하면
+# 지워도 된다.
