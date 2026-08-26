@@ -83,6 +83,11 @@ class ArenaGameController extends GetxController {
   final RxInt enemiesLeft = 0.obs;
   final RxInt waveEnemyTotal = 0.obs;
   final RxInt waveRemaining = 0.obs;
+
+  /// 이번 웨이브에 주어진 총 시간(강화로 늘어난 몫 포함). 뷰가 남은 시간과
+  /// 견주어 "적이 얼마나 다가왔는지"를 그린다 — 시간 압박을 숫자가 아니라
+  /// 위치로 보여 주기 위해 필요하다.
+  final RxInt waveTotalSeconds = 0.obs;
   final RxBool isGameOver = false.obs;
   final RxBool isNewBest = false.obs;
 
@@ -200,7 +205,8 @@ class ArenaGameController extends GetxController {
     final total = isBossWaveNumber(n) ? bossHpForWave(n) : enemiesForWave(n);
     waveEnemyTotal.value = total;
     enemiesLeft.value = total;
-    waveRemaining.value = secondsForWave(n) + extra;
+    waveTotalSeconds.value = secondsForWave(n) + extra;
+    waveRemaining.value = waveTotalSeconds.value;
     waveBannerTick.value++;
     _nextProblem();
   }

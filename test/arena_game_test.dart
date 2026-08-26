@@ -296,6 +296,67 @@ void main() {
     controller.onClose();
   });
 
+  testWidgets('3웨이브에 도달하면 보스가 HP를 달고 등장한다', (tester) async {
+    await pumpGame(tester);
+
+    // 웨이브 1, 2를 비우고 각각 강화 카드를 고른다.
+    for (var w = 0; w < 2; w++) {
+      final needed = controller.enemiesLeft.value;
+      for (var i = 0; i < needed; i++) {
+        await answerCorrectly(tester);
+      }
+      await tester.pump(
+        const Duration(milliseconds: ArenaGameController.waveClearMs + 50),
+      );
+      controller.chooseUpgrade(ArenaUpgrade.extraTime);
+      await tester.pump();
+    }
+
+    expect(controller.wave.value, 3);
+    expect(controller.isBossWave, isTrue);
+    // 보스는 "한 마리"지만 HP가 여러 칸이라 연속으로 맞혀야 한다.
+    expect(controller.enemiesLeft.value, ArenaGameController.bossHpForWave(3));
+    expect(find.textContaining('BOSS'), findsWidgets);
+
+    // 애니메이션이 몇 프레임 돌아도 예외 없이 그려져야 한다(티커 구동 화면).
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+
+    // 보스를 한 번 때리면 HP가 한 칸 줄고, 웨이브는 아직 끝나지 않는다.
+    await answerCorrectly(tester);
+    expect(
+      controller.enemiesLeft.value,
+      ArenaGameController.bossHpForWave(3) - 1,
+    );
+    expect(controller.isChoosingUpgrade.value, isFalse);
+
+    controller.onClose();
+  });
+
+  testWidgets('게임오버에서 다시 버튼을 누르면 1웨이브부터 새로 시작한다',
+      (tester) async {
+    await pumpGame(tester);
+
+    await answerCorrectly(tester);
+    for (var i = 0; i < ArenaGameController.startingHp; i++) {
+      await answerWrong(tester);
+    }
+    expect(controller.isGameOver.value, isTrue);
+    await tester.pump();
+
+    await tester.tap(find.text('다시'));
+    await tester.pump();
+
+    expect(controller.isGameOver.value, isFalse);
+    expect(controller.wave.value, 1);
+    expect(controller.score.value, 0);
+    expect(controller.hp.value, ArenaGameController.startingHp);
+    expect(controller.enemiesLeft.value, ArenaGameController.enemiesForWave(1));
+
+    controller.onClose();
+  });
+
   testWidgets('인자 없이 진입하면 1자리 덧셈으로 폴백한다', (tester) async {
     await pumpGame(tester);
     expect(controller.gameType, GameType.addition);
