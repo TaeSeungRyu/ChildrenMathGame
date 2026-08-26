@@ -87,7 +87,7 @@ void main() {
       expect(ArenaGameController.bossHpForWave(9), 5);
     });
 
-    test('제한시간은 웨이브마다 줄되 12초 아래로는 안 내려간다', () {
+    test('제한시간은 1차 하한 12초에 닿은 뒤에도 10초까지 더 조여진다', () {
       expect(ArenaGameController.secondsForWave(1), 22);
       expect(ArenaGameController.secondsForWave(2), 21);
       // 보스 웨이브는 보너스 시간이 붙는다.
@@ -95,11 +95,28 @@ void main() {
         ArenaGameController.secondsForWave(3),
         20 + ArenaGameController.bossExtraSeconds,
       );
-      expect(ArenaGameController.secondsForWave(40), 12);
+
+      // 웨이브 11에서 1차 하한(12초)에 도달.
+      expect(
+        ArenaGameController.secondsForWave(ArenaGameController.lateGameWave),
+        ArenaGameController.softFloorSeconds,
+      );
+      // 그 뒤로는 3웨이브마다 1초씩 더 — 14는 11초, 17은 최종 하한 10초.
+      expect(ArenaGameController.secondsForWave(14), 11);
+      expect(
+        ArenaGameController.secondsForWave(17),
+        ArenaGameController.hardFloorSeconds,
+      );
+      // 최종 하한 아래로는 내려가지 않는다.
+      expect(
+        ArenaGameController.secondsForWave(40),
+        ArenaGameController.hardFloorSeconds,
+      );
       // 하한에 닿은 뒤에도 보스 보너스는 그대로 붙는다(42 % 3 == 0).
       expect(
         ArenaGameController.secondsForWave(42),
-        12 + ArenaGameController.bossExtraSeconds,
+        ArenaGameController.hardFloorSeconds +
+            ArenaGameController.bossExtraSeconds,
       );
     });
   });
@@ -112,7 +129,7 @@ void main() {
       find.text('${controller.currentProblem.value.questionText} = ?'),
       findsOneWidget,
     );
-    expect(controller.choices.length, ArenaGameController.normalChoiceCount);
+    expect(controller.choices.length, ArenaGameController.baseChoiceCount);
     expect(
       controller.choices.contains(controller.currentProblem.value.answer),
       isTrue,
@@ -252,7 +269,11 @@ void main() {
     controller.chooseUpgrade(ArenaUpgrade.fewerChoices);
     await tester.pump();
 
-    expect(controller.choices.length, ArenaGameController.reducedChoiceCount);
+    // 초반 웨이브라 3개에서 하나 줄어 2개.
+    expect(
+      controller.choices.length,
+      ArenaGameController.baseChoiceCount - 1,
+    );
 
     controller.onClose();
   });
@@ -330,6 +351,60 @@ void main() {
       ArenaGameController.bossHpForWave(3) - 1,
     );
     expect(controller.isChoosingUpgrade.value, isFalse);
+
+    controller.onClose();
+  });
+
+  testWidgets('웨이브가 오르면 자릿수 사다리가 한 칸씩 올라간다', (tester) async {
+    await pumpGame(tester);
+
+    // 진입 인자가 없어 시작 칸은 (1,1). 3웨이브마다 한 칸씩.
+    expect(controller.digitsForWave(1), (1, 1));
+    expect(controller.digitsForWave(3), (1, 1));
+    expect(controller.digitsForWave(4), (2, 1));
+    expect(controller.digitsForWave(7), (2, 2));
+    expect(controller.digitsForWave(10), (3, 2));
+    expect(controller.digitsForWave(13), (3, 3));
+    // 사다리 꼭대기에서 멈춘다.
+    expect(controller.digitsForWave(40), (3, 3));
+    expect(controller.currentDigits, (1, 1));
+
+    controller.onClose();
+  });
+
+  testWidgets('보스를 넘기면 다음 웨이브부터 숫자가 굵어진다', (tester) async {
+    await pumpGame(tester);
+
+    // 웨이브 1·2·3(보스)을 차례로 비운다.
+    for (var w = 0; w < 3; w++) {
+      final needed = controller.enemiesLeft.value;
+      for (var i = 0; i < needed; i++) {
+        await answerCorrectly(tester);
+      }
+      await tester.pump(
+        const Duration(milliseconds: ArenaGameController.waveClearMs + 50),
+      );
+      controller.chooseUpgrade(ArenaUpgrade.extraTime);
+      await tester.pump();
+    }
+
+    expect(controller.wave.value, 4);
+    expect(controller.currentDigits, (2, 1));
+    expect(controller.raisedDigits.value, isTrue);
+    // 배너가 이유를 알려 준다 — 갑자기 숫자가 커진 걸 설명 없이 겪지 않도록.
+    expect(find.textContaining('숫자가 커져요'), findsOneWidget);
+
+    controller.onClose();
+  });
+
+  testWidgets('후반 웨이브에는 보기가 하나 늘어 찍기가 어려워진다',
+      (tester) async {
+    await pumpGame(tester);
+    expect(controller.choiceCount, ArenaGameController.baseChoiceCount);
+
+    // 11웨이브까지 실제로 플레이하면 테스트가 길어져 웨이브만 옮겨 확인한다.
+    controller.wave.value = ArenaGameController.lateGameWave;
+    expect(controller.choiceCount, ArenaGameController.lateChoiceCount);
 
     controller.onClose();
   });

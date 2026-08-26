@@ -14,7 +14,9 @@ enum ArenaUpgrade {
   heal('❤️', '하트 회복', '하트를 하나 채워요'),
   extraTime('⏱️', '시간 +5초', '다음 웨이브를 5초 더!'),
   shield('🛡️', '방어막', '틀려도 한 번은 안전해요'),
-  fewerChoices('🎯', '보기 줄이기', '다음 웨이브는 보기가 2개!');
+  // 후반 웨이브는 보기가 한 칸 늘어나므로 "2개"로 못 박지 않는다 — 언제나
+  // "지금 보기에서 하나 줄어든다".
+  fewerChoices('🎯', '보기 줄이기', '다음 웨이브는 보기가 하나 줄어요');
 
   const ArenaUpgrade(this.emoji, this.title, this.description);
 

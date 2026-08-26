@@ -10,6 +10,7 @@ import '../../data/models/problem.dart';
 import '../../data/services/action_score_service.dart';
 import '../../data/services/problem_generator.dart';
 import '../../data/services/sfx_service.dart';
+import '../../shared/digit_ladder.dart';
 
 /// 아레나 컨트롤러 — 웨이브 생존형("서바이버라이크") 모델.
 ///
@@ -53,8 +54,25 @@ class ArenaGameController extends GetxController {
   static const int bossExtraSeconds = 6;
   static const int bossBonus = 50;
 
-  static const int normalChoiceCount = 3;
-  static const int reducedChoiceCount = 2;
+  /// 보기 수. 후반([lateGameWave] 이후)에는 하나 늘려 찍기 확률을 1/3 → 1/4 로
+  /// 떨어뜨린다. 강화 "보기 줄이기"는 그 시점의 보기에서 하나를 빼 준다.
+  static const int baseChoiceCount = 3;
+  static const int lateChoiceCount = 4;
+
+  /// 잔몹 수가 상한(8)에 닿고 제한시간이 1차 하한(12초)에 닿는 웨이브.
+  /// 이 지점부터는 물량·시간으로는 더 조일 곳이 없어 다른 축이 들어온다.
+  static const int lateGameWave = 11;
+
+  /// 제한시간 하한 두 단계. 1차 하한에 닿은 뒤에도 [floorStepEvery] 웨이브마다
+  /// 1초씩 더 깎아 최종 하한까지 내려간다 — 곡선이 완전히 평평해지면 "언젠가
+  /// 진다"가 아니라 "실수할 때까지 반복"이 되어 버린다.
+  static const int softFloorSeconds = 12;
+  static const int hardFloorSeconds = 10;
+  static const int floorStepEvery = 3;
+
+  /// 몇 웨이브마다 자릿수를 한 칸 올릴지. 보스 주기([bossEvery])와 맞춰 두면
+  /// "보스를 넘겼더니 숫자가 커졌다"로 읽혀 리듬이 생긴다.
+  static const int digitStepEvery = 3;
 
   /// 정오답 연출 시간. 틀렸을 때 정답을 눈으로 확인할 시간을 조금 더 준다.
   static const int revealCorrectMs = 450;
@@ -151,8 +169,32 @@ class ArenaGameController extends GetxController {
   /// 점수 배수(콤보 × 강화). 뷰의 HUD가 "×4" 처럼 그대로 보여준다.
   int get scoreMultiplier => comboMultiplier * (_doubleScoreActive ? 2 : 1);
 
-  int get choiceCount =>
-      _fewerChoicesActive ? reducedChoiceCount : normalChoiceCount;
+  /// 이번 웨이브의 보기 수. 후반에는 한 칸 늘고, 강화를 골랐으면 거기서 하나
+  /// 줄어든다(늘 2개가 되는 게 아니라 "하나 덜 나온다").
+  int get choiceCount {
+    final base = wave.value >= lateGameWave ? lateChoiceCount : baseChoiceCount;
+    return _fewerChoicesActive ? base - 1 : base;
+  }
+
+  /// 시작 자릿수가 사다리의 몇 번째 칸이었는지. 진입 화면에서 고른 값이
+  /// **시작점**이고, 웨이브가 오르면 여기서 위로 올라간다.
+  late final int _startRung;
+
+  /// [wave] 에서 출제할 (A 자릿수, B 자릿수). [digitStepEvery] 웨이브마다 사다리를
+  /// 한 칸 올리고 꼭대기에서 멈춘다.
+  (int, int) digitsForWave(int wave) {
+    final rung = min(
+      _startRung + (wave - 1) ~/ digitStepEvery,
+      digitLadder.length - 1,
+    );
+    return digitLadder[rung];
+  }
+
+  /// 지금 웨이브에서 자릿수가 올라갔는지 — 배너가 "숫자가 커져요!"를 띄운다.
+  final RxBool raisedDigits = false.obs;
+
+  /// 현재 웨이브의 자릿수(뷰/테스트용).
+  (int, int) get currentDigits => digitsForWave(wave.value);
 
   /// 웨이브의 잔몹 수. 2웨이브마다 한 마리씩 늘고 8마리에서 멈춘다 — 더 늘리면
   /// 한 웨이브가 지루하게 길어진다. 보스 웨이브는 항상 "한 마리"다.
@@ -164,11 +206,20 @@ class ArenaGameController extends GetxController {
   /// 보스 HP — 보스전을 거듭할수록 한 칸씩 두꺼워진다.
   static int bossHpForWave(int wave) => 3 + (wave ~/ bossEvery) - 1;
 
-  /// 웨이브 제한시간. 웨이브마다 1초씩 줄어들되 12초 밑으로는 안 내려간다
-  /// (그 아래로는 읽고 계산할 시간 자체가 부족해 실력과 무관해진다).
+  /// 웨이브 제한시간. 웨이브마다 1초씩 줄어 [softFloorSeconds] 에 닿고
+  /// ([lateGameWave] 지점), 그 뒤로는 [floorStepEvery] 웨이브마다 1초씩 더 깎아
+  /// [hardFloorSeconds] 에서 멈춘다. 두 단계로 나눈 이유: 계속 1초씩 깎으면
+  /// 금세 읽을 시간조차 없어 실력과 무관해지고, 12초에서 완전히 멈추면 후반이
+  /// 평평해져 "더 어려워져서 지는" 감각이 사라진다.
+  ///
   /// 보스 웨이브는 HP만큼 더 맞혀야 하므로 [bossExtraSeconds] 를 더 준다.
   static int secondsForWave(int wave) {
-    final base = (22 - (wave - 1)).clamp(12, 22);
+    var base = 22 - (wave - 1);
+    if (base < softFloorSeconds) {
+      final over = wave - lateGameWave; // 1차 하한에 닿은 뒤 지난 웨이브 수
+      base = (softFloorSeconds - over ~/ floorStepEvery)
+          .clamp(hardFloorSeconds, softFloorSeconds);
+    }
     return isBossWaveNumber(wave) ? base + bossExtraSeconds : base;
   }
 
@@ -185,6 +236,7 @@ class ArenaGameController extends GetxController {
       digitsA = 1;
       digitsB = 1;
     }
+    _startRung = digitRungOf((digitsA, digitsB));
     currentProblem = _generateProblem().obs;
     _startWave(1);
     _startSecondTimer();
@@ -193,7 +245,9 @@ class ArenaGameController extends GetxController {
   // ───── 웨이브 ──────────────────────────────────────────────────────────────
 
   void _startWave(int n) {
+    final before = digitsForWave(wave.value);
     wave.value = n;
+    raisedDigits.value = digitsForWave(n) != before;
     // 지난 웨이브에서 고른 카드의 효과를 이번 웨이브에 태운다.
     _doubleScoreActive = _doubleScoreNextWave;
     _fewerChoicesActive = _fewerChoicesNextWave;
@@ -269,11 +323,17 @@ class ArenaGameController extends GetxController {
 
   // ───── 문제 / 입력 ─────────────────────────────────────────────────────────
 
-  Problem _generateProblem() => ProblemGenerator.generateOneForDigits(
-    type: gameType,
-    digitsA: digitsA,
-    digitsB: digitsB,
-  );
+  /// 문제는 **현재 웨이브의 자릿수**로 낸다 — 진입 화면에서 고른 값은 시작점일
+  /// 뿐이고, 웨이브가 오르면 산수 자체가 굵어진다. 오답 보기도 같은 자릿수에서
+  /// 뽑히므로 후반에는 보기 간 간격도 자연히 넓어진다.
+  Problem _generateProblem() {
+    final (a, b) = currentDigits;
+    return ProblemGenerator.generateOneForDigits(
+      type: gameType,
+      digitsA: a,
+      digitsB: b,
+    );
+  }
 
   void _nextProblem() {
     final p = _generateProblem();
@@ -416,6 +476,9 @@ class ArenaGameController extends GetxController {
   }
 
   void restart() {
+    // 자릿수 램프는 웨이브에서 파생되므로, _startWave(1) 이 "올라갔다"로 오해하지
+    // 않도록 웨이브를 먼저 되돌린다.
+    wave.value = 1;
     hp.value = startingHp;
     score.value = 0;
     combo.value = 0;

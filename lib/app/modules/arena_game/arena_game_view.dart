@@ -729,6 +729,9 @@ class _WaveBanner extends StatelessWidget {
       final tick = controller.waveBannerTick.value;
       final wave = controller.wave.value;
       final upgrade = controller.activeUpgrade.value;
+      // 자릿수가 올라간 웨이브에는 그 사실을 먼저 알린다 — 강화 이름보다
+      // 드물게 일어나고, 갑자기 숫자가 커진 이유를 모르면 당황스럽다.
+      final raised = controller.raisedDigits.value;
       return TweenAnimationBuilder<double>(
         // tick 이 바뀌면 새 애니메이션으로 다시 재생된다.
         key: ValueKey(tick),
@@ -758,11 +761,13 @@ class _WaveBanner extends StatelessWidget {
             // 첫 웨이브 배너에 목표를 한 줄 얹어 두면 처음 들어온 아이도 뭘
             // 해야 하는지 알 수 있다. 강화 카드 규칙은 클리어 오버레이가 스스로
             // 설명하므로 여기서는 굳이 말하지 않는다.
-            upgrade != null
-                ? 'WAVE $wave  ${upgrade.emoji} ${upgrade.title}'
-                : wave == 1
-                    ? 'WAVE 1 · 적을 모두 물리쳐요!'
-                    : 'WAVE $wave',
+            raised
+                ? 'WAVE $wave · 🔢 숫자가 커져요!'
+                : upgrade != null
+                    ? 'WAVE $wave  ${upgrade.emoji} ${upgrade.title}'
+                    : wave == 1
+                        ? 'WAVE 1 · 적을 모두 물리쳐요!'
+                        : 'WAVE $wave',
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,

@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/models/action_concept.dart';
 import '../../data/models/game_type.dart';
+import '../../shared/digit_ladder.dart';
 
 /// 액션 게임 4종이 공유하는 진입 선택 화면의 컨트롤러.
 ///
@@ -29,14 +30,9 @@ class ActionSelectController extends GetxController {
   ];
 
   // 자릿수 조합 — challenge 모드의 level 1..5와 의도적으로 동일한 사다리.
-  // (1,1) / (2,1) / (2,2) / (3,2) / (3,3).
-  static const List<(int, int)> digitChoices = [
-    (1, 1),
-    (2, 1),
-    (2, 2),
-    (3, 2),
-    (3, 3),
-  ];
+  // 정의는 `shared/digit_ladder.dart` 한 곳에 있다(아레나가 같은 사다리를
+  // 웨이브 램프에 재사용하므로 상수를 나눠 갖지 않는다).
+  static const List<(int, int)> digitChoices = digitLadder;
 
   late final ActionConcept concept;
 

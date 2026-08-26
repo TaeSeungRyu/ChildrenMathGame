@@ -24,9 +24,20 @@ The eight **action mini-games** (`/monster-game`, `/balloon-game`, `/tower-defen
 
 **저울 맞추기 (balance)** is the odd one out among the eight: every other action game is `식 하나 → 답 하나` (typed on the keypad or tapped among candidates), while this one asks only for the **relation** between two expressions — `>` / `=` / `<` — so it can be answered by estimation without computing either side exactly. Rounds come from `ProblemGenerator.balancePair(type, digitsA, digitsB, solved)`: the left expression is generated normally, then the right one is **back-synthesized** via `synthesizeForAnswer` to land on `left.answer ± gap`, so the gap (and therefore the difficulty) is controlled. The gap band narrows with `solved` (`<4` → 5–12, `<10` → 2–6, else 1–3), and `balanceEqualChance` (0.22) deliberately forces `=` rounds that random generation would almost never produce. When no gap in the band is reachable for a given (op, digits) combo — e.g. 1-digit division only yields answers 2–4 — it widens, then falls back to generating the right side independently. Right/wrong both reveal by tilting the beam toward the true answer; a wrong pick does **not** replay the same round, because with three choices a retry is just a guess.
 
-**아레나 (arena)** is the other structural outlier: the other seven are flat 60-second runs, while this one is **wave-based survival** (서바이버라이크) with state that carries across waves. A wave = clear N enemies before the wave timer runs out; every `bossEvery` (3) waves is a **boss** — one enemy with multi-hit HP and `bossExtraSeconds` more time. Enemy count grows every 2 waves (capped at 8) and the timer shrinks by 1s per wave (floored at 12s), so a run always ends eventually — the score to beat is how deep you got, not whether you "finished".
+**아레나 (arena)** is the other structural outlier: the other seven are flat 60-second runs, while this one is **wave-based survival** (서바이버라이크) with state that carries across waves. A wave = clear N enemies before the wave timer runs out; every `bossEvery` (3) waves is a **boss** — one enemy with multi-hit HP and `bossExtraSeconds` more time. The score to beat is how deep you got, not whether you "finished".
 
-- **Wave clear → one of three 강화 cards** (`ArenaUpgrade`, `lib/app/data/models/arena_upgrade.dart`): 점수 2배 / 하트 회복 / 시간 +5초 / 방어막 / 보기 줄이기. Three are drawn at random from the five each time so runs diverge; `heal` is filtered out at full HP and `shield` while one is held, so a card is never a dud. Everything except `heal` (instant) and `shield` (held until it eats a wrong answer) lasts **one wave only** — permanent buffs flatten the late-game curve.
+**Four axes scale with the wave** — the first two run out early, so the last two exist to keep the curve from flattening:
+
+| Axis | Rule | Caps at |
+|---|---|---|
+| 적 수 | +1 every 2 waves | 8 (wave 11) |
+| 제한시간 | −1s per wave to `softFloorSeconds` (12s), then −1s every `floorStepEvery` (3) waves | `hardFloorSeconds` 10s (wave 17) |
+| **자릿수** | start rung from action-select, +1 rung every `digitStepEvery` (3) waves | top of `digitLadder` (3×3, wave 13 from a 1×1 start) |
+| **보기 수** | `baseChoiceCount` 3 → `lateChoiceCount` 4 at `lateGameWave` (11) | 4 |
+
+The digit ramp is the important one: without it the arithmetic never got harder (a 1-digit-addition run stayed 1-digit forever) and only the clock moved. The action-select digit choice is now the **starting rung**, not the fixed difficulty. `digitsForWave` reads `lib/app/shared/digit_ladder.dart`, which is also what `ActionSelectController.digitChoices` points at — don't reintroduce a second copy of the ladder. When a wave raises the rung, `raisedDigits` flips and the banner says "숫자가 커져요!" so a sudden jump in operand size is never unexplained.
+
+- **Wave clear → one of three 강화 cards** (`ArenaUpgrade`, `lib/app/data/models/arena_upgrade.dart`): 점수 2배 / 하트 회복 / 시간 +5초 / 방어막 / 보기 줄이기 (removes one choice from whatever the wave offers — 3→2 early, 4→3 late; that's why its text says "하나 줄어요" rather than naming a number). Three are drawn at random from the five each time so runs diverge; `heal` is filtered out at full HP and `shield` while one is held, so a card is never a dud. Everything except `heal` (instant) and `shield` (held until it eats a wrong answer) lasts **one wave only** — permanent buffs flatten the late-game curve.
 - **Scoring**: `baseScore` × combo multiplier (×2 at 5 combo, ×3 at 10) × 2 if 점수 2배 is active, plus `critBonus` when answered within `critMs`. Boss kills add `bossBonus`. `ActionScoreService` stores the accumulated score.
 - **Failure**: a wrong answer costs a heart (shield absorbs the first) but leaves the enemy standing; a wave timeout costs a heart and **restarts the same wave** rather than demoting — losing wave progress reads as too harsh at this age. HP 0 is the only end condition, so there's no global timer.
 - The wave clock **pauses during answer reveals and the upgrade overlay** (`_locked` / `isChoosingUpgrade` guards in the tick). Without that, time can expire while the correct answer is being shown, which is a penalty the player can't act on.
@@ -53,7 +64,7 @@ Operation specifics:
 - **Subtraction**: same pair, then swap so `a >= b` (no negatives).
 - **Division**: dividend has A digits, divisor has B digits (1-digit divisor is restricted to 2–9 to skip trivial ÷1), dividend built as `quotient * divisor` with `quotient >= 2` to avoid trivial `n÷n=1`. Loop retries divisor picks that can't reach the dividend digit range.
 
-If you change these rules, update **both** the `_digitsForLevel` table here and `_levelLabel` in `level_select_view.dart`. Level 1 division is intentionally a small set (e.g. `4÷2`, `6÷2`, `8÷2`, `6÷3`, `9÷3`, `8÷4`). The action-select screen (`action_select_controller.dart`) deliberately mirrors this same digit ladder as its `digitChoices`, and generates via `ProblemGenerator.generateOneForDigits(...)` which bypasses the level→digits table.
+If you change these rules, update **both** the `_digitsForLevel` table here and `_levelLabel` in `level_select_view.dart`. Level 1 division is intentionally a small set (e.g. `4÷2`, `6÷2`, `8÷2`, `6÷3`, `9÷3`, `8÷4`). The action-select screen (`action_select_controller.dart`) deliberately mirrors this same digit ladder as its `digitChoices` — the shared definition lives in `lib/app/shared/digit_ladder.dart` (also used by the 아레나 wave ramp) — and generates via `ProblemGenerator.generateOneForDigits(...)` which bypasses the level→digits table.
 
 ### `GameType` — concrete ops vs roll-up labels
 
@@ -185,7 +196,7 @@ Coop (부모와 함께하는 학습): `/coop-lobby` → `/coop-learn` (child) or
 
 ### Shared helpers (`lib/app/shared/`)
 
-Logic: `date_format.dart`, `korean_particle.dart`, `mixed_label.dart` (roll-up component labels), `badges.dart` (built-in badge defs + unlock logic), `daily_missions.dart` (day-seeded pool of 3), `streak.dart` (`computeStreak`), `weakness.dart` (`WeaknessBucket`/`WeaknessAnalysis`), `stamp_evaluation.dart` (auto-earn check), `wrong_notebook.dart` (aggregate/dedupe by signature, group-by-day), `weekly_report.dart` (`computeWeeklyReport` → last-7-days buckets for the parent report card).
+Logic: `date_format.dart`, `korean_particle.dart`, `digit_ladder.dart` (the shared (A,B) digit rungs — action-select choices + 아레나 wave ramp), `mixed_label.dart` (roll-up component labels), `badges.dart` (built-in badge defs + unlock logic), `daily_missions.dart` (day-seeded pool of 3), `streak.dart` (`computeStreak`), `weakness.dart` (`WeaknessBucket`/`WeaknessAnalysis`), `stamp_evaluation.dart` (auto-earn check), `wrong_notebook.dart` (aggregate/dedupe by signature, group-by-day), `weekly_report.dart` (`computeWeeklyReport` → last-7-days buckets for the parent report card).
 Reusable widgets: `op_tile.dart`, `answer_pad.dart`, `attempt_tile.dart`, `action_intro_scaffold.dart` (shared layout for action-game intro screens), `action_record_line.dart` (shared 신기록/best line for action game-over overlays).
 
 ## Stack & assets
