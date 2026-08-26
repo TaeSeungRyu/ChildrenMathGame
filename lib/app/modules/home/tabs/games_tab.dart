@@ -191,7 +191,16 @@ class _GameSpec {
   final Color fg;
 
   /// 타일에 깔리는 순서. 새 게임은 뒤에 붙인다.
-  static const all = [monster, balloon, tower, mole, ladder, fishing, balance];
+  static const all = [
+    monster,
+    balloon,
+    tower,
+    mole,
+    ladder,
+    fishing,
+    balance,
+    arena,
+  ];
 
   static const monster = _GameSpec(
     concept: ActionConcept.monster,
@@ -261,6 +270,16 @@ class _GameSpec {
     bg: Color(0xFFF8BBD0),
     accent: Color(0xFFAD1457),
     fg: Color(0xFF880E4F),
+  );
+
+  static const arena = _GameSpec(
+    concept: ActionConcept.arena,
+    title: '아레나',
+    tagline: '웨이브를 버텨라!',
+    icon: Icons.local_fire_department,
+    bg: Color(0xFFD1C4E9),
+    accent: Color(0xFF4527A0),
+    fg: Color(0xFF311B92),
   );
 }
 
