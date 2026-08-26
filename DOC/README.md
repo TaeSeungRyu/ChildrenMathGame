@@ -31,6 +31,7 @@
 |------|------|
 | [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) | Play Store 출시 체크리스트 — "무엇을" (블로커 → 권장 → 메타데이터 → 출시 후) |
 | [PLAY_STORE_LAUNCH.md](PLAY_STORE_LAUNCH.md) | Play Store 출시 절차 — "어떻게/언제". **`.gitignore` 등록(미커밋), 개인정보 포함 가능 → 새로 클론한 저장소에는 이 파일이 없습니다(정상)** |
+| [STORE_LISTING.md](STORE_LISTING.md) | Play Console에 붙여 넣을 **확정 문구** — 앱 이름/짧은 설명/자세한 설명/출시 노트 + 콘솔 입력값. 기능이 바뀌면 여기부터 고친다 |
 | [TESTER_GUIDE.md](TESTER_GUIDE.md) | 비공개 테스트 참여 안내(테스터 배포용) |
 
 ---
