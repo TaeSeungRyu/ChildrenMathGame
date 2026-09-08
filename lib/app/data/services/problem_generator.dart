@@ -10,8 +10,12 @@ class ProblemGenerator {
   static const timesTableProblems = 9;
   static final _random = Random();
 
-  static List<Problem> generate({required GameType type, required int level}) {
-    return List.generate(totalProblems, (_) => _one(type, level));
+  static List<Problem> generate({
+    required GameType type,
+    required int level,
+    int count = totalProblems,
+  }) {
+    return List.generate(count, (_) => _one(type, level));
   }
 
   /// Single-problem generator for open-ended modes (e.g. time-attack) that
@@ -343,7 +347,9 @@ class ProblemGenerator {
   static List<Problem> generateMixed(
     List<GameType> allowedTypes,
     int level,
-  ) {
+    {
+    int count = totalProblems,
+  }) {
     if (allowedTypes.isEmpty) {
       throw ArgumentError('allowedTypes must contain at least one operation');
     }
@@ -353,10 +359,10 @@ class ProblemGenerator {
       );
     }
     if (allowedTypes.length == 1) {
-      return generate(type: allowedTypes.single, level: level);
+      return generate(type: allowedTypes.single, level: level, count: count);
     }
     return List.generate(
-      totalProblems,
+      count,
       (_) => _compoundOne(allowedTypes, level),
     );
   }

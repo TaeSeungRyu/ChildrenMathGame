@@ -80,6 +80,7 @@ class GameController extends GetxController {
   // first wrong submission. Mutually exclusive with timeAttack/practice; not
   // available for times-table, mixed, equation, or flash sessions.
   late final bool isEndless;
+  late final int problemCount;
 
   final currentIndex = 0.obs;
   // Seconds elapsed since the timer started. Counts up regardless of mode so
@@ -121,6 +122,8 @@ class GameController extends GetxController {
   void onInit() {
     super.onInit();
     final args = Get.arguments as Map;
+    problemCount =
+        (args['problemCount'] as int?) ?? ProblemGenerator.totalProblems;
     tableNumber = args['tableNumber'] as int?;
     mixedTypes = (args['mixedTypes'] as List?)?.cast<GameType>();
     isEquation = (args['isEquation'] as bool?) ?? false;
@@ -141,7 +144,11 @@ class GameController extends GetxController {
     } else if (isMixed) {
       type = GameType.mixed;
       level = args['level'] as int;
-      problems = ProblemGenerator.generateMixed(mixedTypes!, level);
+      problems = ProblemGenerator.generateMixed(
+        mixedTypes!,
+        level,
+        count: problemCount,
+      );
       isPractice = (args['isPractice'] as bool?) ?? false;
       isTimeAttack = false;
       isEndless = false;
@@ -156,7 +163,11 @@ class GameController extends GetxController {
       equationType = args['type'] as GameType;
       type = GameType.equation;
       level = args['level'] as int;
-      problems = ProblemGenerator.generate(type: equationType!, level: level);
+      problems = ProblemGenerator.generate(
+        type: equationType!,
+        level: level,
+        count: problemCount,
+      );
       isPractice = (args['isPractice'] as bool?) ?? false;
       isTimeAttack = false;
       isEndless = false;
@@ -171,7 +182,11 @@ class GameController extends GetxController {
       type = GameType.flash;
       level = args['level'] as int;
       flashDisplayMs = (args['flashDisplayMs'] as int?) ?? 2000;
-      problems = ProblemGenerator.generate(type: flashType!, level: level);
+      problems = ProblemGenerator.generate(
+        type: flashType!,
+        level: level,
+        count: problemCount,
+      );
       isPractice = (args['isPractice'] as bool?) ?? false;
       isTimeAttack = false;
       isEndless = false;
@@ -179,16 +194,16 @@ class GameController extends GetxController {
       estimationType = null;
       estimationChoices = null;
     } else if (isEstimation) {
-      // 어림셈 — 단일 연산(+/−/×), 고정 10문제, 3지선다. 보기는 onInit에서
-      // 한 번에 미리 만들어 두므로 화면 전환 중 새로 셔플되어 답이 바뀌는 일이
-      // 없다. 시간 어택/엔드리스는 어림셈에 적용하지 않는다(보기 사전 생성과
-      // 가변 길이 problems 가 충돌하므로).
+      // 어림셈 — 단일 연산(+/−/×), 고정 길이, 3지선다. 보기는 onInit에서 한
+      // 번에 미리 만들어 두므로 화면 전환 중 새로 셔플되어 답이 바뀌는 일이
+      // 없다. 시간 어택/엔드리스는 어림셈에 적용하지 않는다.
       estimationType = args['type'] as GameType;
       type = GameType.estimation;
       level = args['level'] as int;
       problems = ProblemGenerator.generate(
         type: estimationType!,
         level: level,
+        count: problemCount,
       );
       estimationChoices = [
         for (final p in problems)
@@ -219,7 +234,11 @@ class GameController extends GetxController {
         ];
         isPractice = false;
       } else {
-        problems = ProblemGenerator.generate(type: type, level: level);
+        problems = ProblemGenerator.generate(
+          type: type,
+          level: level,
+          count: problemCount,
+        );
         isPractice = (args['isPractice'] as bool?) ?? false;
       }
     }

@@ -3,6 +3,26 @@ import 'package:children_math_game/app/data/services/problem_generator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('ProblemGenerator custom count', () {
+    test('generate can create a short challenge', () {
+      final problems = ProblemGenerator.generate(
+        type: GameType.addition,
+        level: 1,
+        count: 5,
+      );
+      expect(problems, hasLength(5));
+    });
+
+    test('generateMixed can create a short challenge', () {
+      final problems = ProblemGenerator.generateMixed(
+        const [GameType.addition, GameType.subtraction],
+        1,
+        count: 5,
+      );
+      expect(problems, hasLength(5));
+    });
+  });
+
   group('ProblemGenerator.generateMixed (single type)', () {
     test('single-type selection still yields simple problems', () {
       final problems = ProblemGenerator.generateMixed(

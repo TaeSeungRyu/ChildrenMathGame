@@ -4,7 +4,7 @@
 
 사칙연산(덧셈/뺄셈/곱셈/나눗셈)을 5단계 난이도로 풀고, 구구단·혼합·방정식·플래시·어림셈·부호 맞추기 등 특별 모드와 8종의 액션 미니게임(웨이브 생존형 **아레나** 포함)을 제공합니다. 매 게임마다 점수·소요시간·콤보가 기록되고, 도장판/뱃지·오답노트·통계·복습으로 이어집니다. 두 기기를 근거리에서 연결해 부모가 옆에서 돕는 **함께 학습(Nearby Connections)** 모드도 있습니다.
 
-> 패키지 이름은 `children_math_game`이지만 앱 표시 이름은 **연산 히어로**입니다. 현재 버전 `3.3.0+22` (`pubspec.yaml`의 `version:`이 단일 출처).
+> 패키지 이름은 `children_math_game`이지만 앱 표시 이름은 **연산 히어로**입니다. 현재 버전 `3.4.1+24` (`pubspec.yaml`의 `version:`이 단일 출처).
 
 ---
 
@@ -309,7 +309,7 @@ flutter build apk --debug       # 서명 없이 되는 빌드 (local.properties 
 dart run flutter_launcher_icons # 런처 아이콘 재생성 (icon 변경 시)
 ```
 
-버전은 `pubspec.yaml`의 `version: 3.3.0+22` 한 곳만 고치면 됩니다(`android/local.properties`의 `flutter.versionName/Code`는 빌드 때 자동으로 갱신되는 사본이니 직접 수정하지 마세요).
+버전은 `pubspec.yaml`의 `version: 3.4.1+24` 한 곳만 고치면 됩니다(`android/local.properties`의 `flutter.versionName/Code`는 빌드 때 자동으로 갱신되는 사본이니 직접 수정하지 마세요).
 
 ## 테스트 작성 시 주의
 

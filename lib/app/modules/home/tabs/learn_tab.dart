@@ -50,6 +50,7 @@ class LearnTab extends GetView<HomeController> {
                     _DailyMissionCard(
                       missions: controller.missions,
                       completed: controller.missionsCompleted,
+                      onStart: controller.startDailyChallenge,
                     ),
                     if (controller.recommendation != null) ...[
                       const SizedBox(height: 4),
@@ -301,10 +302,15 @@ class _StreakBadge extends StatelessWidget {
 }
 
 class _DailyMissionCard extends StatelessWidget {
-  const _DailyMissionCard({required this.missions, required this.completed});
+  const _DailyMissionCard({
+    required this.missions,
+    required this.completed,
+    required this.onStart,
+  });
 
   final List<DailyMissionStatus> missions;
   final int completed;
+  final VoidCallback onStart;
 
   @override
   Widget build(BuildContext context) {
@@ -359,6 +365,35 @@ class _DailyMissionCard extends StatelessWidget {
             const SizedBox(height: 2),
             for (var i = 0; i < missions.length; i++)
               _MissionRow(status: missions[i], foreground: fg),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '짧게 5문제만 풀고 미션을 채워 봐요',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: fg.withValues(alpha: 0.82),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: onStart,
+                  icon: const Icon(Icons.play_arrow, size: 18),
+                  label: const Text('5문제 시작'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: allDone
+                        ? const Color(0xFF5D4037)
+                        : const Color(0xFFE65100),
+                    foregroundColor: Colors.white,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

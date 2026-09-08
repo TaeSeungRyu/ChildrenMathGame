@@ -110,6 +110,18 @@ class HomeController extends GetxController {
     );
   }
 
+  void startDailyChallenge() {
+    final bucket = recommendation;
+    Get.toNamed(
+      AppRoutes.game,
+      arguments: {
+        'type': bucket?.type ?? GameType.addition,
+        'level': bucket?.level ?? 1,
+        'problemCount': 5,
+      },
+    );
+  }
+
   // 함께 탭(부모와 함께하는 학습) 진입점.
   void openCoopLobby() => Get.toNamed(AppRoutes.coopLobby);
   void openCoopRecords() => Get.toNamed(AppRoutes.coopRecords);
