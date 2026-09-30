@@ -757,7 +757,7 @@ class _WaveBanner extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
-            // 진입 선택 화면은 8종 공용이라 아레나 규칙을 설명할 자리가 없다.
+            // 진입 선택 화면은 액션 게임 공용이라 아레나 규칙을 설명할 자리가 없다.
             // 첫 웨이브 배너에 목표를 한 줄 얹어 두면 처음 들어온 아이도 뭘
             // 해야 하는지 알 수 있다. 강화 카드 규칙은 클리어 오버레이가 스스로
             // 설명하므로 여기서는 굳이 말하지 않는다.

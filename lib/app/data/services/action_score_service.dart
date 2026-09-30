@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/action_concept.dart';
 import 'profile_service.dart';
 
-/// Best-score + play-count store for the six action mini-games.
+/// Best-score + play-count store for the action mini-games.
 ///
 /// The action games don't go through `RecordService`/`GameRecord` (they're a
 /// separate arcade track), so this tiny service keeps their persistent

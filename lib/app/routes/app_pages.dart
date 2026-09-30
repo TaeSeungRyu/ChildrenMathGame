@@ -8,6 +8,8 @@ import '../modules/arena_game/arena_game_binding.dart';
 import '../modules/arena_game/arena_game_view.dart';
 import '../modules/balance_game/balance_game_binding.dart';
 import '../modules/balance_game/balance_game_view.dart';
+import '../modules/bingo_game/bingo_game_binding.dart';
+import '../modules/bingo_game/bingo_game_view.dart';
 import '../modules/coop_coach/coop_coach_binding.dart';
 import '../modules/coop_coach/coop_coach_view.dart';
 import '../modules/coop_learn/coop_learn_binding.dart';
@@ -246,6 +248,11 @@ abstract class AppPages {
       name: AppRoutes.arenaGame,
       page: () => const ArenaGameView(),
       binding: ArenaGameBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.bingoGame,
+      page: () => const BingoGameView(),
+      binding: BingoGameBinding(),
     ),
   ];
 }

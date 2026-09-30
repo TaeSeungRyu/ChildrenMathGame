@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../../data/services/action_score_service.dart';
 import 'action_select_controller.dart';
 
-/// 액션 게임 4종이 공유하는 진입 선택 화면.
+/// 액션 게임이 공유하는 진입 선택 화면.
 ///
 /// 두 줄로 구성: 연산(➕➖✖️➗🎲) 5지선다 + 자릿수(1×1~3×3) 5지선다.
 /// 시작하기를 누르면 컨셉별 본편 라우트로 선택값이 전달된다.

@@ -4,8 +4,8 @@ import 'package:get/get.dart';
 import '../../../data/models/action_concept.dart';
 import '../home_controller.dart';
 
-/// 게임 탭 — "연산 히어로"의 액션 게임 7종. 각 타일은 공통 진입 선택 화면으로
-/// 라우팅한 뒤 컨셉별 본편으로 넘어간다. 7종 모두 플레이 가능.
+/// 게임 탭 — "연산 히어로"의 액션 게임. 각 타일은 공통 진입 선택 화면으로
+/// 라우팅한 뒤 컨셉별 본편으로 넘어간다.
 class GamesTab extends GetView<HomeController> {
   const GamesTab({super.key});
 
@@ -200,6 +200,7 @@ class _GameSpec {
     fishing,
     balance,
     arena,
+    bingo,
   ];
 
   static const monster = _GameSpec(
@@ -280,6 +281,16 @@ class _GameSpec {
     bg: Color(0xFFD1C4E9),
     accent: Color(0xFF4527A0),
     fg: Color(0xFF311B92),
+  );
+
+  static const bingo = _GameSpec(
+    concept: ActionConcept.bingo,
+    title: '수학 빙고',
+    tagline: '한 줄을 완성해요',
+    icon: Icons.grid_view_rounded,
+    bg: Color(0xFFB2DFDB),
+    accent: Color(0xFF00796B),
+    fg: Color(0xFF004D40),
   );
 }
 

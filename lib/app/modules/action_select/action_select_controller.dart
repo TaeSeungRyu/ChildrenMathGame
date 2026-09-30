@@ -5,7 +5,7 @@ import '../../data/models/action_concept.dart';
 import '../../data/models/game_type.dart';
 import '../../shared/digit_ladder.dart';
 
-/// 액션 게임 4종이 공유하는 진입 선택 화면의 컨트롤러.
+/// 액션 게임이 공유하는 진입 선택 화면의 컨트롤러.
 ///
 /// - [concept]: `Get.arguments['concept']`로 받은 컨셉(몬스터/풍선/타워/두더지).
 /// - [selectedOp]: 사용자가 고른 연산. `null` 이면 "🎲 랜덤"(매 문제 무작위 연산).
