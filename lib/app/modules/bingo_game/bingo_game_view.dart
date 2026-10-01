@@ -264,7 +264,7 @@ class _BingoCell extends StatelessWidget {
         : Theme.of(context).colorScheme.onSurface;
 
     return Material(
-      color: bg,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: marked ? null : onTap,
@@ -272,6 +272,7 @@ class _BingoCell extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           decoration: BoxDecoration(
+            color: bg,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: border, width: 3),
           ),
