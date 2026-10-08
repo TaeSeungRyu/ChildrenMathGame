@@ -42,6 +42,40 @@ void main() {
     controller.onClose();
   });
 
+  testWidgets('tapping the answer paints and keeps the tile marked', (
+    tester,
+  ) async {
+    await pumpGame(tester);
+    final index = controller.boardProblems.indexWhere(
+      (problem) => problem.answer == controller.current.answer,
+    );
+    final tiles = find.descendant(
+      of: find.byType(GridView),
+      matching: find.byType(InkWell),
+    );
+    await tester.tap(tiles.at(index));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final background = find.descendant(
+      of: tiles.at(index),
+      matching: find.byType(AnimatedContainer),
+    );
+    expect(
+      (tester.widget<AnimatedContainer>(background).decoration as BoxDecoration)
+          .color,
+      const Color(0xFF26A69A),
+    );
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+    expect(tester.widget<InkWell>(tiles.at(index)).onTap, isNull);
+    controller.restart();
+    await tester.pump();
+    expect(find.byIcon(Icons.check_circle), findsNothing);
+    controller.onClose();
+  });
+
   testWidgets(
     'a correct answer marks a cell and a wrong answer costs a heart',
     (tester) async {

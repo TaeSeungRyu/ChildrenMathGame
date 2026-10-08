@@ -207,28 +207,34 @@ class _BingoBoard extends StatelessWidget {
     return Center(
       child: AspectRatio(
         aspectRatio: 1,
-        child: Obx(
-          () => GridView.builder(
+        child: Obx(() {
+          // Read reactive state here: itemBuilder runs after Obx's tracking
+          // scope, so reads inside it alone do not subscribe to updates.
+          final problems = controller.boardProblems.toList();
+          final markedCells = controller.marked.toSet();
+          final selectedCell = controller.selectedCell.value;
+          final lastCorrect = controller.lastCorrect.value;
+          return GridView.builder(
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               mainAxisSpacing: 9,
               crossAxisSpacing: 9,
             ),
-            itemCount: controller.boardProblems.length,
+            itemCount: problems.length,
             itemBuilder: (context, index) {
-              final marked = controller.marked.contains(index);
-              final selected = controller.selectedCell.value == index;
-              final wrong = selected && !controller.lastCorrect.value;
+              final marked = markedCells.contains(index);
+              final selected = selectedCell == index;
+              final wrong = selected && !lastCorrect;
               return _BingoCell(
-                answer: controller.boardProblems[index].answer,
+                answer: problems[index].answer,
                 marked: marked,
                 wrong: wrong,
                 onTap: () => controller.selectCell(index),
               );
             },
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
