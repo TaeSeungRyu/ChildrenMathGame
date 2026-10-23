@@ -20,6 +20,7 @@
 | 문서 | 내용 |
 |------|------|
 | [GAME_MODE_PLAN.md](GAME_MODE_PLAN.md) | 게임모드(액션) 기획안 — "연산 히어로" 액션 미니게임 설계 |
+| [MATH_BILLIARDS_PLAN.md](MATH_BILLIARDS_PLAN.md) | 연산 당구 개발 계획 — 숫자 공 4~6개, 방향·파워 조절, 최대 2회 충돌로 가장 큰 수 만들기 |
 | [HOME_REDESIGN_PLAN.md](HOME_REDESIGN_PLAN.md) | 홈 화면 개편안 — 게임모드 추가 대비 레이아웃 재배치 |
 | [LEARNING_FEATURES_ANALYSIS.md](LEARNING_FEATURES_ANALYSIS.md) | 학습 효과 강화("가르치기" 레이어) 기능 후보 분석. 채택 항목은 ROADMAP으로 이관 |
 | [BLUETOOTH_VERSUS.md](BLUETOOTH_VERSUS.md) | 1:1 **대전** 모드 단계별 계획(구현 전 결정 사항 포함). 전송 레이어는 아래 협동학습 문서와 공유 |
