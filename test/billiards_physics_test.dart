@@ -21,7 +21,9 @@ void main() {
       angle: 0,
       power: 1,
     );
-    for (var i = 0; i < 600 && !shot.stopped; i++) shot.advance(0.016);
+    for (var i = 0; i < 600 && !shot.stopped; i++) {
+      shot.advance(0.016);
+    }
     expect(shot.hitIds, [2, 3]);
     expect(shot.stopped, isTrue);
   });

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../data/models/profile.dart';
 import '../../data/services/action_score_service.dart';
+import '../../data/services/billiards_score_service.dart';
 import '../../data/services/custom_stamp_service.dart';
 import '../../data/services/profile_service.dart';
 import '../../data/services/sfx_service.dart';
@@ -33,8 +34,7 @@ class HomeView extends GetView<HomeController> {
         if (didPop) return;
         final now = DateTime.now();
         final last = controller.lastBackPressedAt;
-        if (last != null &&
-            now.difference(last) < const Duration(seconds: 2)) {
+        if (last != null && now.difference(last) < const Duration(seconds: 2)) {
           SystemNavigator.pop();
           return;
         }
@@ -575,6 +575,9 @@ class _ProfileSheet extends StatelessWidget {
     if (Get.isRegistered<ActionScoreService>()) {
       Get.find<ActionScoreService>().reload();
     }
+    if (Get.isRegistered<BilliardsScoreService>()) {
+      Get.find<BilliardsScoreService>().reload();
+    }
   }
 
   @override
@@ -608,12 +611,12 @@ class _ProfileSheet extends StatelessWidget {
                   trailing: p.id == profile.activeId.value
                       ? const Icon(Icons.check_circle, color: Color(0xFF1976D2))
                       : (profile.canDelete(p.id)
-                          ? IconButton(
-                              icon: const Icon(Icons.delete_outline),
-                              tooltip: '삭제',
-                              onPressed: () => profile.deleteProfile(p.id),
-                            )
-                          : null),
+                            ? IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                tooltip: '삭제',
+                                onPressed: () => profile.deleteProfile(p.id),
+                              )
+                            : null),
                   onTap: () => _switch(p.id),
                 ),
               if (profile.canAddProfile)
@@ -662,6 +665,9 @@ class _AddProfileDialogState extends State<_AddProfileDialog> {
     }
     if (Get.isRegistered<ActionScoreService>()) {
       Get.find<ActionScoreService>().reload();
+    }
+    if (Get.isRegistered<BilliardsScoreService>()) {
+      Get.find<BilliardsScoreService>().reload();
     }
     if (!mounted) return;
     Navigator.of(context).pop();

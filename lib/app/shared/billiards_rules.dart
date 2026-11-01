@@ -84,7 +84,9 @@ class BilliardsRules {
       values.add(
         operation == GameType.subtraction
             ? 2 + rng.nextInt(19)
-            : 2 + rng.nextInt(8),
+            : operation == GameType.division
+            ? 2 + rng.nextInt(8)
+            : starter + 1 + rng.nextInt(9 - starter),
       );
     }
     return BilliardsLayout(

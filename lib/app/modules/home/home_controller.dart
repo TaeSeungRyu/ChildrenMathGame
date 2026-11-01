@@ -96,7 +96,11 @@ class HomeController extends GetxController {
   /// 선택 화면(`/action-select`)으로 이동한다. 거기서 연산·자릿수를 고른 뒤
   /// 컨셉별 본편 라우트로 넘어간다.
   void openActionSelect(ActionConcept concept) {
-    Get.toNamed(AppRoutes.actionSelect, arguments: {'concept': concept});
+    if (concept == ActionConcept.billiards) {
+      Get.toNamed(AppRoutes.billiardsSelect);
+    } else {
+      Get.toNamed(AppRoutes.actionSelect, arguments: {'concept': concept});
+    }
   }
 
   void startRecommended(WeaknessBucket bucket) {

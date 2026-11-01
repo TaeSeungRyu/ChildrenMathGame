@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import '../data/models/game_type.dart';
 import 'billiards_rules.dart';
 
 class BilliardsShot {
@@ -78,4 +79,59 @@ class BilliardsShot {
       if (elapsed >= 6 || vx * vx + vy * vy < 0.0004) stopped = true;
     }
   }
+}
+
+class BilliardsTarget {
+  const BilliardsTarget(
+    this.value,
+    this.starterId,
+    this.angle,
+    this.power,
+    this.hitIds,
+  );
+  final BilliardsValue value;
+  final int starterId;
+  final double angle;
+  final double power;
+  final List<int> hitIds;
+}
+
+/// Maximum among simulated, reachable shots. The same simulator drives play.
+BilliardsTarget? findReachableTarget(
+  BilliardsLayout layout,
+  GameType operation,
+) {
+  BilliardsTarget? best;
+  for (final starterId in layout.starterIds) {
+    final starter = layout.balls.firstWhere((b) => b.id == starterId);
+    for (var direction = 0; direction < 72; direction++) {
+      for (final power in [0.4, 0.7, 1.0]) {
+        final angle = direction * 2 * math.pi / 72;
+        final shot = BilliardsShot(
+          layout: layout,
+          starterId: starterId,
+          angle: angle,
+          power: power,
+        );
+        for (var i = 0; i < 375 && !shot.stopped; i++) {
+          shot.advance(0.016);
+        }
+        if (shot.hitIds.isEmpty) continue;
+        final hits = shot.hitIds.map(
+          (id) => layout.balls.firstWhere((b) => b.id == id).number,
+        );
+        final value = BilliardsRules.result(operation, starter.number, hits);
+        if (best == null || value.compareTo(best.value) > 0) {
+          best = BilliardsTarget(
+            value,
+            starterId,
+            angle,
+            power,
+            List<int>.of(shot.hitIds),
+          );
+        }
+      }
+    }
+  }
+  return best;
 }

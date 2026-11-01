@@ -13,7 +13,8 @@ enum ActionConcept {
   fishing('물고기 잡기', AppRoutes.fishingGame),
   balance('저울 맞추기', AppRoutes.balanceGame),
   arena('아레나', AppRoutes.arenaGame),
-  bingo('수학 빙고', AppRoutes.bingoGame);
+  bingo('수학 빙고', AppRoutes.bingoGame),
+  billiards('연산 당구', AppRoutes.billiardsGame);
 
   const ActionConcept(this.title, this.gameRoute);
 

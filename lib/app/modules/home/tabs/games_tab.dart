@@ -25,10 +25,7 @@ class GamesTab extends GetView<HomeController> {
         children: [
           const _IntroBanner(),
           const SizedBox(height: 12),
-          const _SectionHeader(
-            icon: Icons.sports_esports,
-            title: '게임 모드',
-          ),
+          const _SectionHeader(icon: Icons.sports_esports, title: '게임 모드'),
           const SizedBox(height: 8),
           Expanded(
             // 타일이 3행 + 꼬리 카드라 작은 화면에선 본문 높이를 넘길 수 있어
@@ -107,11 +104,7 @@ class _IntroBanner extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.18),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.bolt,
-              color: Colors.white,
-              size: 28,
-            ),
+            child: const Icon(Icons.bolt, color: Colors.white, size: 28),
           ),
           const SizedBox(width: 12),
           const Expanded(
@@ -129,10 +122,7 @@ class _IntroBanner extends StatelessWidget {
                 SizedBox(height: 2),
                 Text(
                   '연산을 풀어 세상을 구해요!',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.white),
                 ),
               ],
             ),
@@ -201,6 +191,7 @@ class _GameSpec {
     balance,
     arena,
     bingo,
+    billiards,
   ];
 
   static const monster = _GameSpec(
@@ -292,6 +283,16 @@ class _GameSpec {
     accent: Color(0xFF00796B),
     fg: Color(0xFF004D40),
   );
+
+  static const billiards = _GameSpec(
+    concept: ActionConcept.billiards,
+    title: '연산 당구',
+    tagline: '가장 큰 수를 만들어요',
+    icon: Icons.sports_baseball,
+    bg: Color(0xFFA5D6A7),
+    accent: Color(0xFF1B5E20),
+    fg: Color(0xFF1B5E20),
+  );
 }
 
 /// 2열 그리드에서 짝이 안 맞는 마지막 한 종을 위한 가로형 타일. 그리드 타일과
@@ -349,10 +350,7 @@ class _WideGameModeTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                color: spec.fg.withValues(alpha: 0.55),
-              ),
+              Icon(Icons.chevron_right, color: spec.fg.withValues(alpha: 0.55)),
             ],
           ),
         ),
@@ -389,11 +387,7 @@ class _GameModeTile extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.45),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      spec.icon,
-                      size: 40,
-                      color: spec.accent,
-                    ),
+                    child: Icon(spec.icon, size: 40, color: spec.accent),
                   ),
                 ),
               ),
