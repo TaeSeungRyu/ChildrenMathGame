@@ -56,19 +56,7 @@ class BilliardsShot {
         final distance2 = dx * dx + dy * dy;
         if (distance2 >= 4 * _radius * _radius) continue;
         hitIds.add(ball.id);
-        final distance = math.sqrt(distance2);
-        final ux = distance > 0
-            ? dx / distance
-            : -vx / math.sqrt(vx * vx + vy * vy);
-        final uy = distance > 0
-            ? dy / distance
-            : -vy / math.sqrt(vx * vx + vy * vy);
-        nx = ball.x + ux * (2 * _radius + 0.001);
-        ny = ball.y + uy * (2 * _radius + 0.001);
-        final dot = vx * ux + vy * uy;
-        vx = (vx - 2 * dot * ux) * 0.72;
-        vy = (vy - 2 * dot * uy) * 0.72;
-        if (hitIds.length == 2) stopped = true;
+        stopped = true;
         break;
       }
       x = nx;

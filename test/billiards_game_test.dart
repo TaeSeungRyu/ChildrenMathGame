@@ -18,6 +18,7 @@ void main() {
       controller.tick(0.016);
     }
     expect(controller.hitIds, target.hitIds);
+    expect(controller.hitIds, hasLength(1));
     expect(controller.phase.value, 'won');
     expect(controller.attempts.value, 1);
     controller.newGame();

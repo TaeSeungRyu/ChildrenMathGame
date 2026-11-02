@@ -66,7 +66,7 @@ class _BilliardsGameViewState extends State<BilliardsGameView>
                     '${controller.operation.label}  ·  ${controller.ballCount}개 공',
                   ),
                   Text('발사 ${controller.attempts.value}회'),
-                  Text('충돌 ${controller.hitIds.length}/2'),
+                  Text('충돌 ${controller.hitIds.length}/1'),
                 ],
               ),
             ),

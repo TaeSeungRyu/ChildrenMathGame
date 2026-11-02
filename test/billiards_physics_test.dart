@@ -5,7 +5,7 @@ import 'package:children_math_game/app/shared/billiards_rules.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('straight shot registers collision and stops after two', () {
+  test('straight shot stops at the first ball', () {
     final layout = BilliardsLayout(
       [
         const BilliardsBall(0, 2, 0.20, 0.5),
@@ -24,8 +24,12 @@ void main() {
     for (var i = 0; i < 600 && !shot.stopped; i++) {
       shot.advance(0.016);
     }
-    expect(shot.hitIds, [2, 3]);
+    expect(shot.hitIds, [2]);
     expect(shot.stopped, isTrue);
+    final firstHitX = shot.x;
+    shot.advance(1);
+    expect(shot.x, firstHitX);
+    expect(shot.hitIds, [2]);
   });
 
   test('empty shot ends and wall reflection stays in bounds', () {

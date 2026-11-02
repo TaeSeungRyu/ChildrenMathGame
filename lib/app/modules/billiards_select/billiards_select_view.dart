@@ -51,7 +51,7 @@ class BilliardsSelectView extends GetView<BilliardsSelectController> {
           ),
           const SizedBox(height: 24),
           const Text(
-            '작은 수(+, ×) 또는 큰 수(-, ÷)의 공을 골라 방향과 힘을 조절해요. 최대 두 번 맞히고, 가장 큰 수를 만들 때까지 다시 도전할 수 있어요.',
+            '작은 수(+, ×) 또는 큰 수(-, ÷)의 공을 골라 방향과 힘을 조절해요. 공 하나를 맞혀 가장 큰 수를 만들 때까지 다시 도전할 수 있어요.',
           ),
           const SizedBox(height: 24),
           SizedBox(
